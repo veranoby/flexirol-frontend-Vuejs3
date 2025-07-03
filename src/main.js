@@ -9,6 +9,7 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 
 // Global styles
 import './assets/main.css'
+import './assets/flexirol.css'
 
 const app = createApp(App)
 

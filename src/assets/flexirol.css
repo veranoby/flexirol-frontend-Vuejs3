@@ -1,0 +1,123 @@
+/* Flexirol Original Colors & Styles */
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500&display=swap');
+
+:root {
+  --flexirol-primary: #3a6a77;
+  --flexirol-secondary: #1d9190;
+  --flexirol-tertiary: #39711a;
+  --flexirol-quaternary: #ff8c00;
+  --flexirol-error: #b51659;
+  --flexirol-light: #a8d1cb;
+  --flexirol-bg-light: #ddf0ed;
+  --flexirol-text-secondary: #375479;
+}
+
+body {
+  font-family: 'Ubuntu', sans-serif;
+  font-size: 12px;
+}
+
+/* Flexirol Button Variants */
+.btn-flexirol-primary {
+  background-color: var(--flexirol-primary);
+  border-color: var(--flexirol-primary);
+  color: white;
+}
+
+.btn-flexirol-primary:hover {
+  background-color: var(--flexirol-secondary);
+  border-color: var(--flexirol-secondary);
+}
+
+.btn-flexirol-secondary {
+  background-color: var(--flexirol-secondary);
+  border-color: var(--flexirol-secondary);
+  color: white;
+}
+
+.btn-flexirol-tertiary {
+  background-color: var(--flexirol-tertiary);
+  border-color: var(--flexirol-tertiary);
+  color: white;
+}
+
+/* Text Colors */
+.text-flexirol-primary {
+  color: var(--flexirol-primary) !important;
+}
+.text-flexirol-tertiary {
+  color: var(--flexirol-tertiary) !important;
+}
+.text-flexirol-quaternary {
+  color: var(--flexirol-quaternary) !important;
+}
+.text-flexirol-error {
+  color: var(--flexirol-error) !important;
+}
+
+/* Background Colors */
+.bg-flexirol-light {
+  background-color: var(--flexirol-bg-light) !important;
+}
+.bg-flexirol-primary {
+  background-color: var(--flexirol-primary) !important;
+}
+
+/* Flexirol Navbar */
+.navbar-flexirol {
+  background: linear-gradient(
+    90deg,
+    var(--flexirol-primary) 0%,
+    var(--flexirol-secondary) 50%,
+    var(--flexirol-light) 100%
+  );
+}
+
+/* Form Controls Flexirol Style */
+.form-control:focus {
+  border-color: var(--flexirol-secondary);
+  box-shadow: 0 0 0 0.25rem rgba(61, 161, 144, 0.25);
+}
+
+/* Card Flexirol Style */
+.card-flexirol {
+  border: none;
+  box-shadow: 0 4px 6px rgba(58, 106, 119, 0.1);
+}
+
+.card-flexirol .card-header {
+  background-color: var(--flexirol-bg-light);
+  border-bottom: 2px solid var(--flexirol-primary);
+  color: var(--flexirol-text-secondary);
+  font-weight: 500;
+}
+
+/* Table Flexirol Style */
+.table-flexirol thead th {
+  background-color: var(--flexirol-primary);
+  color: white;
+  border: none;
+}
+
+.table-flexirol tbody tr:hover {
+  background-color: var(--flexirol-bg-light);
+}
+
+/* Alert Flexirol Variants */
+.alert-flexirol-success {
+  background-color: rgba(57, 113, 26, 0.1);
+  border-color: var(--flexirol-tertiary);
+  color: var(--flexirol-tertiary);
+}
+
+.alert-flexirol-warning {
+  background-color: rgba(255, 140, 0, 0.1);
+  border-color: var(--flexirol-quaternary);
+  color: var(--flexirol-quaternary);
+}
+
+.alert-flexirol-error {
+  background-color: rgba(181, 22, 89, 0.1);
+  border-color: var(--flexirol-error);
+  color: var(--flexirol-error);
+}
