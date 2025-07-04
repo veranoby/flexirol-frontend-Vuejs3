@@ -45,7 +45,7 @@ const router = createRouter({
     },
     // Company Configuration Route (Superadmin & Empresa)
     {
-      path: '/configuracion-empresa',
+      path: '/superadmin/config',
       name: 'configuracion-empresa',
       component: () => import('@/views/superadmin/ConfigView.vue'),
       meta: { requiresAuth: true, roles: ['superadmin', 'empresa'] },
