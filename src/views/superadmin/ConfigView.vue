@@ -246,12 +246,6 @@ const viewError = ref(null) // For errors specific to this view's logic (e.g., n
 const alertMessage = ref('')
 const alertVariant = ref('success') // 'success' or 'danger'
 
-// This ID needs to be determined.
-// For 'empresa', it might be authStore.user.company_id or authStore.user.assigned_companies[0].id
-// For 'superadmin', it could be a specific ID known to the system or from route params.
-// Placeholder logic:
-const companyIdToLoad = ref(null)
-
 onMounted(async () => {
   // Initialize Bootstrap Tooltips
   const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
@@ -259,57 +253,27 @@ onMounted(async () => {
     return new Tooltip(tooltipTriggerEl)
   })
 
-  if (authStore.user) {
-    if (authStore.isSuperadmin) {
-      // Superadmin: How do we determine which company to load?
-      // For now, let's assume a superadmin might manage a primary/default company
-      // or this view is part of a larger system where the company ID is provided.
-      // Using a placeholder ID or logic. This needs clarification/implementation.
-      // Example: Load the first company found if superadmin, or a specific one.
-      // This is a simplified approach. A real app might have a company selection UI for superadmin.
-      // For this task, let's assume we're loading a known company for demo, or it's passed via props/route.
-      // If no company ID is set, the store's fetch will handle it gracefully (shows error).
-      // Let's try to get it from authStore if user has an assigned company, even for superadmin
-      if (authStore.user.assigned_companies && authStore.user.assigned_companies.length > 0) {
-        companyIdToLoad.value = authStore.user.assigned_companies[0]; // Assuming it's an ID string
-      } else if (authStore.user.company_id) { // PocketBase user table might have 'company_id'
-         companyIdToLoad.value = authStore.user.company_id;
-      } else {
-        // Fallback: If superadmin and no direct company, perhaps there's a "global" config company ID
-        // This is highly specific to the application's design.
-        // For now, if a superadmin doesn't have a company_id or assigned_companies[0],
-        // they won't be able to load/edit unless companyIdToLoad is set externally.
-        // viewError.value = "Superadmin: No company ID specified for configuration."
-        // console.warn("Superadmin: No specific company ID found to load configuration for.")
-        // For testing, you might hardcode an ID if you have one in your PocketBase
-        // companyIdToLoad.value = 'YOUR_GLOBAL_COMPANY_ID_HERE';
-      }
-    } else if (authStore.isEmpresa) {
-      if (authStore.user.assigned_companies && authStore.user.assigned_companies.length > 0) {
-        companyIdToLoad.value = authStore.user.assigned_companies[0]; // Assuming it's an ID string
-      } else if (authStore.user.company_id) { // PocketBase user table might have 'company_id'
-         companyIdToLoad.value = authStore.user.company_id;
-      } else {
-        viewError.value = "Empresa: No se pudo determinar el ID de la compañía asociada a su usuario."
-      }
+  if (authStore.user && authStore.isAuthenticated) {
+    await companiesStore.fetchCompanyToConfigure();
+    if (companiesStore.error) {
+      // If the store itself has an error (e.g., "No company ID associated"), display it.
+      viewError.value = companiesStore.error;
+    } else if (!companiesStore.companyConfig || !companiesStore.companyConfig.id) {
+      // This case might occur if fetchCompanyToConfigure completes without error but also without setting a company
+      // e.g. Superadmin and no companies exist. The store should ideally set an error for this.
+      viewError.value = "No se pudo cargar la configuración de la compañía. Verifique que exista una compañía o que esté asignado a una.";
     }
-
-    if (companyIdToLoad.value) {
-      await companiesStore.fetchCompanyConfig(companyIdToLoad.value)
-      if (companiesStore.error) {
-        viewError.value = companiesStore.error;
-      }
-    } else if (!viewError.value) { // if no ID and no prior error
-        viewError.value = "No se ha especificado una compañía para cargar la configuración.";
-    }
+  } else if (!authStore.isAuthenticated) {
+    viewError.value = "Usuario no autenticado. Por favor, inicie sesión.";
   } else {
-    viewError.value = "Usuario no autenticado."
+     // Should not happen if authStore.user is null and not authenticated
+    viewError.value = "Error de autenticación desconocido."
   }
 })
 
 // Watch for changes in companyConfig from store and update local formState for editing
 watch(() => companiesStore.companyConfig, (newConfig) => {
-  if (newConfig) {
+  if (newConfig && newConfig.id) { // Ensure newConfig is not null and has an id
     // Deep copy to avoid direct mutation of store state if formState is modified
     // and then cancelled.
     Object.assign(formState, JSON.parse(JSON.stringify(newConfig)))
@@ -385,41 +349,31 @@ const handleSaveConfiguration = async () => {
   }
 
   if (confirm('¿Está seguro de que desea guardar estos cambios?')) {
-    // Sync formState back to companiesStore's editable copy before saving
-    // This assumes companyConfig in store is the one to be saved.
-    // We need to update the store's copy that will be sent to the backend.
-    // A better way might be to pass the formState directly to saveCompanyConfig
-    // or have a dedicated "editableCompanyConfig" in the store.
-    // For now, let's update the store's main config object before saving.
+    // Prepare the data object from formState to be sent to the store
+    // Ensure all relevant fields are included and correctly typed.
+    const dataToSaveFromForm = {
+      id: formState.id, // Crucial for the update operation
+      flexirol: Number(formState.flexirol),
+      flexirol2: Number(formState.flexirol2),
+      flexirol3: String(formState.flexirol3),
+      dia_inicio: Number(formState.dia_inicio),
+      dia_cierre: Number(formState.dia_cierre),
+      porcentaje: Number(formState.porcentaje),
+      dia_bloqueo: Number(formState.dia_bloqueo),
+      frecuencia: Number(formState.frecuencia),
+      dia_reinicio: Number(formState.dia_reinicio),
+      // Include other fields from formState if they are part of the 'companies' collection
+      // and are meant to be editable through this form.
+      // For example, if company_name were editable here:
+      // company_name: formState.company_name,
+    };
 
-    // Make sure all fields from formState are numbers where expected by the store/API
-    const configToSave = { ...companiesStore.companyConfig }; // take a copy
-    Object.keys(formState).forEach(key => {
-      if (key !== 'id' && key !== 'company_name' && key !== 'owner_id' && companiesStore.companyConfig.hasOwnProperty(key)) {
-         if (typeof companiesStore.companyConfig[key] === 'number') {
-            configToSave[key] = Number(formState[key]);
-         } else {
-            configToSave[key] = formState[key];
-         }
-      }
-    });
-    // Update the store's config. This is a bit indirect.
-    // Ideally, saveCompanyConfig would take the data object.
-    // For now, let's update field by field.
-    Object.keys(configToSave).forEach(key => {
-        if (key !== 'id' && key !== 'owner_id' && key !== 'company_name' && companiesStore.companyConfig.hasOwnProperty(key)) {
-            companiesStore.updateField(key, configToSave[key]);
-        }
-    });
-
-
-    const success = await companiesStore.saveCompanyConfig() // Uses data from companiesStore.companyConfig
+    const success = await companiesStore.saveCompanyConfig(dataToSaveFromForm)
     if (success) {
       showGlobalAlert('Configuración guardada con éxito.', 'success')
-      // Optionally re-fetch or rely on optimistic update
-      if (companyIdToLoad.value) {
-        await companiesStore.fetchCompanyConfig(companyIdToLoad.value); // Re-fetch to confirm
-      }
+      // No explicit re-fetch needed here if saveCompanyConfig updates the store's state
+      // from the server response, which it now does via _setCompanyConfig.
+      // The watch on companiesStore.companyConfig will update formState.
     } else {
       showGlobalAlert(`Error al guardar: ${companiesStore.error || 'Error desconocido'}`, 'danger')
     }
