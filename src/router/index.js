@@ -24,7 +24,11 @@ const router = createRouter({
     // Superadmin routes
     {
       path: '/superadmin',
-      meta: { requiresAuth: true, roles: ['superadmin'] },
+      meta: {
+        requiresAuth: true,
+        roles: ['superadmin'],
+        breadcrumb: 'Superadmin',
+      },
       children: [
         {
           path: 'usuarios',
@@ -35,11 +39,24 @@ const router = createRouter({
           path: 'empresas',
           name: 'superadmin-empresas',
           component: () => import('@/views/superadmin/EmpresasView.vue'),
+          meta: { breadcrumb: 'Empresas' },
         },
         {
           path: 'solicitudes',
           name: 'superadmin-solicitudes',
           component: () => import('@/views/superadmin/SolicitudesView.vue'),
+        },
+        {
+          path: 'excel-upload',
+          name: 'superadmin-excel-upload',
+          component: () => import('@/views/superadmin/ExcelUploadView.vue'),
+          meta: { breadcrumb: 'Carga Excel' },
+        },
+        {
+          path: 'historico',
+          name: 'superadmin-historico',
+          component: () => import('@/views/superadmin/HistoricoView.vue'),
+          meta: { breadcrumb: 'Histórico' },
         },
         // { // This specific route for superadmin config is now replaced by the more general one below
         //   path: 'config',

@@ -24,39 +24,81 @@
     <div v-if="canAccessPage">
       <!-- Filters Card -->
       <div class="card shadow-sm mb-4">
-        <div class="card-header">
-          Filtros del Reporte
-        </div>
+        <div class="card-header">Filtros del Reporte</div>
         <div class="card-body">
           <div class="row g-3">
             <div class="col-md-4">
-              <label for="startDate" class="form-label">Fecha Inicio <span class="text-danger">*</span></label>
-              <input type="date" class="form-control" id="startDate" v-model="reportsStore.filters.startDate">
+              <label for="startDate" class="form-label"
+                >Fecha Inicio <span class="text-danger">*</span></label
+              >
+              <input
+                type="date"
+                class="form-control"
+                id="startDate"
+                v-model="reportsStore.filters.startDate"
+              />
             </div>
             <div class="col-md-4">
-              <label for="endDate" class="form-label">Fecha Fin <span class="text-danger">*</span></label>
-              <input type="date" class="form-control" id="endDate" v-model="reportsStore.filters.endDate">
+              <label for="endDate" class="form-label"
+                >Fecha Fin <span class="text-danger">*</span></label
+              >
+              <input
+                type="date"
+                class="form-control"
+                id="endDate"
+                v-model="reportsStore.filters.endDate"
+              />
             </div>
             <div class="col-md-4 d-flex align-items-end">
-              <button class="btn btn-primary me-2" @click="handleFetchReportData" :disabled="reportsStore.loading">
-                <span v-if="reportsStore.loading" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                Aplicar Filtros
-              </button>
-              <button 
-                class="btn btn-success" 
-                @click="startExport" 
-                :disabled="!habilitadoSwitchExcel || reportsStore.loading || reportsStore.reportData.length === 0"
-                :title="!habilitadoSwitchExcel ? 'La descarga de reportes está disponible solo al finalizar el ciclo mensual' : 'Descargar reporte mensual'"
-              >
-                <i class="bi bi-file-earmark-excel"></i> Descargar Reporte Mensual
-              </button>
+              <div class="d-flex flex-column w-100">
+                <div class="d-flex mb-2">
+                  <button
+                    class="btn btn-primary me-2"
+                    @click="handleFetchReportData"
+                    :disabled="reportsStore.loading"
+                  >
+                    <span
+                      v-if="reportsStore.loading"
+                      class="spinner-border spinner-border-sm"
+                      role="status"
+                      aria-hidden="true"
+                    ></span>
+                    Aplicar Filtros
+                  </button>
+                  <button
+                    class="btn btn-success"
+                    @click="startExport"
+                    :disabled="
+                      !habilitadoSwitchExcel ||
+                      reportsStore.loading ||
+                      !reportsStore.reportData?.users?.length
+                    "
+                    :title="
+                      !habilitadoSwitchExcel
+                        ? 'La descarga de reportes está disponible solo al finalizar el ciclo mensual'
+                        : 'Descargar reporte mensual'
+                    "
+                  >
+                    <i class="bi bi-file-earmark-excel me-1"></i> Exportar
+                  </button>
+                </div>
+                <div v-if="cycleEndMessage" class="small text-muted">
+                  <i class="bi bi-info-circle"></i> {{ cycleEndMessage }}
+                </div>
+                <div
+                  v-if="companyStore.companyConfig?.flexirol3 === '2'"
+                  class="small text-info"
+                >
+                  <i class="bi bi-star-fill"></i> Plan 2 activo - Valor fijo: ${{ plan2Value }}
+                </div>
+              </div>
             </div>
           </div>
           <div v-if="filterError" class="mt-2 text-danger">
             <small>{{ filterError }}</small>
           </div>
           <div v-if="reportsStore.error" class="mt-2 alert alert-warning p-2">
-             <small><i class="bi bi-exclamation-triangle-fill"></i> {{ reportsStore.error }}</small>
+            <small><i class="bi bi-exclamation-triangle-fill"></i> {{ reportsStore.error }}</small>
           </div>
         </div>
       </div>
@@ -95,7 +137,9 @@
                 <td>{{ item.email }}</td>
                 <td>{{ item.plan }}</td>
                 <td>${{ item.monto_solicitado?.toFixed(2) }}</td>
-                <td><span :class="getStatusClass(item.estado)">{{ item.estado }}</span></td>
+                <td>
+                  <span :class="getStatusClass(item.estado)">{{ item.estado }}</span>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -103,7 +147,7 @@
 
         <!-- Totals per User -->
         <h4 class="mt-5">Resumen: Totales por Usuario</h4>
-         <div v-if="Object.keys(userTotals).length > 0" class="table-responsive">
+        <div v-if="Object.keys(userTotals).length > 0" class="table-responsive">
           <table class="table table-bordered table-sm">
             <thead class="table-light">
               <tr>
@@ -122,11 +166,19 @@
           </table>
         </div>
         <div v-else class="alert alert-light">
-            No hay datos agregados para mostrar un resumen por usuario.
+          No hay datos agregados para mostrar un resumen por usuario.
         </div>
       </div>
 
-      <div v-if="!reportsStore.loading && reportsStore.reportData.length === 0 && !reportsStore.error && hasAppliedFilters" class="alert alert-info">
+      <div
+        v-if="
+          !reportsStore.loading &&
+          reportsStore.reportData.length === 0 &&
+          !reportsStore.error &&
+          hasAppliedFilters
+        "
+        class="alert alert-info"
+      >
         No se encontraron solicitudes para los filtros seleccionados.
       </div>
     </div>
@@ -134,7 +186,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useReportsStore } from '@/stores/reports'
 import { useCompanyStore } from '@/stores/company'
@@ -151,71 +203,70 @@ const filterError = ref('')
 const hasAppliedFilters = ref(false)
 const habilitadoSwitch = ref(false)
 const habilitadoSwitchExcel = ref(false)
+const plan2Value = ref(0)
+const cycleEndMessage = ref('')
 
 // Company configuration
-const configuracionEmpresa = computed(() => companyStore.currentCompany?.configuracion || {})
+// configuracionEmpresa is now accessed directly from companyStore
 
 const canAccessPage = computed(() => {
-  return authStore.isAuthenticated && (authStore.isEmpresa || authStore.isOperador)
+  return ['empresa', 'operador', 'superadmin'].includes(authStore.userRole)
 })
 
 const userTotals = computed(() => {
-    return reportsStore.calculateUserTotals()
+  return reportsStore.calculateUserTotals()
 })
 
 // Check if current date is within allowed period for operations
 const verificarHabilitadoSwitch = () => {
-  if (!configuracionEmpresa.value) return false
+  if (!companyStore.companyConfig) return
   
   const now = new Date()
   const currentDay = now.getDate()
-  const { dia_inicio = 1, dia_cierre = 5, dia_bloqueo = 10 } = configuracionEmpresa.value
+  const startDay = companyStore.companyConfig.dia_inicio || 1
+  const endDay = companyStore.companyConfig.dia_cierre || 25
   
-  // Check if current day is between dia_inicio and dia_cierre
-  if (currentDay >= dia_inicio && currentDay <= dia_cierre) {
-    habilitadoSwitch.value = true
-    mensajeImportante.value = 'Período activo para cargar solicitudes.'
-    claseImportante.value = 'alert-primary'
-    return true
-  } 
-  // Check if in blocking period
-  else if (currentDay > dia_cierre && currentDay <= dia_bloqueo) {
-    habilitadoSwitch.value = false
-    mensajeImportante.value = `Período de cierre. Próximo período inicia el día ${dia_inicio} del próximo mes.`
-    claseImportante.value = 'alert-danger'
-    return false
-  } 
-  // Outside blocking period but not in active period
-  else {
-    habilitadoSwitch.value = false
-    mensajeImportante.value = 'Fuera del período de carga. Espere al próximo ciclo.'
-    claseImportante.value = 'alert-warning'
-    return false
+  // Check if current day is within the allowed range
+  habilitadoSwitch.value = currentDay >= startDay && currentDay <= endDay
+  
+  // Set Plan 2 value if company has it enabled
+  if (companyStore.companyConfig.flexirol3 === '2') {
+    plan2Value.value = Number(companyStore.companyConfig.flexirol2) || 0
   }
+  
+  // Set cycle end message
+  const endDate = new Date(now.getFullYear(), now.getMonth(), endDay)
+  cycleEndMessage.value = `Ciclo actual finaliza el ${endDate.getDate()} de ${endDate.toLocaleString('es-EC', { month: 'long' })}`
 }
 
 // Check if Excel export is enabled (only at the end of the month)
 const verificarHabilitadoSwitchExcel = () => {
-  if (!configuracionEmpresa.value) return false
+  if (authStore.userRole === 'superadmin') {
+    habilitadoSwitchExcel.value = true
+    return
+  }
+  
+  if (!companyStore.companyConfig) return
   
   const now = new Date()
   const currentDay = now.getDate()
-  const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+  const endDay = companyStore.companyConfig.dia_cierre || 25
+  // Allow export from day after cycle end to 5th of next month
+  const isAfterCycleEnd = currentDay > endDay
+  const isBefore5thNextMonth = currentDay <= 5
   
-  // Enable Excel export in the last 3 days of the month
-  habilitadoSwitchExcel.value = currentDay > (lastDayOfMonth - 3)
-  return habilitadoSwitchExcel.value
+  habilitadoSwitchExcel.value = isAfterCycleEnd || isBefore5thNextMonth
 }
 
 // Format date for display
 const formatDate = (dateString) => {
   if (!dateString) return 'Nunca'
-  const options = { 
-    year: 'numeric', 
-    month: 'long', 
+  const options = {
+    year: 'numeric',
+    month: 'long',
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   }
   return new Date(dateString).toLocaleDateString('es-ES', options)
 }
@@ -226,7 +277,7 @@ const startExport = async () => {
     alert('La descarga de reportes está disponible solo al finalizar el ciclo mensual.')
     return
   }
-  
+
   try {
     await reportsStore.generateExcel()
     // After successful export, update last load date
@@ -244,7 +295,7 @@ onMounted(async () => {
     await companyStore.fetchCompanyConfig()
     verificarHabilitadoSwitch()
     verificarHabilitadoSwitchExcel()
-    
+
     // Set up monthly check
     setInterval(() => {
       verificarHabilitadoSwitch()
@@ -254,6 +305,24 @@ onMounted(async () => {
 })
 
 // Client-side validation before hitting the store
+const calculateUserTotals = () => {
+  if (!reportsStore.reportData || !reportsStore.reportData.users) return
+  
+  // If company has Plan 2 enabled
+  if (companyStore.companyConfig?.flexirol3 === '2' && plan2Value.value > 0) {
+    reportsStore.reportData.users = reportsStore.reportData.users.map(user => {
+      if (user.flexirol4) { // User is subscribed to Plan 2
+        return {
+          ...user,
+          total: (Number(user.total) || 0) + plan2Value.value,
+          plan2Applied: true
+        }
+      }
+      return user
+    })
+  }
+}
+
 const validateFilters = () => {
   filterError.value = '' // Reset previous error
   if (!reportsStore.filters.startDate || !reportsStore.filters.endDate) {
@@ -271,7 +340,8 @@ const validateFilters = () => {
   const diffTime = Math.abs(endDate - startDate)
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 
-  if (diffDays > 93) { // Approx 3 months (e.g., 31*3 = 93)
+  if (diffDays > 93) {
+    // Approx 3 months (e.g., 31*3 = 93)
     filterError.value = 'El rango de fechas no puede exceder los 3 meses.'
     return false
   }
@@ -279,36 +349,57 @@ const validateFilters = () => {
 }
 
 const handleFetchReportData = async () => {
-  hasAppliedFilters.value = true;
-  if (!validateFilters()) {
-    reportsStore.reportData = [] // Clear data if filters are invalid
-    return
+  if (!validateFilters()) return
+  
+  try {
+    await reportsStore.fetchReportData()
+    calculateUserTotals()
+    
+    // Show cycle information message
+    if (companyStore.companyConfig?.flexirol3 === '2') {
+      reportsStore.setNotification({
+        message: `Plan 2 activo. Se ha aplicado un valor fijo de $${plan2Value.value} a los usuarios suscritos.`,
+        variant: 'info'
+      })
+    }
+  } catch (error) {
+    console.error('Error fetching report data:', error)
+    reportsStore.setNotification({
+      message: 'Error al cargar los datos del reporte',
+      variant: 'danger'
+    })
   }
-  await reportsStore.fetchReportData()
-  // Error from store will be displayed via reportsStore.error
 }
 
 const getStatusClass = (status) => {
   switch (status) {
-    case 'aprobado': return 'badge bg-success text-light';
-    case 'pendiente': return 'badge bg-warning text-dark';
-    case 'rechazado': return 'badge bg-danger text-light';
-    case 'pagado': return 'badge bg-info text-light';
-    default: return 'badge bg-secondary text-light';
+    case 'aprobado':
+      return 'badge bg-success text-light'
+    case 'pendiente':
+      return 'badge bg-warning text-dark'
+    case 'rechazado':
+      return 'badge bg-danger text-light'
+    case 'pagado':
+      return 'badge bg-info text-light'
+    default:
+      return 'badge bg-secondary text-light'
   }
 }
 
 // Watch for filter changes to clear errors if user corrects them
-watch(() => [reportsStore.filters.startDate, reportsStore.filters.endDate], () => {
-  if (filterError.value) { // if there was a filter error
-    validateFilters(); // re-validate to potentially clear it
-  }
-  // Also clear store error when filters change, as it might be related to old filter values
-  if(reportsStore.error){
-    reportsStore.error = null;
-  }
-});
-
+watch(
+  () => [reportsStore.filters.startDate, reportsStore.filters.endDate],
+  () => {
+    if (filterError.value) {
+      // if there was a filter error
+      validateFilters() // re-validate to potentially clear it
+    }
+    // Also clear store error when filters change, as it might be related to old filter values
+    if (reportsStore.error) {
+      reportsStore.error = null
+    }
+  },
+)
 </script>
 
 <style scoped>
@@ -316,11 +407,12 @@ watch(() => [reportsStore.filters.startDate, reportsStore.filters.endDate], () =
   max-width: 1200px;
   margin: auto;
 }
-.table-sm th, .table-sm td {
+.table-sm th,
+.table-sm td {
   padding: 0.4rem;
   font-size: 0.85rem;
 }
 .badge {
-    font-size: 0.8em;
+  font-size: 0.8em;
 }
 </style>
