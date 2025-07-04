@@ -36,12 +36,19 @@ const router = createRouter({
           name: 'superadmin-empresas',
           component: () => import('@/views/superadmin/EmpresasView.vue'),
         },
-        {
-          path: 'config',
-          name: 'superadmin-config',
-          component: () => import('@/views/superadmin/ConfigView.vue'),
-        },
+        // { // This specific route for superadmin config is now replaced by the more general one below
+        //   path: 'config',
+        //   name: 'superadmin-config',
+        //   component: () => import('@/views/superadmin/ConfigView.vue'),
+        // },
       ],
+    },
+    // Company Configuration Route (Superadmin & Empresa)
+    {
+      path: '/configuracion-empresa',
+      name: 'configuracion-empresa',
+      component: () => import('@/views/superadmin/ConfigView.vue'),
+      meta: { requiresAuth: true, roles: ['superadmin', 'empresa'] },
     },
     // Admin routes (empresa/operador)
     {
