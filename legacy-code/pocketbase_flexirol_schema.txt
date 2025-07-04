@@ -1,0 +1,49 @@
+Colecciones de pocketbase:
+
+Collection 1: companies
+Tipo: Base collection
+Campos:
+- owner_id: Relation → Users collection
+- company_name: Plain text (requerido)
+- flexirol: Number (0-100)
+- flexirol2: Number (0-9999) 
+- flexirol3: Select options: "1", "2"
+- dia_inicio: Number (1-31)
+- dia_cierre: Number (1-31)
+- porcentaje: Number (0-100)
+- dia_bloqueo: Number (0-31)
+- frecuencia: Number (1-10)
+- dia_reinicio: Number (1-31)
+
+Collection 2: advance_requests
+Tipo: Base collection
+Campos:
+- user_id: Relation → Users
+- company_id: Relation → companies 
+- monto_solicitado: Number (1-99999)
+- monto_aprobado: Number (0-99999)
+- estado: Select options: "pendiente", "aprobado", "rechazado", "pagado"
+- fecha_solicitud: Date
+- observaciones: Plain text
+- banco_destino: Relation → bank_accounts
+
+Collection 3: bank_accounts
+Tipo: Base collection  
+Campos:
+- user_id: Relation → Users
+- banco_nombre: Plain text
+- numero_cuenta: Plain text
+- tipo_cuenta: Select options: "ahorro", "corriente"
+- titular_nombre: Plain text
+- titular_cedula: Plain text
+- activa: Bool
+
+Users collection (ya existe):
+Settings → Auth → Optional fields → Add:
+
+role: Select options: "superadmin", "empresa", "operador", "usuario"
+cedula: Plain text
+empresa_id: Relation → Users (single)
+assigned_companies: Relation → companies (multiple)
+disponible: Number
+gearbox: Bool
