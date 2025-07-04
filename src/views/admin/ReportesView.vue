@@ -2,6 +2,21 @@
   <div class="container mt-4 reportes-view">
     <h3 class="mb-3">Reporte de Anticipos</h3>
 
+    <!-- Excel Load Status Alert -->
+    <div v-if="canAccessPage" class="alert" :class="claseImportante" role="alert">
+      <div v-if="!ultimaCargaExcel" class="d-flex align-items-center">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <div>No se ha cargado el archivo Excel de este mes.</div>
+      </div>
+      <div v-else class="d-flex justify-content-between align-items-center">
+        <div>
+          <i class="bi bi-info-circle-fill me-2"></i>
+          Última actualización de Excel: {{ formatDate(ultimaCargaExcel) }}
+          <span v-if="!habilitadoSwitch"> - Esperando cierre de ciclo para nueva carga</span>
+        </div>
+      </div>
+    </div>
+
     <div v-if="!canAccessPage" class="alert alert-danger">
       Acceso denegado. Esta sección es solo para roles 'empresa' y 'operador'.
     </div>
@@ -27,8 +42,13 @@
                 <span v-if="reportsStore.loading" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                 Aplicar Filtros
               </button>
-              <button class="btn btn-success" @click="handleExportExcel" :disabled="reportsStore.loading || reportsStore.reportData.length === 0">
-                <i class="bi bi-file-earmark-excel"></i> Exportar a Excel
+              <button 
+                class="btn btn-success" 
+                @click="startExport" 
+                :disabled="!habilitadoSwitchExcel || reportsStore.loading || reportsStore.reportData.length === 0"
+                :title="!habilitadoSwitchExcel ? 'La descarga de reportes está disponible solo al finalizar el ciclo mensual' : 'Descargar reporte mensual'"
+              >
+                <i class="bi bi-file-earmark-excel"></i> Descargar Reporte Mensual
               </button>
             </div>
           </div>
@@ -114,15 +134,26 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useReportsStore } from '@/stores/reports'
+import { useCompanyStore } from '@/stores/company'
 
 const authStore = useAuthStore()
 const reportsStore = useReportsStore()
+const companyStore = useCompanyStore()
 
+// State for Excel load status and validations
+const ultimaCargaExcel = ref(null)
+const mensajeImportante = ref('')
+const claseImportante = ref('alert-primary')
 const filterError = ref('')
-const hasAppliedFilters = ref(false) // To track if filters have been applied at least once
+const hasAppliedFilters = ref(false)
+const habilitadoSwitch = ref(false)
+const habilitadoSwitchExcel = ref(false)
+
+// Company configuration
+const configuracionEmpresa = computed(() => companyStore.currentCompany?.configuracion || {})
 
 const canAccessPage = computed(() => {
   return authStore.isAuthenticated && (authStore.isEmpresa || authStore.isOperador)
@@ -130,6 +161,96 @@ const canAccessPage = computed(() => {
 
 const userTotals = computed(() => {
     return reportsStore.calculateUserTotals()
+})
+
+// Check if current date is within allowed period for operations
+const verificarHabilitadoSwitch = () => {
+  if (!configuracionEmpresa.value) return false
+  
+  const now = new Date()
+  const currentDay = now.getDate()
+  const { dia_inicio = 1, dia_cierre = 5, dia_bloqueo = 10 } = configuracionEmpresa.value
+  
+  // Check if current day is between dia_inicio and dia_cierre
+  if (currentDay >= dia_inicio && currentDay <= dia_cierre) {
+    habilitadoSwitch.value = true
+    mensajeImportante.value = 'Período activo para cargar solicitudes.'
+    claseImportante.value = 'alert-primary'
+    return true
+  } 
+  // Check if in blocking period
+  else if (currentDay > dia_cierre && currentDay <= dia_bloqueo) {
+    habilitadoSwitch.value = false
+    mensajeImportante.value = `Período de cierre. Próximo período inicia el día ${dia_inicio} del próximo mes.`
+    claseImportante.value = 'alert-danger'
+    return false
+  } 
+  // Outside blocking period but not in active period
+  else {
+    habilitadoSwitch.value = false
+    mensajeImportante.value = 'Fuera del período de carga. Espere al próximo ciclo.'
+    claseImportante.value = 'alert-warning'
+    return false
+  }
+}
+
+// Check if Excel export is enabled (only at the end of the month)
+const verificarHabilitadoSwitchExcel = () => {
+  if (!configuracionEmpresa.value) return false
+  
+  const now = new Date()
+  const currentDay = now.getDate()
+  const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+  
+  // Enable Excel export in the last 3 days of the month
+  habilitadoSwitchExcel.value = currentDay > (lastDayOfMonth - 3)
+  return habilitadoSwitchExcel.value
+}
+
+// Format date for display
+const formatDate = (dateString) => {
+  if (!dateString) return 'Nunca'
+  const options = { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }
+  return new Date(dateString).toLocaleDateString('es-ES', options)
+}
+
+// Start Excel export process
+const startExport = async () => {
+  if (!habilitadoSwitchExcel.value) {
+    alert('La descarga de reportes está disponible solo al finalizar el ciclo mensual.')
+    return
+  }
+  
+  try {
+    await reportsStore.generateExcel()
+    // After successful export, update last load date
+    ultimaCargaExcel.value = new Date().toISOString()
+  } catch (error) {
+    console.error('Error al exportar el reporte:', error)
+    mensajeImportante.value = 'Error al generar el reporte. Intente nuevamente.'
+    claseImportante.value = 'alert-danger'
+  }
+}
+
+// Initialize component
+onMounted(async () => {
+  if (canAccessPage.value) {
+    await companyStore.fetchCompanyConfig()
+    verificarHabilitadoSwitch()
+    verificarHabilitadoSwitchExcel()
+    
+    // Set up monthly check
+    setInterval(() => {
+      verificarHabilitadoSwitch()
+      verificarHabilitadoSwitchExcel()
+    }, 3600000) // Check every hour
+  }
 })
 
 // Client-side validation before hitting the store
@@ -165,23 +286,6 @@ const handleFetchReportData = async () => {
   }
   await reportsStore.fetchReportData()
   // Error from store will be displayed via reportsStore.error
-}
-
-const handleExportExcel = () => {
-  if (!canAccessPage.value) {
-      alert("No tiene permisos para exportar.");
-      return;
-  }
-  if (reportsStore.reportData.length === 0) {
-    alert('No hay datos para exportar. Por favor, aplique filtros y obtenga datos primero.');
-    return;
-  }
-  // Additional check (though store also does it)
-  if (!reportsStore.filters.startDate || !reportsStore.filters.endDate) {
-     filterError.value = 'El filtro de fecha es obligatorio para exportar.';
-     return;
-  }
-  reportsStore.generateExcel()
 }
 
 const getStatusClass = (status) => {

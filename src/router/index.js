@@ -36,6 +36,11 @@ const router = createRouter({
           name: 'superadmin-empresas',
           component: () => import('@/views/superadmin/EmpresasView.vue'),
         },
+        {
+          path: 'solicitudes',
+          name: 'superadmin-solicitudes',
+          component: () => import('@/views/superadmin/SolicitudesView.vue'),
+        },
         // { // This specific route for superadmin config is now replaced by the more general one below
         //   path: 'config',
         //   name: 'superadmin-config',

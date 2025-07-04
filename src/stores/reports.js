@@ -10,14 +10,22 @@ export const useReportsStore = defineStore('reports', () => {
   const filters = reactive({
     startDate: null,
     endDate: null,
-    userId: null, // For specific user filter - UI would populate this
-    status: null, // For specific status filter (e.g., "pendiente", "aprobado") - UI would populate this
-    // companyId: null, // Implicitly handled by role or future operator selection
+    userId: null,
+    status: null,
+    banco: null,
+    search: ''
   })
 
   const reportData = ref([])
   const loading = ref(false)
   const error = ref(null)
+  
+  // State for SuperAdmin views
+  const solicitudesPendientes = ref([])
+  const solicitudesProcesando = ref([])
+  const solicitudesPagadas = ref([])
+  const selectedSolicitudes = ref([])
+  const excelLoading = ref(false)
 
   // Function to format date to YYYY-MM-DD HH:MM:SS for PocketBase
   const formatDateForPB = (date) => {
@@ -235,13 +243,233 @@ export const useReportsStore = defineStore('reports', () => {
   }
 
 
+  // ========== SuperAdmin Methods ==========
+
+  // Fetch pending loan requests
+  async function fetchSolicitudesPendientes() {
+    try {
+      loading.value = true
+      const today = new Date()
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+      const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+      
+      const result = await api.collection('solicitudes').getList(1, 200, {
+        filter: `estado = "pendiente" && created >= "${firstDay.toISOString()}" && created <= "${lastDay.toISOString()}"`,
+        expand: 'usuario',
+        sort: '-created'
+      })
+      
+      solicitudesPendientes.value = result.items.map(item => ({
+        ...item,
+        ...item.expand?.usuario || {}
+      }))
+      return solicitudesPendientes.value
+    } catch (err) {
+      console.error('Error fetching pending requests:', err)
+      error.value = 'Error al cargar las solicitudes pendientes'
+      return []
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // Fetch processing loan requests
+  async function fetchSolicitudesProcesando() {
+    try {
+      loading.value = true
+      const result = await api.collection('solicitudes').getList(1, 200, {
+        filter: 'estado = "procesando"',
+        expand: 'usuario',
+        sort: '-updated'
+      })
+      
+      solicitudesProcesando.value = result.items.map(item => ({
+        ...item,
+        ...item.expand?.usuario || {}
+      }))
+      return solicitudesProcesando.value
+    } catch (err) {
+      console.error('Error fetching processing requests:', err)
+      error.value = 'Error al cargar las solicitudes en proceso'
+      return []
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // Fetch paid loan requests
+  async function fetchSolicitudesPagadas() {
+    try {
+      loading.value = true
+      const today = new Date()
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
+      
+      const result = await api.collection('solicitudes').getList(1, 200, {
+        filter: `estado = "pagado" && updated >= "${firstDay.toISOString()}"`,
+        expand: 'usuario,empresa',
+        sort: '-updated'
+      })
+      
+      solicitudesPagadas.value = result.items.map(item => ({
+        ...item,
+        ...item.expand?.usuario || {},
+        empresa_nombre: item.expand?.empresa?.nombre || 'Sin empresa'
+      }))
+      return solicitudesPagadas.value
+    } catch (err) {
+      console.error('Error fetching paid requests:', err)
+      error.value = 'Error al cargar las solicitudes pagadas'
+      return []
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // Generate banking Excel file
+  async function generateBankingExcel(solicitudes = []) {
+    if (solicitudes.length === 0) {
+      error.value = 'No hay solicitudes seleccionadas para generar el Excel'
+      return
+    }
+
+    excelLoading.value = true
+    
+    try {
+      // Group by bank
+      const byBank = {}
+      solicitudes.forEach(solicitud => {
+        const banco = solicitud.banco_nombre || 'OTROS'
+        if (!byBank[banco]) byBank[banco] = []
+        byBank[banco].push(solicitud)
+      })
+
+      // Create workbook
+      const wb = XLSX.utils.book_new()
+      
+      // Process each bank
+      for (const [banco, solicitudesBanco] of Object.entries(byBank)) {
+        let worksheetData = []
+        
+        if (banco.toUpperCase().includes('GUAYAQUIL')) {
+          // Special format for Guayaquil bank
+          worksheetData = solicitudesBanco.map(sol => ({
+            'PA': 'PA',
+            'CUENTA ORIGINAL': sol.numero_cuenta,
+            '1': '1', // Default value
+            'NOMBRE': sol.propietario,
+            'MONTO': sol.monto_aprobado,
+            'EMAIL': sol.email,
+            'IDENTIFICACION': sol.cedula,
+            'TIPO CUENTA': sol.tipo_cuenta === 'ahorros' ? 'A' : 'C'
+          }))
+        } else {
+          // Standard format for other banks
+          worksheetData = solicitudesBanco.map(sol => ({
+            'TIPO CUENTA': sol.tipo_cuenta === 'ahorros' ? 'Ahorros' : 'Corriente',
+            'NUMERO CUENTA': sol.numero_cuenta,
+            'IDENTIFICACION': sol.cedula,
+            'EMAIL': sol.email,
+            'NOMBRE': sol.propietario,
+            'MONTO': sol.monto_aprobado,
+            'IMPUESTO': (sol.monto_aprobado * 0.12).toFixed(2), // 12% tax
+            'TOTAL': (sol.monto_aprobado * 1.12).toFixed(2)
+          }))
+        }
+        
+        // Add worksheet for this bank
+        const ws = XLSX.utils.json_to_sheet(worksheetData)
+        XLSX.utils.book_append_sheet(wb, ws, banco.substring(0, 31)) // Sheet name max 31 chars
+      }
+      
+      // Generate Excel file
+      const date = new Date().toISOString().split('T')[0]
+      XLSX.writeFile(wb, `pagos_bancarios_${date}.xlsx`)
+      
+      // Update status to 'procesando' for all selected requests
+      await Promise.all(solicitudes.map(sol => 
+        api.collection('solicitudes').update(sol.id, { estado: 'procesando' })
+      ))
+      
+      // Refresh lists
+      await Promise.all([
+        fetchSolicitudesPendientes(),
+        fetchSolicitudesProcesando()
+      ])
+      
+      return true
+    } catch (err) {
+      console.error('Error generating Excel:', err)
+      error.value = 'Error al generar el archivo Excel'
+      return false
+    } finally {
+      excelLoading.value = false
+    }
+  }
+
+  // Confirm payment for a request
+  async function confirmarAnticipo(solicitudId) {
+    try {
+      loading.value = true
+      await api.collection('solicitudes').update(solicitudId, {
+        estado: 'pagado',
+        fecha_pago: new Date().toISOString()
+      })
+      
+      // Refresh lists
+      await Promise.all([
+        fetchSolicitudesProcesando(),
+        fetchSolicitudesPagadas()
+      ])
+      
+      return true
+    } catch (err) {
+      console.error('Error confirming payment:', err)
+      error.value = 'Error al confirmar el pago'
+      return false
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // Toggle selection of a request
+  function toggleSolicitudSelection(solicitud, isSelected) {
+    if (isSelected) {
+      selectedSolicitudes.value.push(solicitud)
+    } else {
+      const index = selectedSolicitudes.value.findIndex(s => s.id === solicitud.id)
+      if (index > -1) {
+        selectedSolicitudes.value.splice(index, 1)
+      }
+    }
+  }
+
+  // Check if a request is selected
+  function isSolicitudSelected(solicitud) {
+    return selectedSolicitudes.value.some(s => s.id === solicitud.id)
+  }
+
   return {
+    // State
     filters,
     reportData,
     loading,
     error,
+    solicitudesPendientes,
+    solicitudesProcesando,
+    solicitudesPagadas,
+    selectedSolicitudes,
+    excelLoading,
+    
+    // Methods
     fetchReportData,
     generateExcel,
     calculateUserTotals,
+    fetchSolicitudesPendientes,
+    fetchSolicitudesProcesando,
+    fetchSolicitudesPagadas,
+    generateBankingExcel,
+    confirmarAnticipo,
+    toggleSolicitudSelection,
+    isSolicitudSelected
   }
 })
