@@ -79,6 +79,7 @@ export const api = {
     return await pb.collection('advance_requests').create(requestData)
   },
 
+  // ARREGLAR:
   async updateAdvanceRequest(id, requestData) {
     return await pb.collection('advance_requests').update(id, requestData)
   },
