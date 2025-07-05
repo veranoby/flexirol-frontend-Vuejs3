@@ -192,19 +192,12 @@ const exportHistoricoExcel = reports.exportHistoricoExcel
 const empresas = ref([])
 
 onMounted(async () => {
-  // Cargar empresas para el filtro
   try {
-    await companies.fetchCompanyConfig?.() // fallback
-    if (companies.companyConfig && companies.companyConfig.id) {
-      empresas.value = [companies.companyConfig]
-    } else {
-      // Si hay método para listar todas las empresas:
-      if (companies.fetchCompanies) {
-        empresas.value = await companies.fetchCompanies()
-      } else if (typeof reports.api?.getCompanies === 'function') {
-        empresas.value = (await reports.api.getCompanies()).items || []
-      }
-    }
+    // Cargar empresas para el filtro (ahora usando fetchCompanies)
+    const { items } = await companies.fetchCompanies({
+      expand: 'assigned_companies', // Opcional: cargar relaciones si se necesitan
+    })
+    empresas.value = items
   } catch {
     empresas.value = []
   }

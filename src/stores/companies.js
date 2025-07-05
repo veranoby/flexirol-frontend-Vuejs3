@@ -31,15 +31,27 @@ export const useCompaniesStore = defineStore('companies', () => {
     companyConfig.id = record.id
     companyConfig.owner_id = record.owner_id
     companyConfig.company_name = record.company_name || ''
-    companyConfig.flexirol = record.flexirol !== undefined ? Number(record.flexirol) : defaultCompanyState().flexirol
-    companyConfig.flexirol2 = record.flexirol2 !== undefined ? Number(record.flexirol2) : defaultCompanyState().flexirol2
+    companyConfig.flexirol =
+      record.flexirol !== undefined ? Number(record.flexirol) : defaultCompanyState().flexirol
+    companyConfig.flexirol2 =
+      record.flexirol2 !== undefined ? Number(record.flexirol2) : defaultCompanyState().flexirol2
     companyConfig.flexirol3 = record.flexirol3 || defaultCompanyState().flexirol3
-    companyConfig.dia_inicio = record.dia_inicio !== undefined ? Number(record.dia_inicio) : defaultCompanyState().dia_inicio
-    companyConfig.dia_cierre = record.dia_cierre !== undefined ? Number(record.dia_cierre) : defaultCompanyState().dia_cierre
-    companyConfig.porcentaje = record.porcentaje !== undefined ? Number(record.porcentaje) : defaultCompanyState().porcentaje
-    companyConfig.dia_bloqueo = record.dia_bloqueo !== undefined ? Number(record.dia_bloqueo) : defaultCompanyState().dia_bloqueo
-    companyConfig.frecuencia = record.frecuencia !== undefined ? Number(record.frecuencia) : defaultCompanyState().frecuencia
-    companyConfig.dia_reinicio = record.dia_reinicio !== undefined ? Number(record.dia_reinicio) : defaultCompanyState().dia_reinicio
+    companyConfig.dia_inicio =
+      record.dia_inicio !== undefined ? Number(record.dia_inicio) : defaultCompanyState().dia_inicio
+    companyConfig.dia_cierre =
+      record.dia_cierre !== undefined ? Number(record.dia_cierre) : defaultCompanyState().dia_cierre
+    companyConfig.porcentaje =
+      record.porcentaje !== undefined ? Number(record.porcentaje) : defaultCompanyState().porcentaje
+    companyConfig.dia_bloqueo =
+      record.dia_bloqueo !== undefined
+        ? Number(record.dia_bloqueo)
+        : defaultCompanyState().dia_bloqueo
+    companyConfig.frecuencia =
+      record.frecuencia !== undefined ? Number(record.frecuencia) : defaultCompanyState().frecuencia
+    companyConfig.dia_reinicio =
+      record.dia_reinicio !== undefined
+        ? Number(record.dia_reinicio)
+        : defaultCompanyState().dia_reinicio
   }
 
   async function fetchCompanyById(companyId) {
@@ -64,17 +76,19 @@ export const useCompaniesStore = defineStore('companies', () => {
     Object.assign(companyConfig, defaultCompanyState()) // Reset before fetching
 
     if (!authStore.user) {
-      error.value = "User not authenticated. Cannot determine company to configure."
+      error.value = 'User not authenticated. Cannot determine company to configure.'
       loading.value = false
       return
     }
 
     let companyIdToFetch = null
 
-    if (authStore.isEmpresa || authStore.isSuperadmin) { // Superadmin might also be an owner or have an assigned company
+    if (authStore.isEmpresa || authStore.isSuperadmin) {
+      // Superadmin might also be an owner or have an assigned company
       if (authStore.user.assigned_companies && authStore.user.assigned_companies.length > 0) {
         companyIdToFetch = authStore.user.assigned_companies[0]
-      } else if (authStore.user.company_id) { // This field might exist on the user record in PocketBase
+      } else if (authStore.user.company_id) {
+        // This field might exist on the user record in PocketBase
         companyIdToFetch = authStore.user.company_id
       }
     }
@@ -83,14 +97,16 @@ export const useCompaniesStore = defineStore('companies', () => {
       await fetchCompanyById(companyIdToFetch)
     } else if (authStore.isSuperadmin) {
       // Superadmin fallback: try to fetch the first company from the collection
-      console.log("Superadmin: No specific company assigned, attempting to fetch first available company.")
+      console.log(
+        'Superadmin: No specific company assigned, attempting to fetch first available company.',
+      )
       try {
         const resultList = await api.collection('companies').getList(1, 1, { sort: 'created' })
         if (resultList.items && resultList.items.length > 0) {
           _setCompanyConfig(resultList.items[0])
           // console.log('Superadmin fetched first available company:', companyConfig)
         } else {
-          error.value = "Superadmin: No companies found in the system to configure."
+          error.value = 'Superadmin: No companies found in the system to configure.'
           console.warn(error.value)
         }
       } catch (e) {
@@ -99,14 +115,14 @@ export const useCompaniesStore = defineStore('companies', () => {
       }
     } else {
       // Non-superadmin without a company ID
-      error.value = "No company ID associated with this user account."
+      error.value = 'No company ID associated with this user account.'
       console.warn(error.value)
     }
     loading.value = false
   }
 
-
-  async function saveCompanyConfig(configDataToSave) { // Accepts data as parameter
+  async function saveCompanyConfig(configDataToSave) {
+    // Accepts data as parameter
     if (!authStore.isSuperadmin) {
       error.value = 'Only superadmins can save company configuration.'
       console.error(error.value)
@@ -114,7 +130,7 @@ export const useCompaniesStore = defineStore('companies', () => {
     }
 
     // The ID of the company to update is taken from the passed-in data or current store state if not in data.
-    const idToUpdate = configDataToSave.id || companyConfig.id;
+    const idToUpdate = configDataToSave.id || companyConfig.id
     if (!idToUpdate) {
       error.value = 'Company ID is missing. Cannot update configuration.'
       console.error(error.value)
@@ -136,13 +152,13 @@ export const useCompaniesStore = defineStore('companies', () => {
       dia_bloqueo: Number(configDataToSave.dia_bloqueo),
       frecuencia: Number(configDataToSave.frecuencia),
       dia_reinicio: Number(configDataToSave.dia_reinicio),
-    };
+    }
 
     try {
       // Update using the id from the form data, which should match companyConfig.id
-      const updatedRecord = await api.collection('companies').update(idToUpdate, dataForApi);
+      const updatedRecord = await api.collection('companies').update(idToUpdate, dataForApi)
       // Update local state with the response from the server
-      _setCompanyConfig(updatedRecord);
+      _setCompanyConfig(updatedRecord)
       // console.log('Company configuration updated successfully and local state synced.');
       return true
     } catch (e) {
@@ -156,7 +172,7 @@ export const useCompaniesStore = defineStore('companies', () => {
 
   // Function to update a specific field, useful for increment/decrement
   function updateField(field, value) {
-    if (companyConfig.hasOwnProperty(field)) {
+    if (Object.prototype.hasOwnProperty.call(companyConfig, field)) {
       companyConfig[field] = value
     }
   }
@@ -167,15 +183,72 @@ export const useCompaniesStore = defineStore('companies', () => {
     error.value = null
   }
 
+  /**
+   * Lista todas las empresas (usuarios con role='empresa') para filtros y administración
+   * @param {Object} params - Opcional: { page, perPage, search }
+   * @returns {Promise<{ items: Array, totalItems: number, totalPages: number }>}
+   */
+  async function fetchCompanies(params = {}) {
+    loading.value = true
+    error.value = null
+    try {
+      const page = params.page || 1
+      const perPage = params.perPage || 100 // Suficiente para dropdowns y listados
+      const search = params.search || ''
+      let filter = 'role="empresa"'
+      if (search) {
+        // Buscar por nombre o email
+        filter += ` && (first_name~"${search}" || last_name~"${search}" || email~"${search}")`
+      }
+      const result = await api.collection('users').getList(page, perPage, {
+        filter,
+        sort: 'first_name',
+        expand: params.expand || '',
+      })
+      // Estructura compatible con legacy: empresa_info_set
+      return {
+        items: result.items || [],
+        totalItems: result.totalItems || result.items?.length || 0,
+        totalPages: result.totalPages || 1,
+      }
+    } catch (e) {
+      error.value = `Error al listar empresas: ${e.message}`
+      console.error(error.value, e)
+      return { items: [], totalItems: 0, totalPages: 1 }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function fetchCompanies() {
+    try {
+      loading.value = true
+      const { items } = await companies.fetchCompanies({
+        expand: 'assigned_companies,empresa_id', // Relaciones según schema
+      })
+      companies.value = items.map((company) => ({
+        ...company,
+        userCount: company.expand?.assigned_companies?.length || 0,
+      }))
+    } catch (error) {
+      showToast('Error al cargar empresas', 'danger')
+      console.error(error)
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     companyConfig,
     loading,
     error,
-    fetchCompanyConfig,
+    fetchCompanyToConfigure,
     saveCompanyConfig,
     updateField,
     resetConfig,
     // Expose default state for potential use in component
-    defaultCompanyState
+    defaultCompanyState,
+    // NUEVO: Listar todas las empresas
+    fetchCompanies,
   }
 })

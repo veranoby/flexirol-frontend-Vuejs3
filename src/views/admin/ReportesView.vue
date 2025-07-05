@@ -85,10 +85,7 @@
                 <div v-if="cycleEndMessage" class="small text-muted">
                   <i class="bi bi-info-circle"></i> {{ cycleEndMessage }}
                 </div>
-                <div
-                  v-if="companyStore.companyConfig?.flexirol3 === '2'"
-                  class="small text-info"
-                >
+                <div v-if="companiesStore.companyConfig?.flexirol3 === '2'" class="small text-info">
                   <i class="bi bi-star-fill"></i> Plan 2 activo - Valor fijo: ${{ plan2Value }}
                 </div>
               </div>
@@ -189,16 +186,14 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useReportsStore } from '@/stores/reports'
-import { useCompanyStore } from '@/stores/company'
+import { useCompaniesStore } from '@/stores/companies'
 
 const authStore = useAuthStore()
 const reportsStore = useReportsStore()
-const companyStore = useCompanyStore()
+const companiesStore = useCompaniesStore()
 
 // State for Excel load status and validations
 const ultimaCargaExcel = ref(null)
-const mensajeImportante = ref('')
-const claseImportante = ref('alert-primary')
 const filterError = ref('')
 const hasAppliedFilters = ref(false)
 const habilitadoSwitch = ref(false)
@@ -217,26 +212,11 @@ const userTotals = computed(() => {
   return reportsStore.calculateUserTotals()
 })
 
-// Check if current date is within allowed period for operations
-const verificarHabilitadoSwitch = () => {
-  if (!companyStore.companyConfig) return
-  
-  const now = new Date()
-  const currentDay = now.getDate()
-  const startDay = companyStore.companyConfig.dia_inicio || 1
-  const endDay = companyStore.companyConfig.dia_cierre || 25
-  
-  // Check if current day is within the allowed range
-  habilitadoSwitch.value = currentDay >= startDay && currentDay <= endDay
-  
-  // Set Plan 2 value if company has it enabled
-  if (companyStore.companyConfig.flexirol3 === '2') {
-    plan2Value.value = Number(companyStore.companyConfig.flexirol2) || 0
+// Validación optimizada (memoizada)
+const validateExcelStatus = () => {
+  if (companiesStore.companyConfig) {
+    reportsStore.validateExcelStatus(companiesStore.companyConfig)
   }
-  
-  // Set cycle end message
-  const endDate = new Date(now.getFullYear(), now.getMonth(), endDay)
-  cycleEndMessage.value = `Ciclo actual finaliza el ${endDate.getDate()} de ${endDate.toLocaleString('es-EC', { month: 'long' })}`
 }
 
 // Check if Excel export is enabled (only at the end of the month)
@@ -245,16 +225,16 @@ const verificarHabilitadoSwitchExcel = () => {
     habilitadoSwitchExcel.value = true
     return
   }
-  
-  if (!companyStore.companyConfig) return
-  
+
+  if (!companiesStore.companyConfig) return
+
   const now = new Date()
   const currentDay = now.getDate()
-  const endDay = companyStore.companyConfig.dia_cierre || 25
+  const endDay = companiesStore.companyConfig.dia_cierre || 25
   // Allow export from day after cycle end to 5th of next month
   const isAfterCycleEnd = currentDay > endDay
   const isBefore5thNextMonth = currentDay <= 5
-  
+
   habilitadoSwitchExcel.value = isAfterCycleEnd || isBefore5thNextMonth
 }
 
@@ -284,38 +264,36 @@ const startExport = async () => {
     ultimaCargaExcel.value = new Date().toISOString()
   } catch (error) {
     console.error('Error al exportar el reporte:', error)
-    mensajeImportante.value = 'Error al generar el reporte. Intente nuevamente.'
-    claseImportante.value = 'alert-danger'
+    reportsStore.setNotification({
+      message: 'Error al generar el reporte. Intente nuevamente.',
+      variant: 'danger',
+    })
   }
 }
 
 // Initialize component
 onMounted(async () => {
   if (canAccessPage.value) {
-    await companyStore.fetchCompanyConfig()
+    await companiesStore.fetchCompanyConfig()
+    validateExcelStatus()
     verificarHabilitadoSwitch()
     verificarHabilitadoSwitchExcel()
-
-    // Set up monthly check
-    setInterval(() => {
-      verificarHabilitadoSwitch()
-      verificarHabilitadoSwitchExcel()
-    }, 3600000) // Check every hour
   }
 })
 
 // Client-side validation before hitting the store
 const calculateUserTotals = () => {
   if (!reportsStore.reportData || !reportsStore.reportData.users) return
-  
+
   // If company has Plan 2 enabled
-  if (companyStore.companyConfig?.flexirol3 === '2' && plan2Value.value > 0) {
-    reportsStore.reportData.users = reportsStore.reportData.users.map(user => {
-      if (user.flexirol4) { // User is subscribed to Plan 2
+  if (companiesStore.companyConfig?.flexirol3 === '2' && plan2Value.value > 0) {
+    reportsStore.reportData.users = reportsStore.reportData.users.map((user) => {
+      if (user.flexirol4) {
+        // User is subscribed to Plan 2
         return {
           ...user,
           total: (Number(user.total) || 0) + plan2Value.value,
-          plan2Applied: true
+          plan2Applied: true,
         }
       }
       return user
@@ -350,23 +328,23 @@ const validateFilters = () => {
 
 const handleFetchReportData = async () => {
   if (!validateFilters()) return
-  
+
   try {
     await reportsStore.fetchReportData()
     calculateUserTotals()
-    
+
     // Show cycle information message
-    if (companyStore.companyConfig?.flexirol3 === '2') {
+    if (companiesStore.companyConfig?.flexirol3 === '2') {
       reportsStore.setNotification({
         message: `Plan 2 activo. Se ha aplicado un valor fijo de $${plan2Value.value} a los usuarios suscritos.`,
-        variant: 'info'
+        variant: 'info',
       })
     }
   } catch (error) {
     console.error('Error fetching report data:', error)
     reportsStore.setNotification({
       message: 'Error al cargar los datos del reporte',
-      variant: 'danger'
+      variant: 'danger',
     })
   }
 }
@@ -400,6 +378,9 @@ watch(
     }
   },
 )
+
+// Llamar validación cuando cambie companyConfig
+watch(() => companiesStore.companyConfig, validateExcelStatus, { immediate: true })
 </script>
 
 <style scoped>

@@ -2,9 +2,11 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { api } from '@/services/pocketbase'
+import { useSystemStore } from '@/stores/system'
 
 export const useBankAccountsStore = defineStore('bankAccounts', () => {
   const authStore = useAuthStore()
+  const systemStore = useSystemStore()
 
   // State
   const bankAccounts = ref([])
@@ -23,12 +25,6 @@ export const useBankAccountsStore = defineStore('bankAccounts', () => {
   )
 
   // Validation Functions (migrated from legacy code)
-  const validateEmail = (email) => {
-    const emailRegex =
-      /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-    return emailRegex.test(email)
-  }
-
   const isUnderVerification = (createdDate) => {
     // Migrated from bloqueo() function - 24 hour verification period
     const accountDate = new Date(createdDate)
@@ -40,21 +36,10 @@ export const useBankAccountsStore = defineStore('bankAccounts', () => {
   }
 
   const validatePersonalAccount = (accountData) => {
-    // Migrated from btn_switch() - account must be personal to user
-    const user = authStore.user
-    if (!user) return { valid: false, message: 'Usuario no autenticado' }
-
-    const userLastName = user.last_name?.toLowerCase() || ''
-    const userCedula = user.cedula?.toLowerCase() || ''
-    const accountOwner = accountData.propietario?.toLowerCase() || ''
-    const accountCedula = accountData.cedula?.toLowerCase() || ''
-
-    // Check email validation
-    if (!validateEmail(accountData.email)) {
+    // Usar systemStore para validar email
+    if (!systemStore.validateEmail(accountData.email)) {
       return { valid: false, message: 'Se requiere email válido' }
     }
-
-    // Check required fields
     if (
       !accountData.propietario ||
       !accountData.cedula ||
@@ -63,14 +48,16 @@ export const useBankAccountsStore = defineStore('bankAccounts', () => {
     ) {
       return { valid: false, message: 'Llene los campos obligatorios para poder grabar por favor' }
     }
-
-    // Check personal account validation
+    const user = authStore.user
+    const userLastName = user.last_name?.toLowerCase() || ''
+    const userCedula = user.cedula?.toLowerCase() || ''
+    const accountOwner = accountData.propietario?.toLowerCase() || ''
+    const accountCedula = accountData.cedula?.toLowerCase() || ''
     const isPersonalAccount =
       accountOwner.includes(userLastName) && accountCedula.includes(userCedula)
     if (!isPersonalAccount) {
       return { valid: false, message: 'La cuenta debe ser PERSONAL del usuario de la empresa' }
     }
-
     return { valid: true, message: 'Validación exitosa' }
   }
 

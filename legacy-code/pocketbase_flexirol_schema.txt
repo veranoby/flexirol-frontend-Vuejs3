@@ -1,49 +1,198 @@
-Colecciones de pocketbase:
+## 🎯 **SCHEMA MEJORADO RECOMENDADO:**
 
-Collection 1: companies
-Tipo: Base collection
-Campos:
-- owner_id: Relation → Users collection
-- company_name: Plain text (requerido)
-- flexirol: Number (0-100)
-- flexirol2: Number (0-9999) 
-- flexirol3: Select options: "1", "2"
-- dia_inicio: Number (1-31)
-- dia_cierre: Number (1-31)
-- porcentaje: Number (0-100)
-- dia_bloqueo: Number (0-31)
-- frecuencia: Number (1-10)
-- dia_reinicio: Number (1-31)
+# FLEXIROL - POCKETBASE SCHEMA COMPLETO
+# Migración WordPress → PocketBase con mapeo completo y reglas de negocio
 
-Collection 2: advance_requests
-Tipo: Base collection
-Campos:
-- user_id: Relation → Users
-- company_id: Relation → companies 
-- monto_solicitado: Number (1-99999)
-- monto_aprobado: Number (0-99999)
-- estado: Select options: "pendiente", "aprobado", "rechazado", "pagado"
-- fecha_solicitud: Date
-- observaciones: Plain text
-- banco_destino: Relation → bank_accounts
+## ===== MAPEO WORDPRESS → POCKETBASE =====
 
-Collection 3: bank_accounts
-Tipo: Base collection  
-Campos:
-- user_id: Relation → Users
-- banco_nombre: Plain text
-- numero_cuenta: Plain text
-- tipo_cuenta: Select options: "ahorro", "corriente"
-- titular_nombre: Plain text
-- titular_cedula: Plain text
-- activa: Bool
+WordPress users + user_meta → PocketBase users (extended)
+WordPress posts (solicitudes) → PocketBase advance_requests  
+WordPress posts (cuentas) → PocketBase bank_accounts
+WordPress users (empresas) → PocketBase companies
 
-Users collection (ya existe):
-Settings → Auth → Optional fields → Add:
+## ===== COLLECTIONS DETALLADAS =====
 
-role: Select options: "superadmin", "empresa", "operador", "usuario"
-cedula: Plain text
-empresa_id: Relation → Users (single)
-assigned_companies: Relation → companies (multiple)
-disponible: Number
-gearbox: Bool
+### Collection: users (Auth collection - extendida)
+**Campos base PocketBase:** id, email, username, password, created, updated
+**Campos personalizados agregados:**
+- first_name: Plain text (requerido) 
+- last_name: Plain text (requerido)
+- role: Select ["superadmin", "empresa", "operador", "usuario"] (requerido)
+- cedula: Plain text (10 dígitos, único) 
+- empresa_id: Relation → users single (self-reference para empresa madre)
+- assigned_companies: Relation → companies multiple (solo operadores)
+- disponible: Number (monto disponible para anticipos)
+- gearbox: Bool (activo/inactivo - true=activo, false=bloqueado)
+- phone_number: Plain text (opcional)
+- address: Plain text (opcional) 
+- city: Plain text (opcional)
+
+**Mapeo WordPress:**
+- wp_users.user_login → username
+- wp_users.user_email → email  
+- wp_usermeta.first_name → first_name
+- wp_usermeta.last_name → last_name
+- wp_usermeta.cedula → cedula
+- wp_usermeta.empresa → empresa_id (ID del usuario empresa)
+- wp_usermeta.disponible → disponible
+- wp_usermeta.gearbox → gearbox
+
+**Reglas de negocio:**
+- role="usuario" DEBE tener empresa_id (no puede ser null)
+- role="empresa" NO tiene empresa_id (es la empresa madre)
+- role="operador" puede tener assigned_companies
+- cedula debe ser único y 10 dígitos numéricos
+- gearbox=false bloquea al usuario de solicitar anticipos
+
+### Collection: companies  
+**Campos:**
+- id: Auto-generated primary key
+- company_name: Plain text (requerido) - nombre de la empresa
+- owner_id: Relation → users single (usuario empresa dueño)
+- fecha_excel: Date (última carga de Excel - CRÍTICO para validaciones)
+- flexirol: Number (0-100) - Plan 1: Porcentaje del servicio  
+- flexirol2: Number (0-9999) - Plan 2: Valor fijo mensual
+- flexirol3: Select ["1", "2"] - Tipo de plan activo
+- dia_inicio: Number (1-31) - Día inicio del ciclo mensual
+- dia_cierre: Number (1-31) - Día cierre del ciclo mensual  
+- porcentaje: Number (0-100) - Porcentaje máximo del disponible
+- dia_bloqueo: Number (0-31) - Días antes del cierre para bloquear
+- frecuencia: Number (1-10) - Máximo solicitudes por usuario por mes
+- dia_reinicio: Number (1-31) - Días después de pago para reactivar
+- gearbox: Bool (empresa activa/inactiva)
+
+**Mapeo WordPress:**
+- wp_usermeta donde role='empresa' → company record
+- wp_usermeta.flexirol → flexirol (default: 10)
+- wp_usermeta.flexirol2 → flexirol2 (default: 10) 
+- wp_usermeta.flexirol3 → flexirol3 (default: "1")
+- wp_usermeta.fecha_excel → fecha_excel (default: null)
+
+**Reglas de negocio:**
+- fecha_excel DEBE estar actualizada o usuarios se bloquean
+- dia_inicio < dia_cierre siempre
+- dia_bloqueo < dia_cierre
+- Si flexirol3="1" usar flexirol (porcentaje), si "2" usar flexirol2 (fijo)
+
+### Collection: advance_requests
+**Campos:**
+- id: Auto-generated primary key
+- user_id: Relation → users single (usuario solicitante)
+- company_id: Relation → companies single (empresa del usuario)
+- monto_solicitado: Number (1-99999) (requerido)
+- monto_aprobado: Number (0-99999) (default: igual a solicitado)
+- estado: Select ["pendiente", "procesando", "pagado", "rechazado"]
+- fecha_solicitud: Date (requerido)
+- fecha_procesado: Date (cuando se incluye en Excel bancario)
+- fecha_pagado: Date (cuando banco confirma pago)
+- observaciones: Plain text (opcional)
+- banco_destino: Relation → bank_accounts single (cuenta destino)
+
+**Mapeo WordPress:**
+- wp_posts type='solicitud' → advance_requests
+- wp_posts.post_author → user_id
+- wp_posts.post_excerpt → monto_solicitado  
+- wp_posts.post_date → fecha_solicitud
+- wp_posts.post_content → observaciones (parseado)
+- wp_posts tags → estado
+
+**Estados y transiciones:**
+- "pendiente" (amarillo) → "procesando" (azul) → "pagado" (verde)
+- "pendiente" → "rechazado" (rojo)
+- Cambio a "procesando" cuando se incluye en Excel bancario
+- Cambio a "pagado" cuando banco confirma
+
+### Collection: bank_accounts
+**Campos:**
+- id: Auto-generated primary key  
+- user_id: Relation → users single (propietario cuenta)
+- banco_nombre: Plain text (requerido)
+- numero_cuenta: Plain text (requerido)
+- tipo_cuenta: Select ["ahorros", "corriente"] (requerido)
+- titular_nombre: Plain text (requerido - debe coincidir con usuario)
+- titular_cedula: Plain text (requerido - debe coincidir con usuario)
+- email: Email (requerido - debe coincidir con usuario)
+- activa: Bool (default: true)
+
+**Mapeo WordPress:**
+- wp_posts type='cuenta' → bank_accounts
+- wp_posts.post_author → user_id
+- wp_postmeta.post_banco → banco_nombre
+- wp_postmeta.numero_cuenta → numero_cuenta
+- wp_postmeta.gearbox → tipo_cuenta
+- wp_posts.post_excerpt → titular_nombre
+- wp_posts.post_content → titular_cedula
+- wp_postmeta.user_email → email
+
+**Validaciones críticas:**
+- titular_cedula DEBE coincidir con users.cedula del propietario
+- email DEBE coincidir con users.email del propietario  
+- Cuentas nuevas tienen período de verificación 24 horas
+- Solo cuentas personales (no de terceros)
+
+## ===== REGLAS DE NEGOCIO CRÍTICAS =====
+
+### Validación de Anticipos:
+1. Usuario y empresa deben tener gearbox=true
+2. Empresa debe tener fecha_excel actualizada (mes actual)
+3. Usuario no puede exceder frecuencia máxima por mes
+4. Monto no puede exceder porcentaje del disponible
+5. No solicitar en período de bloqueo (dia_bloqueo antes de dia_cierre)
+
+### Ciclo Mensual:
+- Inicia en dia_inicio, termina en dia_cierre
+- Bloqueo automático desde (dia_cierre - dia_bloqueo)
+- Reset de contadores en nuevo ciclo
+- Excel debe cargarse antes del nuevo ciclo
+
+### Excel Bancario:
+- Formato específico para Banco Guayaquil: PA, CUENTA ORIGINAL, headers especiales
+- Formato otros bancos: TIPO CUENTA, NUMERO CUENTA, headers estándar
+- Al generar: solicitudes "pendiente" → "procesando"
+
+## ===== EJEMPLOS DE DATOS =====
+
+### Usuario empresa:
+```json
+{
+  "id": "empresa_001", 
+  "email": "admin@empresa.com",
+  "first_name": "Empresa",
+  "last_name": "Demo", 
+  "role": "empresa",
+  "empresa_id": null,
+  "gearbox": true
+}
+```
+
+### Usuario empleado:
+```json
+{
+  "id": "user_001",
+  "email": "empleado@empresa.com", 
+  "first_name": "Juan",
+  "last_name": "Pérez",
+  "role": "usuario",
+  "cedula": "0912345678",
+  "empresa_id": "empresa_001",
+  "disponible": 500,
+  "gearbox": true
+}
+```
+
+### Configuración empresa:
+```json
+{
+  "id": "company_001",
+  "company_name": "Empresa Demo",
+  "owner_id": "empresa_001",
+  "flexirol3": "1",
+  "flexirol": 10,
+  "dia_inicio": 2,
+  "dia_cierre": 28,
+  "porcentaje": 50,
+  "frecuencia": 3,
+  "fecha_excel": "2025-01-15"
+}
+```
+```

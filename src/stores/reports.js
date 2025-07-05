@@ -354,7 +354,66 @@ export const useReportsStore = defineStore('reports', () => {
     }
   }
 
-  // Generate banking Excel file
+  // Estado reactivo para mensajes y habilitación
+  const mensajeImportante = ref('')
+  const claseImportante = ref('alert-primary')
+  const habilitadoSwitch = ref(false)
+
+  /**
+   * Valida si el Excel de usuarios está actualizado y si el usuario puede descargar reportes.
+   * Replica la lógica legacy de habilitado_switch y validación de fecha_excel.
+   * @param {Object} miInfo - Info de la empresa/usuario (de PB)
+   * @returns {boolean} true si habilitado, false si bloqueado
+   */
+  function validateExcelStatus(miInfo) {
+    let retornar = false
+    mensajeImportante.value = ''
+    claseImportante.value = 'alert-primary'
+
+    if (!miInfo || !miInfo.fecha_excel) {
+      mensajeImportante.value =
+        'No se ha cargado su Listado Excel Actualizado - Usuarios bloqueados'
+      claseImportante.value = 'alert alert-danger'
+      habilitadoSwitch.value = false
+      return false
+    }
+
+    // Fecha de hoy y cierre mes anterior
+    const hoy = new Date()
+    const hoy_mes = hoy.getMonth()
+    const hoy_anio = hoy.getFullYear()
+    // Cierre mes anterior: siempre día 28 (como en legacy)
+    let cierre_mes_anterior = new Date(hoy_anio, hoy_mes, 0) // día 0 = último día mes anterior
+    cierre_mes_anterior.setDate(28) // forzar día 28
+
+    // Parse fecha_excel (formato legacy: dd/mm/yyyy)
+    const [dia, mes, anio] = miInfo.fecha_excel.split('/')
+    const dia_excel = new Date(`${anio}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`)
+
+    if (dia_excel > cierre_mes_anterior) {
+      mensajeImportante.value = 'Su listado de Excel de Usuarios está Actualizado y Activo!'
+      claseImportante.value = 'alert alert-primary'
+      retornar = true
+    } else {
+      mensajeImportante.value =
+        'No se ha cargado su Listado Excel Actualizado - Usuarios bloqueados'
+      claseImportante.value = 'alert alert-danger'
+      retornar = false
+    }
+    habilitadoSwitch.value = retornar
+    console.log(
+      '[validateExcelStatus] fecha_excel:',
+      miInfo.fecha_excel,
+      'cierre_mes_anterior:',
+      cierre_mes_anterior,
+      'habilitado:',
+      retornar,
+    )
+    return retornar
+  }
+
+  // Exportar Excel bancario con formato especial para Banco Guayaquil y estándar para otros bancos.
+  // Replica la lógica de functions.php:generar_pagos
   async function generateBankingExcel(solicitudes = []) {
     if (solicitudes.length === 0) {
       error.value = 'No hay solicitudes seleccionadas para generar el Excel'
@@ -364,7 +423,7 @@ export const useReportsStore = defineStore('reports', () => {
     excelLoading.value = true
 
     try {
-      // Group by bank
+      // Agrupar por banco
       const byBank = {}
       solicitudes.forEach((solicitud) => {
         const banco = solicitud.banco_nombre || 'OTROS'
@@ -372,56 +431,58 @@ export const useReportsStore = defineStore('reports', () => {
         byBank[banco].push(solicitud)
       })
 
-      // Create workbook
+      // Crear workbook
       const wb = XLSX.utils.book_new()
 
-      // Process each bank
+      // Procesar cada banco
       for (const [banco, solicitudesBanco] of Object.entries(byBank)) {
         let worksheetData = []
 
         if (banco.toUpperCase().includes('GUAYAQUIL')) {
-          // Special format for Guayaquil bank
+          // Formato especial Banco Guayaquil
           worksheetData = solicitudesBanco.map((sol) => ({
             PA: 'PA',
-            'CUENTA ORIGINAL': sol.numero_cuenta,
-            1: '1', // Default value
-            NOMBRE: sol.propietario,
-            MONTO: sol.monto_aprobado,
-            EMAIL: sol.email,
+            'CUENTA ORIGINAL FLEXIROL': sol.numero_cuenta,
+            1: '1',
+            '': '',
+            'NRO CTA': sol.numero_cuenta,
+            USD: 'USD',
+            MONTO: Number(sol.monto_aprobado).toFixed(2),
+            CTA: sol.tipo_cuenta === 'ahorros' ? 'A' : 'C',
             IDENTIFICACION: sol.cedula,
-            'TIPO CUENTA': sol.tipo_cuenta === 'ahorros' ? 'A' : 'C',
+            NOMBRE: sol.propietario,
           }))
         } else {
-          // Standard format for other banks
+          // Formato estándar otros bancos
           worksheetData = solicitudesBanco.map((sol) => ({
             'TIPO CUENTA': sol.tipo_cuenta === 'ahorros' ? 'Ahorros' : 'Corriente',
             'NUMERO CUENTA': sol.numero_cuenta,
             IDENTIFICACION: sol.cedula,
             EMAIL: sol.email,
             NOMBRE: sol.propietario,
-            MONTO: sol.monto_aprobado,
-            IMPUESTO: (sol.monto_aprobado * 0.12).toFixed(2), // 12% tax
-            TOTAL: (sol.monto_aprobado * 1.12).toFixed(2),
+            MONTO: Number(sol.monto_aprobado).toFixed(2),
+            IMPUESTO: (Number(sol.monto_aprobado) * 0.12).toFixed(2),
+            TOTAL: (Number(sol.monto_aprobado) * 1.12).toFixed(2),
           }))
         }
 
-        // Add worksheet for this bank
+        // Agregar worksheet
         const ws = XLSX.utils.json_to_sheet(worksheetData)
-        XLSX.utils.book_append_sheet(wb, ws, banco.substring(0, 31)) // Sheet name max 31 chars
+        XLSX.utils.book_append_sheet(wb, ws, banco.substring(0, 31))
       }
 
-      // Generate Excel file
+      // Guardar archivo
       const date = new Date().toISOString().split('T')[0]
       XLSX.writeFile(wb, `pagos_bancarios_${date}.xlsx`)
 
-      // Update status to 'procesando' for all selected requests
+      // Actualizar estado a 'procesando'
       await Promise.all(
         solicitudes.map((sol) =>
           api.collection('solicitudes').update(sol.id, { estado: 'procesando' }),
         ),
       )
 
-      // Refresh lists
+      // Refrescar listas
       await Promise.all([fetchSolicitudesPendientes(), fetchSolicitudesProcesando()])
 
       return true
@@ -659,6 +720,9 @@ export const useReportsStore = defineStore('reports', () => {
     historicoData,
     historicoLoading,
     historicoError,
+    mensajeImportante,
+    claseImportante,
+    habilitadoSwitch,
 
     // Methods
     fetchReportData,
@@ -678,5 +742,6 @@ export const useReportsStore = defineStore('reports', () => {
     historicoConteoPorEstado,
     historicoPromedioMontos,
     exportHistoricoExcel,
+    validateExcelStatus,
   }
 })

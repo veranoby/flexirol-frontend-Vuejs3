@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, reactive } from 'vue'
 import { api } from '@/services/pocketbase'
 import { useAuthStore } from '@/stores/auth'
 import { useSystemStore } from '@/stores/system'
@@ -16,12 +16,25 @@ export const useUserAdvanceRequestsStore = defineStore('userAdvanceRequests', ()
   const error = ref(null)
   const validationMessage = ref('')
   const validationClass = ref('alert alert-info')
-  
+
   // Pagination
   const currentPage = ref(1)
   const totalPages = ref(1)
   const itemsPerPage = 20
   const totalItems = ref(0)
+
+  // ================ VALIDACIONES CRÍTICAS ================
+
+  // Estado adicional para validaciones
+  const validationState = reactive({
+    message: '',
+    class: 'alert alert-info',
+    isUserActive: false,
+    isCompanyActive: false,
+    excelUpToDate: false,
+    withinFrequency: false,
+    withinPeriod: false,
+  })
 
   // Getters
   const pendingRequests = computed(() =>
@@ -33,7 +46,7 @@ export const useUserAdvanceRequestsStore = defineStore('userAdvanceRequests', ()
   )
 
   const canRequestAdvance = computed(() => {
-    return validateRequestLimits().valid
+    return validateAdvanceConditions().valid
   })
 
   // Main validation function migrated from habilitado_switch
@@ -145,7 +158,7 @@ export const useUserAdvanceRequestsStore = defineStore('userAdvanceRequests', ()
   // Calculate available amount based on company rules
   function calculateAvailableAmount() {
     if (!authStore.user || !companyConfig.value) return 0
-    
+
     // Use the system store's calculation
     return systemStore.calculateAvailableAmount(authStore.user, companyConfig.value)
   }
@@ -204,16 +217,18 @@ export const useUserAdvanceRequestsStore = defineStore('userAdvanceRequests', ()
       // Update pagination info
       totalPages.value = result.totalPages
       totalItems.value = result.totalItems
-      
-      console.log(`Fetched ${userRequests.value.length} user requests (page ${currentPage.value} of ${totalPages.value})`)
+
+      console.log(
+        `Fetched ${userRequests.value.length} user requests (page ${currentPage.value} of ${totalPages.value})`,
+      )
       return {
         items: userRequests.value,
         pagination: {
           currentPage: currentPage.value,
           totalPages: totalPages.value,
           totalItems: totalItems.value,
-          itemsPerPage: itemsPerPage
-        }
+          itemsPerPage: itemsPerPage,
+        },
       }
     } catch (err) {
       error.value = `Error al cargar solicitudes: ${err.message}`
@@ -252,7 +267,7 @@ export const useUserAdvanceRequestsStore = defineStore('userAdvanceRequests', ()
         fecha_solicitud: new Date().toISOString(),
         banco_id: requestData.banco_id,
         cuenta_bancaria: requestData.cuenta_bancaria,
-        observaciones: requestData.observaciones || ''
+        observaciones: requestData.observaciones || '',
       }
 
       // Create request in PocketBase
@@ -262,7 +277,9 @@ export const useUserAdvanceRequestsStore = defineStore('userAdvanceRequests', ()
       const user = await api.collection('users').getOne(requestData.user_id)
       if (user) {
         await api.collection('users').update(requestData.user_id, {
-          disponible: (Number(user.disponible || 0) - Number(requestData.monto_solicitado)).toString()
+          disponible: (
+            Number(user.disponible || 0) - Number(requestData.monto_solicitado)
+          ).toString(),
         })
       }
 
@@ -270,12 +287,12 @@ export const useUserAdvanceRequestsStore = defineStore('userAdvanceRequests', ()
       userRequests.value.unshift({
         ...result,
         user: authStore.user,
-        company: companyConfig.value
+        company: companyConfig.value,
       })
 
       // Update available amount
       availableAmount.value = calculateAvailableAmount()
-      
+
       console.log('Created advance request:', result.id)
       return result
     } catch (err) {
@@ -301,19 +318,19 @@ export const useUserAdvanceRequestsStore = defineStore('userAdvanceRequests', ()
   async function fetchUserAvailableAmount() {
     try {
       if (!authStore.user?.id) return 0
-      
+
       // Get fresh user data with company config
       const userInfo = await systemStore.getInfoUsuarioCompleto(authStore.user.id)
-      
+
       // Update company config
       companyConfig.value = {
         id: userInfo.empresa_id,
         nombre: userInfo.empresa_nombre,
         porcentaje: userInfo.porcentaje,
         dia_cierre: userInfo.dia_cierre,
-        dia_bloqueo: userInfo.dia_bloqueo
+        dia_bloqueo: userInfo.dia_bloqueo,
       }
-      
+
       // Calculate and return available amount
       availableAmount.value = systemStore.calculateAvailableAmount(userInfo, companyConfig.value)
       return availableAmount.value
@@ -327,11 +344,102 @@ export const useUserAdvanceRequestsStore = defineStore('userAdvanceRequests', ()
   // Initialize store
   async function init() {
     if (authStore.user?.id) {
-      await Promise.all([
-        fetchUserRequests(authStore.user.id),
-        fetchUserAvailableAmount()
-      ])
+      await Promise.all([fetchUserRequests(authStore.user.id), fetchUserAvailableAmount()])
     }
+  }
+
+  // ================ VALIDACIONES CRÍTICAS ================
+
+  // Método principal de validación (reemplaza validateRequestLimits)
+  async function validateAdvanceConditions(requestedAmount = 0) {
+    // Reset validation state
+    validationState.message = ''
+    validationState.class = 'alert alert-info'
+
+    // Ejecutar todas las validaciones
+    await validateCompanyExcelStatus()
+    await validateUserActiveStatus()
+    validateRequestFrequency()
+    validateBlockingPeriods()
+
+    // Construir mensaje compuesto
+    if (!validationState.isUserActive || !validationState.isCompanyActive) {
+      validationState.message = 'Usuario Bloqueado por Admin! Comuníquese con su empresa'
+      validationState.class = 'alert alert-danger'
+      return false
+    }
+
+    if (!validationState.excelUpToDate) {
+      validationState.message = 'Empresa no ha cargado datos actualizados de Anticipos'
+      validationState.class = 'alert alert-danger'
+      return false
+    }
+
+    if (!validationState.withinFrequency) {
+      validationState.message = `Límite de solicitudes alcanzado (${companyConfig.value.frecuencia} por ciclo)`
+      validationState.class = 'alert alert-warning'
+      return false
+    }
+
+    if (!validationState.withinPeriod) {
+      validationState.message = 'Fuera del período permitido para solicitudes'
+      validationState.class = 'alert alert-warning'
+      return false
+    }
+
+    // Validación de monto disponible
+    const available = calculateAvailableAmount()
+    if (requestedAmount > 0 && requestedAmount > available) {
+      validationState.message = `Monto solicitado excede lo disponible ($${available.toFixed(2)})`
+      validationState.class = 'alert alert-warning'
+      return false
+    }
+
+    validationState.message = 'Usuario habilitado para solicitudes'
+    validationState.class = 'alert alert-success'
+    return true
+  }
+
+  // Validar estado del Excel de la empresa
+  async function validateCompanyExcelStatus() {
+    if (!companyConfig.value.fecha_excel || companyConfig.value.fecha_excel === 'No creado') {
+      validationState.excelUpToDate = false
+      return
+    }
+
+    const excelDate = new Date(companyConfig.value.fecha_excel)
+    const today = new Date()
+    const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0)
+
+    validationState.excelUpToDate = excelDate >= endOfLastMonth
+  }
+
+  // Validar estado activo de usuario y empresa
+  async function validateUserActiveStatus() {
+    validationState.isUserActive = authStore.user?.gearbox === 'true'
+    validationState.isCompanyActive = companyConfig.value.gearbox === 'true'
+  }
+
+  // Validar límite de frecuencia de solicitudes
+  function validateRequestFrequency() {
+    const maxRequests = Number(companyConfig.value.frecuencia) || 0
+    validationState.withinFrequency = pendingRequests.value.length < maxRequests
+  }
+
+  // Validar períodos de bloqueo y reinicio
+  function validateBlockingPeriods() {
+    const today = new Date()
+    const currentDay = today.getDate()
+
+    // Días de bloqueo
+    const startDay = Number(companyConfig.value.dia_inicio) || 1
+    const endDay = Number(companyConfig.value.dia_cierre) || 30
+    const blockDays = Number(companyConfig.value.dia_bloqueo) || 0
+
+    const effectiveStart = startDay + blockDays
+    const effectiveEnd = endDay - blockDays
+
+    validationState.withinPeriod = currentDay >= effectiveStart && currentDay <= effectiveEnd
   }
 
   // Return store methods and state
@@ -344,7 +452,7 @@ export const useUserAdvanceRequestsStore = defineStore('userAdvanceRequests', ()
     error,
     validationMessage,
     validationClass,
-    
+
     // Pagination state
     currentPage,
     totalPages,
@@ -363,5 +471,11 @@ export const useUserAdvanceRequestsStore = defineStore('userAdvanceRequests', ()
     validateRequestLimits,
     init,
     $reset,
+    validationState,
+    validateAdvanceConditions,
+    validateCompanyExcelStatus,
+    validateUserActiveStatus,
+    validateRequestFrequency,
+    validateBlockingPeriods,
   }
 })

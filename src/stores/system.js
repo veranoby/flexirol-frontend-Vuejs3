@@ -5,7 +5,7 @@ import { useAuthStore } from '@/stores/auth'
 
 export const useSystemStore = defineStore('system', () => {
   const authStore = useAuthStore()
-  
+
   // Cache for user info with TTL (5 minutes)
   const userInfoCache = ref({})
   const CACHE_TTL = 5 * 60 * 1000 // 5 minutes in milliseconds
@@ -38,20 +38,20 @@ export const useSystemStore = defineStore('system', () => {
    */
   async function getInfoUsuarioCompleto(userId) {
     const now = Date.now()
-    
+
     // Check cache first
     const cached = userInfoCache.value[userId]
-    if (cached && (now - cached.timestamp) < CACHE_TTL) {
+    if (cached && now - cached.timestamp < CACHE_TTL) {
       return cached.data
     }
 
     try {
       const user = await api.collection('users').getOne(userId, {
-        expand: 'empresa_id'
+        expand: 'empresa_id',
       })
 
       const company = user.expand?.empresa_id || {}
-      
+
       // Map legacy fields with defaults
       const result = {
         // User info
@@ -62,11 +62,11 @@ export const useSystemStore = defineStore('system', () => {
         cedula: user.cedula,
         role: user.role,
         gearbox: user.gearbox,
-        
+
         // Company info with defaults
         empresa_id: user.empresa_id,
         empresa_nombre: company.nombre || '',
-        
+
         // Company configuration with defaults from legacy
         fecha_excel: company.fecha_excel || 'No creado',
         flexirol: company.flexirol || '10',
@@ -77,15 +77,15 @@ export const useSystemStore = defineStore('system', () => {
         dia_reinicio: company.dia_reinicio || '0',
         frecuencia: company.frecuencia || '1',
         porcentaje: company.porcentaje || '30',
-        
+
         // Timestamp for cache invalidation
-        _cachedAt: now
+        _cachedAt: now,
       }
 
       // Update cache
       userInfoCache.value[userId] = {
         data: result,
-        timestamp: now
+        timestamp: now,
       }
 
       return result
@@ -125,9 +125,9 @@ export const useSystemStore = defineStore('system', () => {
     if (!firstName || !lastName || !cedula) {
       throw new Error('Nombre, apellido y cédula son requeridos')
     }
-    
+
     // Normalize and clean name parts
-    const clean = (str) => 
+    const clean = (str) =>
       str
         .toLowerCase()
         .normalize('NFD')
@@ -150,23 +150,24 @@ export const useSystemStore = defineStore('system', () => {
    */
   function calculateAvailableAmount(user, company) {
     if (!user || !company) return 0
-    
+
     const today = new Date()
     const currentDay = today.getDate()
     const endDay = Number(company.dia_cierre) || 30
     const blockDays = Number(company.dia_bloqueo) || 0
     const effectiveEndDay = endDay - blockDays
-    
+
     if (currentDay > effectiveEndDay) {
       return 0
     }
-    
+
     // Calculate daily amount based on percentage of available balance
-    const dailyAmount = (Number(user.disponible) * Number(company.porcentaje)) / 100 / effectiveEndDay
-    
+    const dailyAmount =
+      (Number(user.disponible) * Number(company.porcentaje)) / 100 / effectiveEndDay
+
     // Calculate total available up to current day
     const available = dailyAmount * currentDay
-    
+
     return Math.max(0, Math.floor(available * 100) / 100) // Round to 2 decimal places
   }
 
@@ -179,13 +180,111 @@ export const useSystemStore = defineStore('system', () => {
     }
   }
 
+  /**
+   * Get users by role with optional filters (empresa, cedula)
+   * @param {string} role - User role to filter by
+   * @param {string} [orderby='created'] - Field to order by
+   * @param {string} [order='desc'] - Sort order (asc/desc)
+   * @param {string|null} [empresa=null] - Company ID to filter by
+   * @param {string|null} [cedula=null] - Cedula to filter by
+   * @returns {Promise<Array>} List of filtered users with expanded company data
+   */
+  async function getUsersByRole(
+    role,
+    orderby = 'created',
+    order = 'desc',
+    empresa = null,
+    cedula = null,
+  ) {
+    try {
+      // Base filter for role
+      let filter = `role = "${role}"`
+
+      // Add empresa filter if provided
+      if (empresa) {
+        filter += ` && empresa_id = "${empresa}"`
+      }
+
+      // Add cedula filter if provided
+      if (cedula) {
+        filter += ` && cedula = "${cedula}"`
+      }
+
+      // Get users with optional expand
+      const result = await api.collection('users').getList(1, 500, {
+        filter,
+        sort: `${order === 'desc' ? '-' : ''}${orderby}`,
+        expand: 'empresa_id',
+      })
+
+      // Map results to consistent format
+      return result.items.map((user) => ({
+        id: user.id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email,
+        cedula: user.cedula,
+        role: user.role,
+        gearbox: user.gearbox,
+        disponible: user.disponible,
+        empresa_id: user.empresa_id,
+        empresa: user.expand?.empresa_id || null,
+        created: user.created,
+        updated: user.updated,
+      }))
+    } catch (error) {
+      console.error('Error in getUsersByRole:', error)
+      throw new Error('No se pudo obtener la lista de usuarios')
+    }
+  }
+
+  /**
+   * Validación base para datos de usuario (reusable)
+   * @param {Object} userData - Datos del usuario
+   * @param {boolean} [isUpdate=false] - Si es una actualización
+   * @param {string} [userId=null] - ID del usuario (para updates)
+   */
+  async function validateUserBaseData(userData, isUpdate = false, userId = null) {
+    if (!userData.first_name || !userData.last_name || !userData.email || !userData.cedula) {
+      throw new Error('Todos los campos son obligatorios')
+    }
+    if (!validateEmail(userData.email)) {
+      throw new Error('El formato del correo electrónico no es válido')
+    }
+    if (!validateCedula(userData.cedula)) {
+      throw new Error('La cédula debe tener 10 dígitos numéricos')
+    }
+
+    // Verificar unicidad de email y cédula
+    const emailFilter = isUpdate
+      ? `email = "${userData.email}" && id != "${userId}"`
+      : `email = "${userData.email}"`
+    const cedulaFilter = isUpdate
+      ? `cedula = "${userData.cedula}" && id != "${userId}"`
+      : `cedula = "${userData.cedula}"`
+
+    const [emailExists, cedulaExists] = await Promise.all([
+      api
+        .collection('users')
+        .getFirstListItem(emailFilter, { requestKey: null })
+        .catch(() => null),
+      api
+        .collection('users')
+        .getFirstListItem(cedulaFilter, { requestKey: null })
+        .catch(() => null),
+    ])
+
+    if (emailExists) throw new Error('El correo electrónico ya está registrado')
+    if (cedulaExists) throw new Error('La cédula ya está registrada')
+  }
+
   return {
     // Computed properties
     currentUser,
     currentUserId,
     currentUserRole,
     currentCompanyId,
-    
+
     // Functions
     getUserRole,
     getInfoUsuarioCompleto,
@@ -193,6 +292,8 @@ export const useSystemStore = defineStore('system', () => {
     validateEmail,
     generateUsername,
     calculateAvailableAmount,
-    clearCache
+    clearCache,
+    getUsersByRole,
+    validateUserBaseData,
   }
 })
