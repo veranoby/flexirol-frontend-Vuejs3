@@ -25,7 +25,7 @@ export const useUsersStore = defineStore('users', () => {
   const myCompanyUsers = computed(() => {
     if (!authStore.user?.id) return []
     return users.value.filter(
-      (user) => user.empresa_id === authStore.user.id && user.role === 'usuario',
+      (user) => user.company_id === authStore.user.id && user.role === 'usuario',
     )
   })
 
@@ -59,7 +59,7 @@ export const useUsersStore = defineStore('users', () => {
    * Fetch users with advanced filtering
    * @param {Object} filters - Filtering options
    * @param {string} filters.role - Filter by role
-   * @param {string} filters.empresa_id - Filter by company
+   * @param {string} filters.company_id - Filter by company
    * @param {string} filters.search - Search term
    * @param {boolean} filters.gearbox - Filter by status
    * @param {number} page - Page number
@@ -77,13 +77,12 @@ export const useUsersStore = defineStore('users', () => {
       if (!authStore.isSuperadmin) {
         if (authStore.isEmpresa) {
           // Empresa only sees their employees
-          filterParts.push(`empresa_id="${authStore.user.id}"`)
-          filterParts.push(`role="usuario"`)
+          filterParts.push(`company_id="${authStore.user.id}"`)
         } else if (authStore.isOperador) {
           // Operador sees users from assigned companies
           const companies = authStore.getUserCompanies()
           if (companies.length > 0) {
-            const companyFilter = companies.map((id) => `empresa_id="${id}"`).join(' || ')
+            const companyFilter = companies.map((id) => `company_id="${id}"`).join(' || ')
             filterParts.push(`(${companyFilter})`)
           }
         } else {
@@ -94,7 +93,7 @@ export const useUsersStore = defineStore('users', () => {
 
       // Apply additional filters
       if (filters.role) filterParts.push(`role="${filters.role}"`)
-      if (filters.empresa_id) filterParts.push(`empresa_id="${filters.empresa_id}"`)
+      if (filters.company_id) filterParts.push(`company_id="${filters.company_id}"`)
       if (filters.gearbox !== undefined) filterParts.push(`gearbox=${filters.gearbox}`)
       if (filters.search) {
         const search = filters.search.toLowerCase()
@@ -108,7 +107,7 @@ export const useUsersStore = defineStore('users', () => {
       const result = await api.collection('users').getList(page, perPage, {
         filter: filterString,
         sort: '-created',
-        expand: 'empresa_id',
+        expand: 'company_id',
       })
 
       // Map results to consistent format
@@ -137,7 +136,7 @@ export const useUsersStore = defineStore('users', () => {
   async function fetchUsersByRole(role, companyId = null) {
     const filters = {}
     if (role) filters.role = role
-    if (companyId) filters.empresa_id = companyId
+    if (companyId) filters.company_id = companyId
 
     const result = await fetchUsers(filters)
     return result.items
@@ -172,7 +171,7 @@ export const useUsersStore = defineStore('users', () => {
         gearbox: userData.gearbox !== undefined ? userData.gearbox : true,
         password: userData.password || userData.cedula, // Default password is cedula
         passwordConfirm: userData.password || userData.cedula,
-        empresa_id: userData.role === 'empresa' ? null : userData.empresa_id,
+        company_id: userData.role === 'empresa' ? null : userData.company_id,
         disponible: userData.disponible || 0,
       }
 
@@ -215,7 +214,7 @@ export const useUsersStore = defineStore('users', () => {
         cedula: userData.cedula.trim(),
         role: userData.role,
         gearbox: userData.gearbox,
-        empresa_id: userData.role === 'empresa' ? null : userData.empresa_id,
+        company_id: userData.role === 'empresa' ? null : userData.company_id,
         disponible: userData.disponible || 0,
       }
 
@@ -295,7 +294,7 @@ export const useUsersStore = defineStore('users', () => {
       // **LOGIC PRESERVADA**: Si es empresa, borrar todos sus empleados primero
       if (user.role === 'empresa') {
         const employeeUsers = users.value.filter(
-          (u) => u.empresa_id === userId && u.role === 'usuario',
+          (u) => u.company_id === userId && u.role === 'usuario',
         )
 
         for (const employee of employeeUsers) {
@@ -309,7 +308,7 @@ export const useUsersStore = defineStore('users', () => {
       await api.collection('users').delete(userId)
 
       // Remove from local state
-      users.value = users.value.filter((u) => u.id !== userId || u.empresa_id === userId)
+      users.value = users.value.filter((u) => u.id !== userId || u.company_id === userId)
 
       return true
     } catch (err) {
@@ -376,7 +375,7 @@ export const useUsersStore = defineStore('users', () => {
   async function getUserById(userId) {
     try {
       const user = await api.collection('users').getOne(userId, {
-        expand: 'empresa_id,assigned_companies',
+        expand: 'company_id,assigned_companies',
       })
       return mapUserData(user)
     } catch (err) {
@@ -403,7 +402,7 @@ export const useUsersStore = defineStore('users', () => {
     let targetUsers = users.value
 
     if (companyId) {
-      targetUsers = users.value.filter((u) => u.empresa_id === companyId)
+      targetUsers = users.value.filter((u) => u.company_id === companyId)
     }
 
     return {
@@ -456,8 +455,8 @@ export const useUsersStore = defineStore('users', () => {
     if (filters.role) {
       exportData = exportData.filter((u) => u.role === filters.role)
     }
-    if (filters.empresa_id) {
-      exportData = exportData.filter((u) => u.empresa_id === filters.empresa_id)
+    if (filters.company_id) {
+      exportData = exportData.filter((u) => u.company_id === filters.company_id)
     }
     if (filters.gearbox !== undefined) {
       exportData = exportData.filter((u) => u.gearbox === filters.gearbox)
@@ -471,7 +470,7 @@ export const useUsersStore = defineStore('users', () => {
       email: user.email,
       cedula: user.cedula,
       rol: user.role,
-      empresa: user.empresa?.first_name + ' ' + user.empresa?.last_name || 'N/A',
+      empresa: user.company?.first_name + ' ' + user.company?.last_name || 'N/A',
       estado: user.gearbox ? 'Habilitado' : 'Bloqueado',
       disponible: user.disponible || 0,
       fechaCreacion: user.created,
@@ -506,13 +505,13 @@ export const useUsersStore = defineStore('users', () => {
       cedula: user.cedula,
       role: user.role,
       gearbox: user.gearbox,
-      empresa_id: user.empresa_id,
+      company_id: user.company_id,
       disponible: user.disponible || 0,
       assigned_companies: user.assigned_companies || [],
       created: user.created,
       updated: user.updated,
       // Expanded relationships
-      empresa: user.expand?.empresa_id || null,
+      empresa: user.expand?.company_id || null,
       assignedCompaniesData: user.expand?.assigned_companies || [],
     }
   }
@@ -548,8 +547,8 @@ export const useUsersStore = defineStore('users', () => {
     }
 
     // Role-specific validations
-    if (['usuario', 'operador'].includes(userData.role) && !userData.empresa_id) {
-      errors.empresa_id = 'La empresa es requerida para este rol'
+    if (['usuario', 'operador'].includes(userData.role) && !userData.company_id) {
+      errors.company_id = 'La empresa es requerida para este rol'
     }
 
     return {

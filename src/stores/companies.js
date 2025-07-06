@@ -189,34 +189,15 @@ export const useCompaniesStore = defineStore('companies', () => {
    * @returns {Promise<{ items: Array, totalItems: number, totalPages: number }>}
    */
   async function fetchCompanies(params = {}) {
-    loading.value = true
-    error.value = null
     try {
-      const page = params.page || 1
-      const perPage = params.perPage || 100 // Suficiente para dropdowns y listados
-      const search = params.search || ''
-      let filter = 'role="empresa"'
-      if (search) {
-        // Buscar por nombre o email
-        filter += ` && (first_name~"${search}" || last_name~"${search}" || email~"${search}")`
-      }
-      const result = await api.collection('users').getList(page, perPage, {
-        filter,
-        sort: 'first_name',
-        expand: params.expand || '',
+      const result = await api.collection('companies').getList(params.page, params.perPage, {
+        filter: params.search ? `name~"${params.search}"` : '',
+        sort: 'name',
       })
-      // Estructura compatible con legacy: empresa_info_set
-      return {
-        items: result.items || [],
-        totalItems: result.totalItems || result.items?.length || 0,
-        totalPages: result.totalPages || 1,
-      }
-    } catch (e) {
-      error.value = `Error al listar empresas: ${e.message}`
-      console.error(error.value, e)
-      return { items: [], totalItems: 0, totalPages: 1 }
-    } finally {
-      loading.value = false
+      return result.items
+    } catch (error) {
+      console.error('Error fetching companies:', error)
+      return []
     }
   }
 

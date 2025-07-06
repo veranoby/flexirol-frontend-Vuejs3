@@ -19,10 +19,10 @@ WordPress users (empresas) → PocketBase companies
 - last_name: Plain text (requerido)
 - role: Select ["superadmin", "empresa", "operador", "usuario"] (requerido)
 - cedula: Plain text (10 dígitos, único) 
-- empresa_id: Relation → users single (self-reference para empresa madre)
+- company_id: Relation → companies single (nueva relación)
 - assigned_companies: Relation → companies multiple (solo operadores)
 - disponible: Number (monto disponible para anticipos)
-- gearbox: Bool (activo/inactivo - true=activo, false=bloqueado)
+- gearbox: Bool (activo/inactivo)
 - phone_number: Plain text (opcional)
 - address: Plain text (opcional) 
 - city: Plain text (opcional)
@@ -33,13 +33,13 @@ WordPress users (empresas) → PocketBase companies
 - wp_usermeta.first_name → first_name
 - wp_usermeta.last_name → last_name
 - wp_usermeta.cedula → cedula
-- wp_usermeta.empresa → empresa_id (ID del usuario empresa)
+- wp_usermeta.empresa → company_id (ID del usuario empresa)
 - wp_usermeta.disponible → disponible
 - wp_usermeta.gearbox → gearbox
 
 **Reglas de negocio:**
-- role="usuario" DEBE tener empresa_id (no puede ser null)
-- role="empresa" NO tiene empresa_id (es la empresa madre)
+- role="usuario" DEBE tener company_id (no puede ser null)
+- role="empresa" NO tiene company_id (es la empresa madre)
 - role="operador" puede tener assigned_companies
 - cedula debe ser único y 10 dígitos numéricos
 - gearbox=false bloquea al usuario de solicitar anticipos
@@ -160,7 +160,7 @@ WordPress users (empresas) → PocketBase companies
   "first_name": "Empresa",
   "last_name": "Demo", 
   "role": "empresa",
-  "empresa_id": null,
+  "company_id": null,
   "gearbox": true
 }
 ```
@@ -174,7 +174,7 @@ WordPress users (empresas) → PocketBase companies
   "last_name": "Pérez",
   "role": "usuario",
   "cedula": "0912345678",
-  "empresa_id": "empresa_001",
+  "company_id": "empresa_001",
   "disponible": 500,
   "gearbox": true
 }
@@ -194,5 +194,4 @@ WordPress users (empresas) → PocketBase companies
   "frecuencia": 3,
   "fecha_excel": "2025-01-15"
 }
-```
 ```
