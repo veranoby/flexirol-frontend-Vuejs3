@@ -133,21 +133,57 @@ const errors = ref({})
 // Test users
 const testUsers = ref([
   {
-    email: 'admin@powersersa.com',
+    email: 'superadmin@powersersa.com',
     password: 'admin123',
-    label: 'Superadmin',
+    label: 'Superadmin Powersersa',
     icon: 'fas fa-crown',
   },
   {
-    email: 'empresa@test.com',
-    password: 'empresa123',
-    label: 'Empresa',
+    email: 'operador1@powersersa.com',
+    password: 'operador123',
+    label: 'Powersersa Operador 1',
     icon: 'fas fa-building',
   },
   {
-    email: 'usuario@test.com',
+    email: 'operador2@powersersa.com',
+    password: 'operador123',
+    label: 'Powersersa Operador 2',
+    icon: 'fas fa-building',
+  },
+  {
+    email: 'empresa1@test.com',
+    password: 'empresa123',
+    label: 'Empresa1',
+    icon: 'fas fa-building',
+  },
+  {
+    email: 'empresa2@test.com',
+    password: 'empresa123',
+    label: 'Empresa2',
+    icon: 'fas fa-building',
+  },
+  {
+    email: 'usuario1@empresa1.com',
     password: 'usuario123',
-    label: 'Usuario',
+    label: 'Usuario1-Empresa1',
+    icon: 'fas fa-user',
+  },
+  {
+    email: 'usuario2@empresa1.com',
+    password: 'usuario123',
+    label: 'Usuario2-Empresa1',
+    icon: 'fas fa-user',
+  },
+  {
+    email: 'usuario1@empresa2.com',
+    password: 'usuario123',
+    label: 'Usuario1-Empresa2',
+    icon: 'fas fa-user',
+  },
+  {
+    email: 'usuario2@empresa2.com',
+    password: 'usuario123',
+    label: 'Usuario2-Empresa2',
     icon: 'fas fa-user',
   },
 ])
