@@ -1,106 +1,108 @@
 <template>
   <div class="login-container">
-    <div class="row justify-content-center">
-      <div class="col-md-6 col-lg-4">
-        <div class="card shadow">
-          <div class="card-body p-4">
-            <div class="text-center mb-4">
-              <h2 class="text-primary">FlexiRol</h2>
-              <p class="text-muted">Inicia sesión en tu cuenta</p>
-            </div>
-
-            <form @submit.prevent="handleLogin">
-              <!-- Email -->
-              <div class="mb-3">
-                <label for="email" class="form-label">Email</label>
-                <input
-                  id="email"
-                  v-model="form.email"
-                  type="email"
-                  class="form-control"
-                  :class="{ 'is-invalid': errors.email }"
-                  placeholder="tu@email.com"
-                  required
-                  autocomplete="email"
-                />
-                <div v-if="errors.email" class="invalid-feedback">
-                  {{ errors.email }}
-                </div>
+    <div class="container-fluid px-0">
+      <div class="row g-0">
+        <div class="col-12 col-lg-6 mx-auto">
+          <div class="login-card card shadow">
+            <div class="card-body p-4">
+              <div class="text-center mb-4">
+                <h2 class="text-primary">FlexiRol</h2>
+                <p class="text-muted">Inicia sesión en tu cuenta</p>
               </div>
 
-              <!-- Password -->
-              <div class="mb-3">
-                <label for="password" class="form-label">Contraseña</label>
-                <div class="input-group">
+              <form @submit.prevent="handleLogin">
+                <!-- Email -->
+                <div class="mb-3">
+                  <label for="email" class="form-label">Email</label>
                   <input
-                    id="password"
-                    v-model="form.password"
-                    :type="showPassword ? 'text' : 'password'"
+                    id="email"
+                    v-model="form.email"
+                    type="email"
                     class="form-control"
-                    :class="{ 'is-invalid': errors.password }"
-                    placeholder="Tu contraseña"
+                    :class="{ 'is-invalid': errors.email }"
+                    placeholder="tu@email.com"
                     required
-                    autocomplete="current-password"
+                    autocomplete="email"
                   />
+                  <div v-if="errors.email" class="invalid-feedback">
+                    {{ errors.email }}
+                  </div>
+                </div>
+
+                <!-- Password -->
+                <div class="mb-3">
+                  <label for="password" class="form-label">Contraseña</label>
+                  <div class="input-group">
+                    <input
+                      id="password"
+                      v-model="form.password"
+                      :type="showPassword ? 'text' : 'password'"
+                      class="form-control"
+                      :class="{ 'is-invalid': errors.password }"
+                      placeholder="Tu contraseña"
+                      required
+                      autocomplete="current-password"
+                    />
+                    <button
+                      type="button"
+                      class="btn btn-outline-secondary"
+                      @click="showPassword = !showPassword"
+                    >
+                      <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                    </button>
+                  </div>
+                  <div v-if="errors.password" class="invalid-feedback">
+                    {{ errors.password }}
+                  </div>
+                </div>
+
+                <!-- Remember me -->
+                <div class="mb-3 form-check">
+                  <input
+                    id="remember"
+                    v-model="form.remember"
+                    type="checkbox"
+                    class="form-check-input"
+                  />
+                  <label for="remember" class="form-check-label"> Recordarme </label>
+                </div>
+
+                <!-- Error message -->
+                <div v-if="authStore.error" class="alert alert-danger" role="alert">
+                  <i class="fas fa-exclamation-triangle me-2"></i>
+                  {{ authStore.error }}
+                </div>
+
+                <!-- Submit button -->
+                <button
+                  type="submit"
+                  class="btn btn-primary w-100"
+                  :disabled="authStore.isLoading || !isFormValid"
+                >
+                  <span
+                    v-if="authStore.isLoading"
+                    class="spinner-border spinner-border-sm me-2"
+                  ></span>
+                  <i v-else class="fas fa-sign-in-alt me-2"></i>
+                  {{ authStore.isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión' }}
+                </button>
+              </form>
+
+              <!-- Test users -->
+              <div class="mt-4 p-3 bg-light rounded">
+                <h6 class="text-muted mb-2">Usuarios de prueba:</h6>
+                <div class="d-grid gap-2">
                   <button
+                    v-for="testUser in testUsers"
+                    :key="testUser.email"
                     type="button"
-                    class="btn btn-outline-secondary"
-                    @click="showPassword = !showPassword"
+                    class="btn btn-outline-secondary btn-sm"
+                    @click="fillTestUser(testUser)"
                   >
-                    <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                    <i :class="testUser.icon" class="me-2"></i>
+                    {{ testUser.label }}
                   </button>
                 </div>
-                <div v-if="errors.password" class="invalid-feedback">
-                  {{ errors.password }}
-                </div>
-              </div>
-
-              <!-- Remember me -->
-              <div class="mb-3 form-check">
-                <input
-                  id="remember"
-                  v-model="form.remember"
-                  type="checkbox"
-                  class="form-check-input"
-                />
-                <label for="remember" class="form-check-label"> Recordarme </label>
-              </div>
-
-              <!-- Error message -->
-              <div v-if="authStore.error" class="alert alert-danger" role="alert">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                {{ authStore.error }}
-              </div>
-
-              <!-- Submit button -->
-              <button
-                type="submit"
-                class="btn btn-primary w-100"
-                :disabled="authStore.isLoading || !isFormValid"
-              >
-                <span
-                  v-if="authStore.isLoading"
-                  class="spinner-border spinner-border-sm me-2"
-                ></span>
-                <i v-else class="fas fa-sign-in-alt me-2"></i>
-                {{ authStore.isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión' }}
-              </button>
-            </form>
-
-            <!-- Test users -->
-            <div class="mt-4 p-3 bg-light rounded">
-              <h6 class="text-muted mb-2">Usuarios de prueba:</h6>
-              <div class="d-grid gap-2">
-                <button
-                  v-for="testUser in testUsers"
-                  :key="testUser.email"
-                  type="button"
-                  class="btn btn-outline-secondary btn-sm"
-                  @click="fillTestUser(testUser)"
-                >
-                  <i :class="testUser.icon" class="me-2"></i>
-                  {{ testUser.label }}
-                </button>
               </div>
             </div>
           </div>
@@ -131,7 +133,7 @@ const errors = ref({})
 // Test users
 const testUsers = ref([
   {
-    email: 'admin@flexirol.com',
+    email: 'admin@powersersa.com',
     password: 'admin123',
     label: 'Superadmin',
     icon: 'fas fa-crown',
@@ -216,15 +218,25 @@ onMounted(() => {
 <style scoped>
 .login-container {
   min-height: 100vh;
+  width: 100%;
   display: flex;
   align-items: center;
   background: linear-gradient(135deg, #3a6a77 0%, #1d9190 50%, #a8d1cb 100%);
   padding: 20px;
 }
 
-.card {
+.login-card {
+  max-width: none !important;
+  width: 100%;
   border: none;
   border-radius: 10px;
+}
+
+@media (min-width: 992px) {
+  .login-card {
+    max-width: 500px;
+    margin: 0 auto;
+  }
 }
 
 .btn-outline-secondary {

@@ -1,35 +1,31 @@
 @import './base.css';
 
+/* Flexirol App Layout - Full Width */
 #app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
   font-weight: normal;
 }
 
+/* Remove Vue demo styles that limit width */
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+/* Flexirol link styles */
 a,
 .green {
   text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
+  color: var(--flexirol-secondary, #1d9190);
   transition: 0.4s;
-  padding: 3px;
 }
 
 @media (hover: hover) {
   a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
-}
-
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
-
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
+    background-color: rgba(29, 145, 144, 0.1);
   }
 }

@@ -1,5 +1,4 @@
 import PocketBase from 'pocketbase'
-import { saveAs } from 'file-saver'
 import * as XLSX from 'xlsx'
 
 const pb = new PocketBase(import.meta.env.VITE_POCKETBASE_URL || 'http://127.0.0.1:8090')
@@ -218,11 +217,7 @@ export const api = {
     })
 
     // Generate Excel file
-    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
-    const blob = new Blob([excelBuffer], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    })
-    saveAs(blob, `pagos_${new Date().toISOString().split('T')[0]}.xlsx`)
+    XLSX.writeFile(wb, `pagos_${new Date().toISOString().split('T')[0]}.xlsx`)
   },
 }
 

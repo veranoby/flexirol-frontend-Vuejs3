@@ -241,41 +241,32 @@ export const useSystemStore = defineStore('system', () => {
   /**
    * Validación base para datos de usuario (reusable)
    * @param {Object} userData - Datos del usuario
-   * @param {boolean} [isUpdate=false] - Si es una actualización
-   * @param {string} [userId=null] - ID del usuario (para updates)
+   * @returns {Object} { isValid: boolean, errors: object }
    */
-  async function validateUserBaseData(userData, isUpdate = false, userId = null) {
-    if (!userData.first_name || !userData.last_name || !userData.email || !userData.cedula) {
-      throw new Error('Todos los campos son obligatorios')
+  function validateUserBaseData(userData) {
+    const errors = {}
+
+    if (!userData.first_name) {
+      errors.first_name = 'El nombre es obligatorio'
     }
-    if (!validateEmail(userData.email)) {
-      throw new Error('El formato del correo electrónico no es válido')
+    if (!userData.last_name) {
+      errors.last_name = 'El apellido es obligatorio'
     }
-    if (!validateCedula(userData.cedula)) {
-      throw new Error('La cédula debe tener 10 dígitos numéricos')
+    if (!userData.email) {
+      errors.email = 'El correo electrónico es obligatorio'
+    } else if (!validateEmail(userData.email)) {
+      errors.email = 'El formato del correo electrónico no es válido'
+    }
+    if (!userData.cedula) {
+      errors.cedula = 'La cédula es obligatoria'
+    } else if (!validateCedula(userData.cedula)) {
+      errors.cedula = 'La cédula debe tener 10 dígitos numéricos'
     }
 
-    // Verificar unicidad de email y cédula
-    const emailFilter = isUpdate
-      ? `email = "${userData.email}" && id != "${userId}"`
-      : `email = "${userData.email}"`
-    const cedulaFilter = isUpdate
-      ? `cedula = "${userData.cedula}" && id != "${userId}"`
-      : `cedula = "${userData.cedula}"`
-
-    const [emailExists, cedulaExists] = await Promise.all([
-      api
-        .collection('users')
-        .getFirstListItem(emailFilter, { requestKey: null })
-        .catch(() => null),
-      api
-        .collection('users')
-        .getFirstListItem(cedulaFilter, { requestKey: null })
-        .catch(() => null),
-    ])
-
-    if (emailExists) throw new Error('El correo electrónico ya está registrado')
-    if (cedulaExists) throw new Error('La cédula ya está registrada')
+    return {
+      isValid: Object.keys(errors).length === 0,
+      errors,
+    }
   }
 
   return {
@@ -290,11 +281,11 @@ export const useSystemStore = defineStore('system', () => {
     getInfoUsuarioCompleto,
     validateCedula,
     validateEmail,
+    validateUserBaseData,
     generateUsername,
     calculateAvailableAmount,
     clearCache,
     getUsersByRole,
-    validateUserBaseData,
   }
 })
 
