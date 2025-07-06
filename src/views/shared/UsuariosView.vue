@@ -196,8 +196,8 @@
                         }}</span>
                       </td>
                       <td v-if="showCompanyColumn">
-                        <span v-if="user.empresa"
-                          >{{ user.empresa.first_name }} {{ user.empresa.last_name }}</span
+                        <span v-if="user.company"
+                          >{{ user.company.first_name }} {{ user.company.last_name }}</span
                         >
                         <span v-else class="text-muted">Sin empresa</span>
                       </td>
@@ -370,7 +370,7 @@
                 <!-- Company Selection (Para Usuarios/Operadores) -->
                 <div v-if="needsCompanySelection" class="col-md-6">
                   <label class="form-label">Empresa *</label>
-                  <select v-model="userForm.empresa_id" class="form-select" required>
+                  <select v-model="userForm.company_id" class="form-select" required>
                     <option value="">Seleccionar empresa...</option>
                     <option
                       v-for="company in availableCompanies"
@@ -525,7 +525,7 @@ const userForm = ref({
   email: '',
   cedula: '',
   role: 'usuario',
-  empresa_id: '',
+  company_id: '',
   disponible: 0,
   gearbox: true,
 })
@@ -601,7 +601,7 @@ const isFormValid = computed(() => {
     userForm.value.cedula &&
     systemStore.validateCedula(userForm.value.cedula) &&
     systemStore.validateEmail(userForm.value.email) &&
-    (!needsCompanySelection.value || userForm.value.empresa_id)
+    (!needsCompanySelection.value || userForm.value.company_id)
   )
 })
 
@@ -612,11 +612,11 @@ const filteredUsers = computed(() => {
   // Role-based filtering
   if (!authStore.isSuperadmin) {
     // Non-superadmin only see their company's employees
-    users = users.filter((user) => user.empresa_id === authStore.user.id && user.role === 'usuario')
+    users = users.filter((user) => user.company_id === authStore.user.id && user.role === 'usuario')
   } else {
     // Superadmin filters
     if (selectedCompanyId.value) {
-      users = users.filter((user) => user.empresa_id === selectedCompanyId.value)
+      users = users.filter((user) => user.company_id === selectedCompanyId.value)
     }
     if (selectedUserType.value) {
       users = users.filter((user) => user.role === selectedUserType.value)
@@ -671,7 +671,7 @@ const visiblePages = computed(() => {
 
 const selectedCompanyUsersCount = computed(() => {
   if (!selectedCompanyId.value) return 0
-  return allUsers.value.filter((user) => user.empresa_id === selectedCompanyId.value).length
+  return allUsers.value.filter((user) => user.company_id === selectedCompanyId.value).length
 })
 
 const emptyMessage = computed(() => {
@@ -729,7 +729,7 @@ const resetForm = () => {
     email: '',
     cedula: '',
     role: authStore.isSuperadmin ? 'usuario' : 'usuario',
-    empresa_id: authStore.isSuperadmin ? '' : authStore.user.id,
+    company_id: authStore.isSuperadmin ? '' : authStore.user.id,
     disponible: 0,
     gearbox: true,
   }
@@ -758,7 +758,7 @@ const editUser = (user) => {
     email: user.email,
     cedula: user.cedula,
     role: user.role,
-    empresa_id: user.empresa_id || '',
+    company_id: user.company_id || '',
     disponible: user.disponible || 0,
     gearbox: user.gearbox,
   }
@@ -796,12 +796,12 @@ const handleSubmitUser = async () => {
 
     // **BUSINESS LOGIC PRESERVADA**: Empresa assignment logic del legacy
     if (!authStore.isSuperadmin) {
-      userData.empresa_id = authStore.user.id
+      userData.company_id = authStore.user.id
     }
 
-    // **BUSINESS LOGIC PRESERVADA**: Para empresas, empresa_id = null (functions.php línea 1785)
+    // **BUSINESS LOGIC PRESERVADA**: Para empresas, company_id = null (functions.php línea 1785)
     if (userData.role === 'empresa') {
-      userData.empresa_id = null
+      userData.company_id = null
     }
 
     if (isEditMode.value) {
@@ -913,7 +913,7 @@ const exportToExcel = () => {
     Email: user.email,
     Cédula: user.cedula,
     Rol: getRoleLabel(user.role),
-    Empresa: user.empresa?.first_name + ' ' + user.empresa?.last_name || 'N/A',
+    Empresa: user.company?.first_name + ' ' + user.company?.last_name || 'N/A',
     Estado: user.gearbox ? 'Habilitado' : 'Bloqueado',
     Disponible: user.disponible || 0,
     'Fecha Creación': formatDate(user.created),

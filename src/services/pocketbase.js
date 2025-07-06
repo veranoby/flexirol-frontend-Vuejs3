@@ -32,33 +32,33 @@ export const api = {
 
     return await pb.collection('users').getList(1, 1000, {
       filter: filterString,
-      expand: 'empresa_id',
+      expand: 'company_id',
       sort: '-created',
     })
   },
 
   async getUserById(id) {
-    return await pb.collection('users').getOne(id, { expand: 'empresa_id' })
+    return await pb.collection('users').getOne(id, { expand: 'company_id' })
   },
 
   async getUserCompanyInfo(userId) {
     try {
       const user = await pb.collection('users').getOne(userId, {
-        expand: 'empresa_id',
-        fields: '*,empresa_id.*',
+        expand: 'company_id',
+        fields: '*,company_id.*',
       })
 
       // Map to legacy format for compatibility
       return {
         ...user,
-        empresa_nombre: user.expand?.empresa_id?.nombre || '',
-        empresa_ruc: user.expand?.empresa_id?.ruc || '',
-        porcentaje: user.expand?.empresa_id?.porcentaje || 0,
-        dia_inicio: user.expand?.empresa_id?.dia_inicio || 1,
-        dia_cierre: user.expand?.empresa_id?.dia_cierre || 30,
-        dia_bloqueo: user.expand?.empresa_id?.dia_bloqueo || 0,
-        dia_reinicio: user.expand?.empresa_id?.dia_reinicio || 1,
-        frecuencia: user.expand?.empresa_id?.frecuencia || 'quincenal',
+        empresa_nombre: user.expand?.company_id?.nombre || '',
+        empresa_ruc: user.expand?.company_id?.ruc || '',
+        porcentaje: user.expand?.company_id?.porcentaje || 0,
+        dia_inicio: user.expand?.company_id?.dia_inicio || 1,
+        dia_cierre: user.expand?.company_id?.dia_cierre || 30,
+        dia_bloqueo: user.expand?.company_id?.dia_bloqueo || 0,
+        dia_reinicio: user.expand?.company_id?.dia_reinicio || 1,
+        frecuencia: user.expand?.company_id?.frecuencia || 'quincenal',
       }
     } catch (error) {
       console.error('Error fetching user company info:', error)
@@ -112,7 +112,7 @@ export const api = {
   },
 
   async getCompanyUsers(companyId) {
-    return await this.getUsers({ empresa_id: companyId })
+    return await this.getUsers({ company_id: companyId })
   },
 
   async createCompany(companyData) {
