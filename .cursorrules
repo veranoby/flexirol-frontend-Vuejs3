@@ -1,226 +1,242 @@
-# Flexirol Migration Project - Cursor AI Rules
+# Flexirol Migration + Optimization Project - Cursor AI Rules
 
 ## 🎯 PROJECT CONTEXT
 
-This is a migration project from WordPress + Vue 2 to Vue 3 + Pinia + PocketBase.
-Legacy code is in `legacy-code/` folder. Target is modern SPA with client-side Excel generation.
+**STRATEGIC APPROACH**: This is a MIGRATION + OPTIMIZATION project from WordPress + Vue 2 to Vue 3 + Pinia + PocketBase.
+**KEY PRINCIPLE**: Preserve business logic exactly while modernizing architecture AND eliminating redundancies.
+**TARGET MARKET**: Ecuador → USA expansion (requires flexible, scalable solutions)
 
-## 🏗️ ARCHITECTURE RULES
+Legacy code: `legacy-code/` folder → Modern SPA with universal Excel generation
+
+## 🏗️ OPTIMIZED ARCHITECTURE
 
 ### Stack Components
 
 - **Frontend**: Vue 3 + Composition API + Pinia + Vue Router + Bootstrap 5
 - **Backend**: PocketBase (auth, CRUD, real-time subscriptions)
-- **Excel**: XLSX.js client-side (replaces CBX PhpSpreadsheet)
-- **Storage**: NO localStorage/sessionStorage - use reactive state only
-- **Styling**: Bootstrap 5 utility classes only (no custom CSS compilation)
+- **Excel**: XLSX.js client-side - **UNIVERSAL FORMAT** (no bank-specific formats)
+- **Storage**: NO localStorage/sessionStorage - reactive state only
+- **Styling**: Bootstrap 5 utility classes only
 
-### File Structure Standards
+### Optimized File Structure
 
 ```
 src/
-├── stores/           # Pinia stores (business logic)
-├── views/            # Page components by role
-│   ├── auth/         # Login, register
-│   ├── superadmin/   # Superadmin-only views
-│   ├── admin/        # Empresa/Operador views
-│   └── usuario/      # End-user views
-├── components/       # Reusable components
-├── services/         # API services (PocketBase)
+├── stores/              # Pinia stores (business logic)
+├── views/
+│   ├── auth/           # Login, register
+│   ├── shared/         # 🆕 Smart components (role-conditional)
+│   │   ├── UsuariosView.vue      # Superadmin + Empresa
+│   │   ├── SolicitudesView.vue   # Superadmin + Operador
+│   │   └── ReportesView.vue      # Empresa + Operador
+│   ├── superadmin/     # Exclusive superadmin functions
+│   │   ├── EmpresasView.vue
+│   │   ├── ConfigView.vue
+│   │   └── ExcelUploadView.vue
+│   └── usuario/        # End-user only
+│       ├── BancosView.vue
+│       └── DashboardView.vue
+├── components/         # Reusable UI components
+├── services/          # API services (PocketBase)
 └── router/           # Vue Router config
 ```
 
-## 📋 MIGRATION PRINCIPLES
+## 🚀 OPTIMIZATION PRINCIPLES
 
-### Legacy Analysis First
+### Smart Component Strategy
 
-- **ALWAYS** analyze both legacy files: `.js` (Vue 2 logic) + `.php` (template + server logic)
-- **PRESERVE** all business logic exactly as in legacy
-- **MIGRATE** functions.php universal functions to stores
-- **MAINTAIN** exact validation rules and user flows
-
-### Migration Mapping
-
-```
-WordPress/PHP Pattern → Vue 3 Pattern
-├── functions.php → stores/system.js (universal functions)
-├── /js/component.js → stores/[domain].js (business logic)
-├── dashboard-*.php → views/[role]/[Component]View.vue
-├── BootstrapVue → Bootstrap 5 + vanilla JS
-├── Vue 2 Options → Vue 3 Composition API
-└── WordPress REST → PocketBase SDK
-```
-
-## 🔧 PINIA STORE STANDARDS
-
-### Store Structure Template
+- **ONE intelligent component** instead of multiple role-specific duplicates
+- **Conditional logic** based on user role within single component
+- **Shared business logic** eliminates 70% code duplication
 
 ```javascript
-import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import { useAuthStore } from '@/stores/auth'
-import { api } from '@/services/pocketbase'
-
-export const use[Domain]Store = defineStore('[domain]', () => {
-  const authStore = useAuthStore()
-
-  // State (ref for primitives, reactive for objects)
-  const items = ref([])
-  const loading = ref(false)
-  const error = ref(null)
-
-  // Getters (computed)
-  const activeItems = computed(() => items.value.filter(item => item.active))
-
-  // Actions (async functions)
-  async function fetchItems() {
-    loading.value = true
-    error.value = null
-    try {
-      const result = await api.collection('items').getList()
-      items.value = result.items
-      console.log('Items fetched:', items.value.length)
-    } catch (err) {
-      error.value = `Error fetching items: ${err.message}`
-      console.error('Fetch error:', err)
-    } finally {
-      loading.value = false
-    }
-  }
-
-  return {
-    // State
-    items, loading, error,
-    // Getters
-    activeItems,
-    // Actions
-    fetchItems
-  }
+// Pattern: Smart component with role conditions
+const canManageAllUsers = computed(() => authStore.isSuperadmin)
+const visibleUsers = computed(() => {
+  return authStore.isSuperadmin ? allSystemUsers.value : myCompanyUsers.value
 })
 ```
 
-### Critical Store Requirements
+### Universal Excel Strategy
 
-- **Error Handling**: Always try/catch with user-friendly messages
-- **Loading States**: Always set loading true/false around async operations
-- **Console Logging**: Include for debugging during migration
-- **Auth Integration**: Check permissions using useAuthStore
-- **State Cleanup**: Reset error state on new operations
+**ELIMINATED**: Bank-specific formats (Guayaquil 14-column special format, etc.)
+**IMPLEMENTED**: Single universal format compatible with any bank worldwide
 
-## 📱 VUE 3 COMPONENT STANDARDS
+```javascript
+// Universal Excel format (international compatibility)
+const generateUniversalBankingExcel = (solicitudes) => {
+  // Standard format: Tipo Cuenta | Número | Nombre | Identificación | Monto | Email
+  // Works in Ecuador, USA, and globally
+}
+```
 
-### Composition API Template
+### Legacy Consolidation Rules
+
+```
+BEFORE (Legacy duplicates):
+├── superadmin/UsuariosView.vue     # All users management
+├── admin/UsuariosView.vue          # Company users (didn't exist)
+└── CheckUsuariosView.vue           # Search/filters
+
+AFTER (Optimized):
+└── shared/UsuariosView.vue         # Smart component handles all cases
+```
+
+## 📋 MIGRATION + OPTIMIZATION WORKFLOW
+
+### 1. Legacy Analysis Pattern
+
+```
+ANALYZE BOTH FILES:
+├── legacy-code/[role]/js/[component].js    # Vue 2 logic
+└── legacy-code/[role]/dashboard-[component].php  # Template + server logic
+
+CONSOLIDATE INTO:
+├── stores/[domain].js              # Business logic
+└── views/shared/[Component]View.vue  # Smart UI component
+```
+
+### 2. Component Consolidation Strategy
+
+**Priority Order:**
+
+1. **Merge similar views** → Create smart shared components
+2. **Eliminate CheckUsuarios** → Integrate into UsuariosView
+3. **Simplify Excel** → Universal format only
+4. **Clean architecture** → Remove redundant stores/functions
+
+### 3. Role-Based Smart Components
 
 ```vue
+<!-- Pattern: Single component, conditional behavior -->
 <template>
   <div class="container mt-4">
-    <!-- Loading State -->
-    <div v-if="loading" class="text-center">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Cargando...</span>
-      </div>
+    <!-- Superadmin sees everything -->
+    <div v-if="authStore.isSuperadmin">
+      <CompanySelector v-model="selectedCompany" />
+      <AllUsersTable :users="allUsers" />
     </div>
 
-    <!-- Error State -->
-    <div v-if="error" class="alert alert-danger">
-      {{ error }}
-    </div>
-
-    <!-- Content -->
-    <div v-if="!loading && !error">
-      <!-- Component content -->
+    <!-- Company admin sees only their users -->
+    <div v-else-if="authStore.isEmpresa">
+      <MyUsersTable :users="myCompanyUsers" />
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useAuthStore } from '@/stores/auth'
-import { use[Domain]Store } from '@/stores/[domain]'
-
-const authStore = useAuthStore()
-const [domain]Store = use[Domain]Store()
-
-// Local reactive state
-const localState = ref('')
-
-// Computed properties
-const canAccess = computed(() => authStore.canManageUsers())
-
-// Methods
-const handleAction = async () => {
-  try {
-    await [domain]Store.performAction()
-  } catch (error) {
-    console.error('Action failed:', error)
-  }
-}
-
-// Lifecycle
-onMounted(async () => {
-  if (canAccess.value) {
-    await [domain]Store.fetchItems()
-  }
+// Single component handles multiple roles intelligently
+const users = computed(() => {
+  if (authStore.isSuperadmin) return allSystemUsers.value
+  if (authStore.isEmpresa) return myCompanyUsers.value
+  return []
 })
 </script>
 ```
 
-### Component Rules
+## 🔧 PINIA STORE STANDARDS
 
-- **NO localStorage/sessionStorage** - Will break in Claude.ai artifacts
-- **Bootstrap 5 classes only** - Use utility classes, avoid custom CSS
-- **Composition API always** - No Options API
-- **Loading/Error states** - Always include for async operations
-- **Permission checks** - Use authStore for role-based access
-- **Form validation** - Client-side reactive validation
-- **Accessibility** - Include aria-labels, semantic HTML
-
-## 🔒 BUSINESS LOGIC RULES
-
-### Authentication & Permissions
+### Consolidated Store Pattern
 
 ```javascript
-// Role hierarchy (from legacy)
-const ROLES = {
-  superadmin: ['all'], // Full access
-  empresa: ['manage_employees', 'view_reports'], // Company admin
-  operador: ['view_reports'], // Limited access
-  usuario: ['request_advances', 'manage_banks'], // End user
-}
+export const useUsersStore = defineStore('users', () => {
+  // State
+  const allUsers = ref([]) // For superadmin
+  const companyUsers = ref([]) // For empresa
+  const loading = ref(false)
+  const error = ref(null)
 
-// Permission checking pattern
-const canAccess = computed(() => {
-  if (!authStore.isAuthenticated) return false
-  if (authStore.isSuperadmin) return true
-  return authStore.userRole === 'empresa' || authStore.userRole === 'operador'
+  // Smart getters based on role
+  const visibleUsers = computed(() => {
+    const authStore = useAuthStore()
+    if (authStore.isSuperadmin) return allUsers.value
+    if (authStore.isEmpresa) return companyUsers.value
+    return []
+  })
+
+  // Unified actions (no duplication)
+  async function fetchUsers(scope = 'auto') {
+    const authStore = useAuthStore()
+    loading.value = true
+
+    try {
+      if (scope === 'auto') {
+        scope = authStore.isSuperadmin ? 'all' : 'company'
+      }
+
+      if (scope === 'all') {
+        const result = await api.collection('users').getList()
+        allUsers.value = result.items
+      } else {
+        const result = await api.collection('users').getList(1, 50, {
+          filter: `empresa_id="${authStore.user.empresa_id}"`,
+        })
+        companyUsers.value = result.items
+      }
+    } catch (err) {
+      error.value = `Error fetching users: ${err.message}`
+    } finally {
+      loading.value = false
+    }
+  }
+
+  return { allUsers, companyUsers, visibleUsers, fetchUsers }
 })
 ```
 
-### Critical Business Validations (from legacy)
+## 📊 UNIVERSAL EXCEL STANDARDS
+
+### Simplified Excel Generation
 
 ```javascript
-// Cedula validation (Ecuador - 10 digits)
+// ELIMINATED: Complex bank-specific formats from legacy
+// IMPLEMENTED: Universal international format
+
+const generateUniversalExcel = (data, type = 'banking') => {
+  const workbook = XLSX.utils.book_new()
+
+  if (type === 'banking') {
+    // Universal banking format (works globally)
+    const excelData = data.map((item) => ({
+      'Tipo Cuenta': item.tipo_cuenta === 'ahorros' ? 'Savings' : 'Checking',
+      'Número Cuenta': item.numero_cuenta,
+      Titular: item.propietario,
+      Identificación: item.cedula,
+      Monto: item.monto_aprobado,
+      Email: item.email,
+      Banco: item.banco_nombre,
+    }))
+  } else if (type === 'report') {
+    // Universal report format
+    const excelData = data.map((item) => ({
+      Nombre: item.nombre,
+      Empresa: item.empresa,
+      Fecha: item.fecha,
+      Monto: item.monto_solicitado,
+      Estado: item.estado,
+    }))
+  }
+
+  const worksheet = XLSX.utils.json_to_sheet(excelData)
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Data')
+
+  const filename = `${type}_${new Date().toISOString().split('T')[0]}.xlsx`
+  XLSX.writeFile(workbook, filename)
+
+  console.log(`Universal Excel generated: ${filename}`)
+}
+```
+
+## 🔒 BUSINESS LOGIC PRESERVATION
+
+### Critical Legacy Functions (Preserve Exactly)
+
+```javascript
+// From functions.php - MUST preserve exactly
 const validateCedula = (cedula) => /^[0-9]{10}$/.test(cedula)
 
-// Email validation (exact legacy regex)
-const validateEmail = (email) => {
-  const regex =
-    /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-  return regex.test(email)
-}
-
-// Bank account verification (24 hour rule)
-const isUnderVerification = (createdDate) => {
-  const accountDate = new Date(createdDate)
-  const currentDate = new Date()
-  const timeDifference = currentDate - accountDate
-  const oneDayInMs = 86400000
-  return timeDifference <= oneDayInMs
-}
-
-// User enabled validation (critical for advance requests)
 const habilitado_switch = (userInfo, companyInfo, userRequests) => {
-  // 1. Check company uploaded Excel for current month
+  // EXACT legacy logic - don't modify
   if (!companyInfo.fecha_excel || companyInfo.fecha_excel === 'No creado') {
     return {
       enabled: false,
@@ -228,202 +244,128 @@ const habilitado_switch = (userInfo, companyInfo, userRequests) => {
     }
   }
 
-  // 2. Check user and company are active
   if (userInfo.gearbox !== 'true' || companyInfo.gearbox !== 'true') {
     return { enabled: false, message: 'Usuario Bloqueado por Admin' }
   }
 
-  // 3. Check frequency limits
-  if (userRequests.length >= Number(companyInfo.frecuencia)) {
-    return {
-      enabled: false,
-      message: `El Usuario ha alcanzado el limite de solicitudes (${companyInfo.frecuencia})`,
-    }
-  }
+  // Continue with exact legacy logic...
+}
 
-  // 4. Check date restrictions (complex legacy logic)
-  const today = new Date().getDate()
-  const diaFinal = Number(companyInfo.dia_cierre) - Number(companyInfo.dia_bloqueo)
-  const diaInicio = Number(companyInfo.dia_inicio) + Number(companyInfo.dia_bloqueo)
-
-  if (today < diaInicio || today > diaFinal) {
-    return { enabled: false, message: 'Fuera del período de solicitudes' }
-  }
-
-  return { enabled: true, message: 'Usuario Activo y Habilitado para Anticipos' }
+// Bank account 24-hour verification rule
+const isUnderVerification = (createdDate) => {
+  const accountDate = new Date(createdDate)
+  const currentDate = new Date()
+  const timeDifference = currentDate - accountDate
+  const oneDayInMs = 86400000
+  return timeDifference <= oneDayInMs
 }
 ```
 
-## 🏦 POCKETBASE INTEGRATION
+## 📱 SMART COMPONENT PATTERNS
 
-### API Service Pattern
-
-```javascript
-// services/pocketbase.js
-export const api = {
-  // Standard CRUD
-  async getUsers(filters = {}) {
-    const filterString = Object.entries(filters)
-      .map(([key, value]) => `${key}="${value}"`)
-      .join(' && ')
-
-    return await pb.collection('users').getList(1, 50, {
-      filter: filterString,
-      expand: 'empresa_id',
-      sort: '-created',
-    })
-  },
-
-  // Complex business operations
-  async getUserCompanyInfo(userId) {
-    const user = await pb.collection('users').getOne(userId, {
-      expand: 'empresa_id',
-    })
-
-    // Return legacy-compatible format
-    return {
-      user_info: user,
-      empresa_info: user.expand.empresa_id,
-      fecha_excel: user.expand.empresa_id.fecha_excel || 'No creado',
-    }
-  },
-}
-```
-
-### Real-time Subscriptions
-
-```javascript
-// In stores - setup real-time updates
-onMounted(() => {
-  // Subscribe to changes
-  pb.collection('advance_requests').subscribe('*', (e) => {
-    if (e.action === 'create') {
-      requests.value.unshift(e.record)
-    } else if (e.action === 'update') {
-      const index = requests.value.findIndex((r) => r.id === e.record.id)
-      if (index > -1) requests.value[index] = e.record
-    }
-  })
-})
-
-onUnmounted(() => {
-  pb.collection('advance_requests').unsubscribe()
-})
-```
-
-## 📊 EXCEL GENERATION STANDARDS
-
-### Client-side Excel (XLSX.js)
-
-```javascript
-import * as XLSX from 'xlsx'
-
-// Standard report generation
-const generateReport = (data, config = {}) => {
-  const workbook = XLSX.utils.book_new()
-
-  // Transform data to Excel format
-  const excelData = data.map((item) => ({
-    Nombre: item.nombre,
-    Sucursal: item.sucursal,
-    Fecha: formatDate(item.fecha),
-    Monto: item.monto_solicitado,
-    Estado: item.estado,
-  }))
-
-  const worksheet = XLSX.utils.json_to_sheet(excelData)
-
-  // Set column widths (optional)
-  worksheet['!cols'] = [
-    { wch: 20 }, // Nombre
-    { wch: 15 }, // Sucursal
-    { wch: 12 }, // Fecha
-    { wch: 10 }, // Monto
-    { wch: 10 }, // Estado
-  ]
-
-  XLSX.utils.book_append_sheet(workbook, worksheet, config.sheetName || 'Reporte')
-
-  const filename = `${config.filename || 'reporte'}_${new Date().toISOString().split('T')[0]}.xlsx`
-  XLSX.writeFile(workbook, filename)
-
-  console.log(`Excel generated: ${filename}`)
-}
-
-// Banking Excel (multi-sheet by bank)
-const generateBankingExcel = (solicitudes) => {
-  const workbook = XLSX.utils.book_new()
-
-  // Group by bank
-  const byBank = solicitudes.reduce((acc, sol) => {
-    const banco = sol.banco_nombre || 'OTROS'
-    if (!acc[banco]) acc[banco] = []
-    acc[banco].push(sol)
-    return acc
-  }, {})
-
-  // Create sheet for each bank
-  Object.entries(byBank).forEach(([banco, solicitudesBanco]) => {
-    const worksheetData = solicitudesBanco.map((sol) => ({
-      TIPO_CUENTA: sol.tipo_cuenta === 'ahorros' ? 'A' : 'C',
-      NUMERO_CUENTA: sol.numero_cuenta,
-      NOMBRE: sol.propietario,
-      MONTO: sol.monto_aprobado,
-      CEDULA: sol.cedula,
-      EMAIL: sol.email,
-    }))
-
-    const worksheet = XLSX.utils.json_to_sheet(worksheetData)
-    XLSX.utils.book_append_sheet(workbook, worksheet, banco.substring(0, 31)) // Max 31 chars
-  })
-
-  XLSX.writeFile(workbook, `pagos_bancarios_${Date.now()}.xlsx`)
-}
-```
-
-## 🎨 UI/UX STANDARDS
-
-### Bootstrap 5 Components
+### Conditional Rendering by Role
 
 ```vue
-<!-- Modal Pattern -->
-<div class="modal fade" id="modalId" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Título</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<template>
+  <div class="container mt-4">
+    <!-- Universal header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2>{{ pageTitle }}</h2>
+      <button v-if="canCreate" @click="openCreateModal" class="btn btn-primary">
+        <i class="fas fa-plus"></i> {{ createButtonText }}
+      </button>
+    </div>
+
+    <!-- Smart filters (conditional) -->
+    <div class="row mb-3">
+      <!-- Company selector (superadmin only) -->
+      <div v-if="authStore.isSuperadmin" class="col-md-4">
+        <select v-model="selectedCompany" class="form-select">
+          <option value="">Todas las empresas</option>
+          <option v-for="company in companies" :key="company.id" :value="company.id">
+            {{ company.name }}
+          </option>
+        </select>
       </div>
-      <div class="modal-body">
-        <!-- Content -->
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-primary" @click="handleSave">Guardar</button>
+
+      <!-- Universal search -->
+      <div class="col-md-4">
+        <input v-model="searchTerm" class="form-control" placeholder="Buscar..." />
       </div>
     </div>
-  </div>
-</div>
 
-<!-- Table Pattern -->
+    <!-- Smart content based on role -->
+    <component :is="currentComponent" :data="visibleData" @action="handleAction" />
+  </div>
+</template>
+
+<script setup>
+const authStore = useAuthStore()
+const usersStore = useUsersStore()
+
+// Smart computed properties
+const pageTitle = computed(() => {
+  if (authStore.isSuperadmin) return 'Gestión de Usuarios del Sistema'
+  if (authStore.isEmpresa) return 'Mis Empleados'
+  return 'Usuarios'
+})
+
+const canCreate = computed(() => authStore.isSuperadmin || authStore.isEmpresa)
+
+const createButtonText = computed(() =>
+  authStore.isSuperadmin ? 'Crear Usuario' : 'Crear Empleado',
+)
+
+const currentComponent = computed(() => {
+  if (authStore.isSuperadmin) return 'AdminUsersTable'
+  if (authStore.isEmpresa) return 'CompanyUsersTable'
+  return 'ReadOnlyUsersTable'
+})
+
+const visibleData = computed(() => usersStore.visibleUsers)
+</script>
+```
+
+## 🎨 BOOTSTRAP 5 OPTIMIZATION
+
+### Streamlined UI Patterns
+
+```vue
+<!-- Unified table component (works for all roles) -->
 <div class="table-responsive">
   <table class="table table-hover">
     <thead class="table-light">
       <tr>
-        <th>Columna 1</th>
-        <th>Columna 2</th>
+        <th>Nombre</th>
+        <th>Email</th>
+        <th v-if="showCompanyColumn">Empresa</th>
+        <th v-if="showAdvancedActions">Estado</th>
         <th class="text-end">Acciones</th>
       </tr>
     </thead>
     <tbody>
-      <tr v-for="item in items" :key="item.id">
-        <td>{{ item.column1 }}</td>
-        <td>{{ item.column2 }}</td>
+      <tr v-for="user in users" :key="user.id">
+        <td>{{ user.full_name }}</td>
+        <td>{{ user.email }}</td>
+        <td v-if="showCompanyColumn">{{ user.empresa_nombre }}</td>
+        <td v-if="showAdvancedActions">
+          <span :class="getStatusClass(user.gearbox)">
+            {{ user.gearbox === 'true' ? 'Activo' : 'Bloqueado' }}
+          </span>
+        </td>
         <td class="text-end">
-          <button class="btn btn-sm btn-outline-primary me-1" @click="edit(item)">
+          <button 
+            v-if="canEdit(user)" 
+            @click="editUser(user)" 
+            class="btn btn-sm btn-outline-primary me-1"
+          >
             <i class="fas fa-edit"></i>
           </button>
-          <button class="btn btn-sm btn-outline-danger" @click="delete(item)">
+          <button 
+            v-if="canDelete(user)" 
+            @click="deleteUser(user)" 
+            class="btn btn-sm btn-outline-danger"
+          >
             <i class="fas fa-trash"></i>
           </button>
         </td>
@@ -431,257 +373,76 @@ const generateBankingExcel = (solicitudes) => {
     </tbody>
   </table>
 </div>
-
-<!-- Form Pattern -->
-<form @submit.prevent="handleSubmit">
-  <div class="mb-3">
-    <label for="field" class="form-label">Campo <span class="text-danger">*</span></label>
-    <input
-      type="text"
-      class="form-control"
-      :class="{ 'is-invalid': errors.field }"
-      id="field"
-      v-model="formData.field"
-      required
-    >
-    <div v-if="errors.field" class="invalid-feedback">
-      {{ errors.field }}
-    </div>
-  </div>
-
-  <button type="submit" class="btn btn-primary" :disabled="!isFormValid || isSubmitting">
-    <span v-if="isSubmitting" class="spinner-border spinner-border-sm me-1"></span>
-    {{ isEdit ? 'Actualizar' : 'Crear' }}
-  </button>
-</form>
 ```
 
-### Status Badges & States
+## 🚫 OPTIMIZATION ANTI-PATTERNS
 
-```vue
-<!-- Status badges -->
-<span :class="getStatusClass(estado)">{{ estado }}</span>
+### What NOT to Do
 
-<script>
-const getStatusClass = (estado) => {
-  switch (estado) {
-    case 'pendiente':
-      return 'badge bg-warning'
-    case 'procesando':
-      return 'badge bg-primary'
-    case 'pagado':
-      return 'badge bg-success'
-    case 'rechazado':
-      return 'badge bg-danger'
-    default:
-      return 'badge bg-secondary'
-  }
-}
-</script>
-```
+- **DON'T create separate views** for similar functionality across roles
+- **DON'T implement bank-specific Excel formats** - use universal format
+- **DON'T duplicate validation logic** across stores
+- **DON'T create CheckUsuarios** as separate view - integrate into UsuariosView
+- **DON'T preserve outdated WordPress patterns** - optimize while migrating
 
-## 🚀 PERFORMANCE & OPTIMIZATION
-
-### Code Splitting & Lazy Loading
+### Legacy Elimination Rules
 
 ```javascript
-// Router lazy loading
-const routes = [
-  {
-    path: '/superadmin/usuarios',
-    component: () => import('@/views/superadmin/UsuariosView.vue')
-  }
-]
+// ELIMINATE these legacy patterns:
+❌ Multiple views: superadmin/UsuariosView + admin/UsuariosView + CheckUsuarios
+❌ Bank-specific Excel: Guayaquil format, Pacífico format, etc.
+❌ Duplicate CRUD: Same logic in multiple stores
+❌ Role-specific routes: /superadmin/usuarios vs /admin/usuarios
 
-// Store lazy loading
-const useLazyStore = () => {
-  if (!store) {
-    store = defineStore(...)()
-  }
-  return store
-}
+// REPLACE with optimized patterns:
+✅ Single smart view: shared/UsuariosView with role conditions
+✅ Universal Excel: One format for all banks globally
+✅ Consolidated stores: Smart stores with role-based getters
+✅ Dynamic routes: /usuarios with permission-based content
 ```
 
-### Reactive Performance
-
-```javascript
-// Use shallowRef for large arrays
-import { shallowRef } from 'vue'
-const largeDataSet = shallowRef([])
-
-// Use computed for expensive operations
-const expensiveComputation = computed(() => {
-  return data.value.filter((item) => item.active).sort((a, b) => a.name.localeCompare(b.name))
-})
-
-// Debounce search inputs
-import { debounce } from 'lodash'
-const debouncedSearch = debounce((searchTerm) => {
-  performSearch(searchTerm)
-}, 300)
-```
-
-## 🔍 DEBUGGING & LOGGING
-
-### Console Logging Standards
-
-```javascript
-// Store operations
-console.log('Users fetched:', users.value.length)
-console.error('API Error:', error)
-console.warn('Deprecated feature used:', featureName)
-
-// Component lifecycle
-console.log(`${componentName} mounted`)
-
-// Business logic
-console.log('Validation result:', { valid: isValid, errors })
-console.log('Excel generated:', filename)
-```
-
-### Error Handling Pattern
-
-```javascript
-try {
-  const result = await apiCall()
-  return { success: true, data: result }
-} catch (error) {
-  const errorMessage = error.response?.data?.message || error.message || 'Error desconocido'
-  console.error('Operation failed:', error)
-
-  // User-friendly error
-  showAlert(errorMessage, 'error')
-
-  return { success: false, error: errorMessage }
-}
-```
-
-## ✅ CODE QUALITY RULES
-
-### Naming Conventions
-
-```javascript
-// Files: PascalCase for components, camelCase for others
-UsersList.vue, userAdvanceRequests.js
-
-// Variables: camelCase
-const userName = 'Juan'
-const isUserActive = true
-
-// Constants: UPPER_SNAKE_CASE
-const MAX_FILE_SIZE = 10000000
-
-// Functions: camelCase verbs
-const fetchUserData = () => {}
-const validateForm = () => {}
-
-// Components: PascalCase
-const UserCard = {}
-```
-
-### Code Organization
-
-```javascript
-// Script setup order:
-// 1. Imports
-// 2. Props/emits definitions
-// 3. Store instances
-// 4. Reactive state
-// 5. Computed properties
-// 6. Methods
-// 7. Lifecycle hooks
-// 8. Watchers
-```
-
-### Comments & Documentation
-
-```javascript
-// Business logic comments (critical for migration)
-/**
- * Validates if user can request advance based on legacy rules
- * Migration from: legacy-code/usuario/js/solicitudes.js:habilitado_switch()
- *
- * @param {Object} userInfo - User data from PocketBase
- * @param {Object} companyInfo - Company configuration
- * @param {Array} userRequests - Current user requests this cycle
- * @returns {Object} { enabled: boolean, message: string }
- */
-const validateAdvanceRequest = (userInfo, companyInfo, userRequests) => {
-  // Implementation...
-}
-```
-
-## 🚫 ANTI-PATTERNS & RESTRICTIONS
-
-### Never Do
-
-- **NO localStorage/sessionStorage** - Will break in artifacts
-- **NO BootstrapVue components** - Use Bootstrap 5 + vanilla JS
-- **NO Vue 2 Options API** - Use Composition API only
-- **NO direct DOM manipulation** - Use Vue reactivity
-- **NO jQuery** - Use vanilla JS or Vue methods
-- **NO global CSS** - Use Bootstrap utility classes
-- **NO TODOs in production** - Complete implementations only
-- **NO hardcoded values** - Use environment variables or constants
-
-### Legacy Migration Don'ts
-
-- **DON'T skip business validations** - Migrate exactly
-- **DON'T change user flows** - Keep UX identical
-- **DON'T ignore PHP logic** - functions.php has critical business rules
-- **DON'T assume simple mapping** - WordPress/Vue 2 patterns are complex
-
-## 📚 MIGRATION CHECKLIST
+## 📚 OPTIMIZATION CHECKLIST
 
 ### Before Starting Component
 
-- [ ] Analyze both `.js` and `.php` legacy files
-- [ ] Identify all business validations
-- [ ] Map WordPress functions to PocketBase
-- [ ] Plan store structure and dependencies
+- [ ] Identify similar components to consolidate
+- [ ] Plan smart component with role conditions
+- [ ] Eliminate redundant legacy patterns
+- [ ] Design universal data formats
 
 ### During Development
 
-- [ ] Implement exact business logic from legacy
-- [ ] Add loading and error states
-- [ ] Include permission checks
-- [ ] Add console logging for debugging
-- [ ] Test with realistic data
+- [ ] Build one smart component instead of multiple
+- [ ] Implement universal Excel (no bank-specific formats)
+- [ ] Use role-based conditional rendering
+- [ ] Consolidate duplicate business logic
 
 ### Before Commit
 
-- [ ] All TODOs resolved
-- [ ] Error handling implemented
-- [ ] Responsive design verified
-- [ ] Role-based access working
-- [ ] Excel generation tested (if applicable)
-- [ ] No console errors
-- [ ] Legacy functionality preserved
+- [ ] No duplicate components for similar functionality
+- [ ] Universal formats implemented
+- [ ] Smart role-based components working
+- [ ] Legacy redundancies eliminated
+- [ ] Code reduction achieved (target: 70% less)
 
 ## 🎯 SUCCESS CRITERIA
 
-### Functional Parity
+### Functional Parity + Optimization
 
-- All legacy user flows work identically
-- All business validations preserved
-- All Excel exports generate correctly
-- All role permissions respected
+- ✅ All legacy user flows preserved exactly
+- ✅ 70% code reduction through consolidation
+- ✅ Universal Excel works globally (Ecuador + USA)
+- ✅ Smart components handle multiple roles
+- ✅ Architecture ready for international expansion
 
-### Modern Standards
+### Modern + Scalable Standards
 
-- Vue 3 Composition API throughout
-- Pinia for state management
-- Bootstrap 5 responsive design
-- Client-side Excel generation
-- Real-time updates via PocketBase
-
-### Performance
-
-- Fast initial load
-- Smooth interactions
-- Optimized re-renders
-- Efficient API calls
+- ✅ Vue 3 Composition API with smart components
+- ✅ Pinia with consolidated, role-aware stores
+- ✅ Bootstrap 5 responsive with conditional UI
+- ✅ Universal client-side Excel generation
+- ✅ Scalable architecture for new markets
 
 ---
 
-**Remember: This is a MIGRATION project. Preserve legacy business logic exactly while modernizing the tech stack. When in doubt, favor the legacy behavior over new patterns.**
+**OPTIMIZATION MANTRA**: One smart component beats three dumb ones. Universal format beats bank-specific chaos. Preserve business logic, eliminate technical debt.

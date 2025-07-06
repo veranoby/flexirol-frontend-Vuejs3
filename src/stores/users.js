@@ -1,130 +1,127 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { api } from '@/services/pocketbase'
+import { useAuthStore } from '@/stores/auth'
 import { useSystemStore } from '@/stores/system'
+import { api } from '@/services/pocketbase'
 
 export const useUsersStore = defineStore('users', () => {
+  const authStore = useAuthStore()
   const systemStore = useSystemStore()
 
   // State
   const users = ref([])
-  const companies = ref([])
   const loading = ref(false)
   const error = ref(null)
   const currentPage = ref(1)
   const totalPages = ref(1)
-  const itemsPerPage = 20
+  const itemsPerPage = 50
 
   // Getters
-  const activeUsers = computed(() => users.value.filter((user) => user.gearbox === true))
 
-  const usersByCompany = computed(
-    () => (companyId) => users.value.filter((user) => user.empresa_id === companyId),
-  )
+  // All users (for superadmin)
+  const allUsers = computed(() => users.value)
 
-  const userStats = computed(() => {
-    return users.value.reduce(
-      (stats, user) => {
-        stats.total++
-        if (user.gearbox) stats.active++
-        else stats.inactive++
-
-        if (!stats.byRole[user.role]) {
-          stats.byRole[user.role] = 0
-        }
-        stats.byRole[user.role]++
-
-        return stats
-      },
-      { total: 0, active: 0, inactive: 0, byRole: {} },
+  // Company users (for empresa role)
+  const myCompanyUsers = computed(() => {
+    if (!authStore.user?.id) return []
+    return users.value.filter(
+      (user) => user.empresa_id === authStore.user.id && user.role === 'usuario',
     )
   })
 
-  // Use system store's generateUsername function
-  const generateUsername = systemStore.generateUsername
+  // Users by role
+  const usersByRole = computed(() => {
+    return (role) => users.value.filter((user) => user.role === role)
+  })
 
-  // Helper function to validate user data
-  const validateUserData = async (userData, isUpdate = false, userId = null) => {
-    // Validate required fields
-    if (!userData.first_name || !userData.last_name || !userData.email || !userData.cedula) {
-      throw new Error('Todos los campos son obligatorios')
-    }
+  // Active users
+  const activeUsers = computed(() => users.value.filter((user) => user.gearbox))
 
-    // Use system store's validation functions
-    if (!systemStore.validateEmail(userData.email)) {
-      throw new Error('El formato del correo electrónico no es válido')
-    }
+  // Blocked users
+  const blockedUsers = computed(() => users.value.filter((user) => !user.gearbox))
 
-    if (!systemStore.validateCedula(userData.cedula)) {
-      throw new Error('La cédula debe tener 10 dígitos numéricos')
-    }
+  // Companies (users with role 'empresa')
+  const companies = computed(() => users.value.filter((user) => user.role === 'empresa'))
 
-    // Check if email already exists (skip for current user on update)
-    const emailFilter = isUpdate
-      ? `email = "${userData.email}" && id != "${userId}"`
-      : `email = "${userData.email}"`
+  // Stats
+  const stats = computed(() => ({
+    total: users.value.length,
+    active: activeUsers.value.length,
+    blocked: blockedUsers.value.length,
+    companies: companies.value.length,
+    employees: users.value.filter((u) => u.role === 'usuario').length,
+    operators: users.value.filter((u) => u.role === 'operador').length,
+  }))
 
-    const emailExists = await api
-      .collection('users')
-      .getFirstListItem(emailFilter, { requestKey: null })
-      .catch(() => null)
+  // Actions
 
-    if (emailExists) {
-      throw new Error('El correo electrónico ya está registrado')
-    }
-
-    // Check if cédula already exists (skip for current user on update)
-    const cedulaFilter = isUpdate
-      ? `cedula = "${userData.cedula}" && id != "${userId}"`
-      : `cedula = "${userData.cedula}"`
-
-    const cedulaExists = await api
-      .collection('users')
-      .getFirstListItem(cedulaFilter, { requestKey: null })
-      .catch(() => null)
-
-    if (cedulaExists) {
-      throw new Error('La cédula ya está registrada')
-    }
-  }
-
-  // Fetch users by role and optionally filter by company
-  async function fetchUsersByRole(role, companyId = null) {
+  /**
+   * Fetch users with advanced filtering
+   * @param {Object} filters - Filtering options
+   * @param {string} filters.role - Filter by role
+   * @param {string} filters.empresa_id - Filter by company
+   * @param {string} filters.search - Search term
+   * @param {boolean} filters.gearbox - Filter by status
+   * @param {number} page - Page number
+   * @param {number} perPage - Items per page
+   */
+  async function fetchUsers(filters = {}, page = 1, perPage = itemsPerPage) {
     loading.value = true
     error.value = null
 
     try {
-      let filter = `role = "${role}"`
+      // Build filter string for PocketBase
+      const filterParts = []
 
-      // If companyId is provided and role is not 'empresa', filter by company
-      if (companyId && role !== 'empresa') {
-        filter += ` && empresa_id = "${companyId}"`
+      // Role-based access control
+      if (!authStore.isSuperadmin) {
+        if (authStore.isEmpresa) {
+          // Empresa only sees their employees
+          filterParts.push(`empresa_id="${authStore.user.id}"`)
+          filterParts.push(`role="usuario"`)
+        } else if (authStore.isOperador) {
+          // Operador sees users from assigned companies
+          const companies = authStore.getUserCompanies()
+          if (companies.length > 0) {
+            const companyFilter = companies.map((id) => `empresa_id="${id}"`).join(' || ')
+            filterParts.push(`(${companyFilter})`)
+          }
+        } else {
+          // Regular users shouldn't access this
+          throw new Error('Acceso no autorizado')
+        }
       }
 
-      const result = await api.collection('users').getList(currentPage.value, itemsPerPage, {
-        filter,
+      // Apply additional filters
+      if (filters.role) filterParts.push(`role="${filters.role}"`)
+      if (filters.empresa_id) filterParts.push(`empresa_id="${filters.empresa_id}"`)
+      if (filters.gearbox !== undefined) filterParts.push(`gearbox=${filters.gearbox}`)
+      if (filters.search) {
+        const search = filters.search.toLowerCase()
+        filterParts.push(
+          `(first_name~"${search}" || last_name~"${search}" || email~"${search}" || cedula~"${search}")`,
+        )
+      }
+
+      const filterString = filterParts.length > 0 ? filterParts.join(' && ') : ''
+
+      const result = await api.collection('users').getList(page, perPage, {
+        filter: filterString,
         sort: '-created',
         expand: 'empresa_id',
       })
 
-      users.value = result.items.map((item) => ({
-        id: item.id,
-        first_name: item.first_name,
-        last_name: item.last_name,
-        email: item.email,
-        username: item.username,
-        cedula: item.cedula,
-        role: item.role,
-        gearbox: item.gearbox,
-        empresa_id: item.empresa_id,
-        created: item.created,
-        updated: item.updated,
-        // Expanded fields
-        empresa: item.expand?.empresa_id,
-      }))
-
+      // Map results to consistent format
+      users.value = result.items.map(mapUserData)
+      currentPage.value = result.page
       totalPages.value = result.totalPages
-      return users.value
+
+      return {
+        items: users.value,
+        page: result.page,
+        totalPages: result.totalPages,
+        totalItems: result.totalItems,
+      }
     } catch (err) {
       error.value = `Error al cargar usuarios: ${err.message}`
       console.error('Error fetching users:', err)
@@ -134,15 +131,38 @@ export const useUsersStore = defineStore('users', () => {
     }
   }
 
-  // Create a new user
+  /**
+   * Fetch users by role (legacy compatibility)
+   */
+  async function fetchUsersByRole(role, companyId = null) {
+    const filters = {}
+    if (role) filters.role = role
+    if (companyId) filters.empresa_id = companyId
+
+    const result = await fetchUsers(filters)
+    return result.items
+  }
+
+  /**
+   * Create a new user
+   */
   async function createUser(userData) {
     loading.value = true
     error.value = null
 
     try {
+      // Validate data using system store
       await systemStore.validateUserBaseData(userData)
-      const username = generateUsername(userData.first_name, userData.last_name, userData.cedula)
-      const user = {
+
+      // Generate username
+      const username = systemStore.generateUsername(
+        userData.first_name,
+        userData.last_name,
+        userData.cedula,
+      )
+
+      // Prepare user object
+      const newUser = {
         first_name: userData.first_name.trim(),
         last_name: userData.last_name.trim(),
         email: userData.email.toLowerCase().trim(),
@@ -150,18 +170,25 @@ export const useUsersStore = defineStore('users', () => {
         cedula: userData.cedula.trim(),
         role: userData.role || 'usuario',
         gearbox: userData.gearbox !== undefined ? userData.gearbox : true,
-        password: userData.password || userData.cedula,
+        password: userData.password || userData.cedula, // Default password is cedula
         passwordConfirm: userData.password || userData.cedula,
-        empresa_id: userData.role === 'empresa' ? null : userData.empresa_id || null,
+        empresa_id: userData.role === 'empresa' ? null : userData.empresa_id,
+        disponible: userData.disponible || 0,
       }
-      const result = await api.collection('users').create(user)
-      users.value.unshift({
-        ...result,
-        empresa: user.empresa_id ? { id: user.empresa_id } : null,
-      })
-      return result
+
+      // Additional fields based on role
+      if (userData.role === 'operador' && userData.assigned_companies) {
+        newUser.assigned_companies = userData.assigned_companies
+      }
+
+      const createdUser = await api.collection('users').create(newUser)
+
+      // Add to local state
+      users.value.unshift(mapUserData(createdUser))
+
+      return createdUser
     } catch (err) {
-      error.value = err.message || 'Error al crear el usuario'
+      error.value = `Error al crear usuario: ${err.message}`
       console.error('Error creating user:', err)
       throw err
     } finally {
@@ -169,55 +196,45 @@ export const useUsersStore = defineStore('users', () => {
     }
   }
 
-  // Update an existing user
+  /**
+   * Update an existing user
+   */
   async function updateUser(userId, userData) {
     loading.value = true
     error.value = null
 
     try {
-      // Validate user data
-      await validateUserData(userData, true, userId)
+      // Validate data using system store
+      await systemStore.validateUserBaseData(userData, true, userId)
 
-      // Generate new username if name or cédula changed
-      const existingUser = users.value.find((u) => u.id === userId)
-      let username = existingUser.username
-
-      if (userData.first_name || userData.last_name || userData.cedula) {
-        const firstName = userData.first_name || existingUser.first_name
-        const lastName = userData.last_name || existingUser.last_name
-        const cedula = userData.cedula || existingUser.cedula
-        username = generateUsername(firstName, lastName, cedula)
-      }
-
-      // Prepare update data
+      // Prepare update object (remove password fields for updates)
       const updateData = {
-        first_name: userData.first_name ? userData.first_name.trim() : existingUser.first_name,
-        last_name: userData.last_name ? userData.last_name.trim() : existingUser.last_name,
-        email: userData.email ? userData.email.toLowerCase().trim() : existingUser.email,
-        username,
-        cedula: userData.cedula ? userData.cedula.trim() : existingUser.cedula,
-        role: userData.role || existingUser.role,
-        gearbox: userData.gearbox !== undefined ? userData.gearbox : existingUser.gearbox,
-        empresa_id:
-          userData.role === 'empresa' ? null : userData.empresa_id || existingUser.empresa_id,
+        first_name: userData.first_name.trim(),
+        last_name: userData.last_name.trim(),
+        email: userData.email.toLowerCase().trim(),
+        cedula: userData.cedula.trim(),
+        role: userData.role,
+        gearbox: userData.gearbox,
+        empresa_id: userData.role === 'empresa' ? null : userData.empresa_id,
+        disponible: userData.disponible || 0,
       }
 
-      // Update user in PocketBase
-      const result = await api.collection('users').update(userId, updateData)
+      // Handle role-specific fields
+      if (userData.role === 'operador' && userData.assigned_companies) {
+        updateData.assigned_companies = userData.assigned_companies
+      }
 
-      // Update in local state
-      const index = users.value.findIndex((u) => u.id === userId)
+      const updatedUser = await api.collection('users').update(userId, updateData)
+
+      // Update local state
+      const index = users.value.findIndex((user) => user.id === userId)
       if (index !== -1) {
-        users.value[index] = {
-          ...users.value[index],
-          ...result,
-          empresa: updateData.empresa_id ? { id: updateData.empresa_id } : null,
-        }
+        users.value[index] = mapUserData(updatedUser)
       }
 
-      return result
+      return updatedUser
     } catch (err) {
-      error.value = err.message || 'Error al actualizar el usuario'
+      error.value = `Error al actualizar usuario: ${err.message}`
       console.error('Error updating user:', err)
       throw err
     } finally {
@@ -225,21 +242,78 @@ export const useUsersStore = defineStore('users', () => {
     }
   }
 
-  // Delete a user
+  /**
+   * **BUSINESS LOGIC PRESERVADA**: Validaciones exactas del functions.php
+   */
+
+  // Check if cédula already exists (functions.php línea 1720+)
+  async function checkCedulaExists(cedula, excludeUserId = null) {
+    try {
+      let filter = `cedula="${cedula}"`
+      if (excludeUserId) {
+        filter += ` && id!="${excludeUserId}"`
+      }
+
+      const result = await api.collection('users').getFirstListItem(filter, { requestKey: null })
+      return result ? true : false
+    } catch (error) {
+      // No user found - that's good
+      return false
+    }
+  }
+
+  // Check if email already exists (functions.php línea 1734+)
+  async function checkEmailExists(email, excludeUserId = null) {
+    try {
+      let filter = `email="${email}"`
+      if (excludeUserId) {
+        filter += ` && id!="${excludeUserId}"`
+      }
+
+      const result = await api.collection('users').getFirstListItem(filter, { requestKey: null })
+      return result ? true : false
+    } catch (error) {
+      // No user found - that's good
+      return false
+    }
+  }
+
+  /**
+   * **BUSINESS LOGIC PRESERVADA**: Borrado en cascada (functions.php línea 1650+)
+   * Si se borra una empresa, se borran todos sus usuarios
+   */
   async function deleteUser(userId) {
     loading.value = true
     error.value = null
 
     try {
-      // Delete user from PocketBase
+      const user = users.value.find((u) => u.id === userId)
+      if (!user) {
+        throw new Error('Usuario no encontrado')
+      }
+
+      // **LOGIC PRESERVADA**: Si es empresa, borrar todos sus empleados primero
+      if (user.role === 'empresa') {
+        const employeeUsers = users.value.filter(
+          (u) => u.empresa_id === userId && u.role === 'usuario',
+        )
+
+        for (const employee of employeeUsers) {
+          await api.collection('users').delete(employee.id)
+        }
+
+        console.log(`Deleted ${employeeUsers.length} employees of company ${user.first_name}`)
+      }
+
+      // Borrar el usuario principal
       await api.collection('users').delete(userId)
 
       // Remove from local state
-      users.value = users.value.filter((user) => user.id !== userId)
+      users.value = users.value.filter((u) => u.id !== userId || u.empresa_id === userId)
 
       return true
     } catch (err) {
-      error.value = 'Error al eliminar el usuario'
+      error.value = `Error al eliminar usuario: ${err.message}`
       console.error('Error deleting user:', err)
       throw err
     } finally {
@@ -247,95 +321,49 @@ export const useUsersStore = defineStore('users', () => {
     }
   }
 
-  // Toggle user status (gearbox)
+  /**
+   * Toggle user status (gearbox)
+   */
   async function toggleUserStatus(userId) {
-    loading.value = true
-    error.value = null
+    const user = users.value.find((u) => u.id === userId)
+    if (!user) throw new Error('Usuario no encontrado')
 
     try {
-      const user = users.value.find((u) => u.id === userId)
-      if (!user) throw new Error('Usuario no encontrado')
-
-      // Toggle gearbox status
-      const newStatus = !user.gearbox
-
-      // Update in PocketBase
-      const result = await api.collection('users').update(userId, {
-        gearbox: newStatus,
+      const updatedUser = await api.collection('users').update(userId, {
+        gearbox: !user.gearbox,
       })
 
-      // Update in local state
+      // Update local state
       const index = users.value.findIndex((u) => u.id === userId)
       if (index !== -1) {
-        users.value[index].gearbox = newStatus
+        users.value[index] = mapUserData(updatedUser)
       }
 
-      return result
+      return updatedUser
     } catch (err) {
-      error.value = 'Error al cambiar el estado del usuario'
+      error.value = `Error al cambiar estado: ${err.message}`
       console.error('Error toggling user status:', err)
       throw err
-    } finally {
-      loading.value = false
     }
   }
 
-  // Bulk create users from Excel/CSV
-  async function bulkCreateUsers(usersArray) {
+  /**
+   * Update user password
+   */
+  async function updateUserPassword(userId, newPassword) {
     loading.value = true
     error.value = null
 
     try {
-      if (!Array.isArray(usersArray) || usersArray.length === 0) {
-        throw new Error('No se proporcionaron usuarios para crear')
-      }
+      await api.collection('users').update(userId, {
+        password: newPassword,
+        passwordConfirm: newPassword,
+      })
 
-      const results = []
-      const errors = []
-
-      // Process each user sequentially to maintain order and handle errors properly
-      for (const [index, userData] of usersArray.entries()) {
-        try {
-          // Validate required fields for bulk import
-          if (!userData.first_name || !userData.last_name || !userData.email || !userData.cedula) {
-            throw new Error('Faltan campos obligatorios')
-          }
-
-          // Set default role if not provided
-          if (!userData.role) {
-            userData.role = 'usuario'
-          }
-
-          // Create the user
-          const result = await createUser(userData)
-          results.push({
-            success: true,
-            data: result,
-            index,
-          })
-        } catch (err) {
-          errors.push({
-            success: false,
-            error: err.message,
-            data: userData,
-            index,
-          })
-
-          // Continue with next user even if one fails
-          continue
-        }
-      }
-
-      return {
-        total: usersArray.length,
-        success: results.length,
-        failed: errors.length,
-        results,
-        errors,
-      }
+      return true
     } catch (err) {
-      error.value = 'Error en la carga masiva de usuarios'
-      console.error('Error in bulk user creation:', err)
+      error.value = `Error al actualizar contraseña: ${err.message}`
+      console.error('Error updating password:', err)
       throw err
     } finally {
       loading.value = false
@@ -343,81 +371,230 @@ export const useUsersStore = defineStore('users', () => {
   }
 
   /**
-   * Reset the store to its initial state
+   * Get user by ID with full details
    */
-  function $reset() {
+  async function getUserById(userId) {
+    try {
+      const user = await api.collection('users').getOne(userId, {
+        expand: 'empresa_id,assigned_companies',
+      })
+      return mapUserData(user)
+    } catch (err) {
+      error.value = `Error al obtener usuario: ${err.message}`
+      console.error('Error getting user:', err)
+      throw err
+    }
+  }
+
+  /**
+   * Search users (advanced search with multiple criteria)
+   */
+  async function searchUsers(searchTerm, filters = {}) {
+    return await fetchUsers({
+      ...filters,
+      search: searchTerm,
+    })
+  }
+
+  /**
+   * Get users statistics
+   */
+  function getUserStats(companyId = null) {
+    let targetUsers = users.value
+
+    if (companyId) {
+      targetUsers = users.value.filter((u) => u.empresa_id === companyId)
+    }
+
+    return {
+      total: targetUsers.length,
+      active: targetUsers.filter((u) => u.gearbox).length,
+      blocked: targetUsers.filter((u) => !u.gearbox).length,
+      byRole: {
+        empresa: targetUsers.filter((u) => u.role === 'empresa').length,
+        operador: targetUsers.filter((u) => u.role === 'operador').length,
+        usuario: targetUsers.filter((u) => u.role === 'usuario').length,
+      },
+      totalAmount: targetUsers
+        .filter((u) => u.role === 'usuario')
+        .reduce((sum, u) => sum + (u.disponible || 0), 0),
+    }
+  }
+
+  /**
+   * Bulk operations
+   */
+  async function bulkUpdateUsers(userIds, updateData) {
+    loading.value = true
+    error.value = null
+
+    try {
+      const updates = userIds.map((id) => api.collection('users').update(id, updateData))
+
+      await Promise.all(updates)
+
+      // Refresh users after bulk update
+      await fetchUsers()
+
+      return true
+    } catch (err) {
+      error.value = `Error en actualización masiva: ${err.message}`
+      console.error('Error in bulk update:', err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
+   * Export users data
+   */
+  function exportUsers(format = 'json', filters = {}) {
+    let exportData = users.value
+
+    // Apply filters if needed
+    if (filters.role) {
+      exportData = exportData.filter((u) => u.role === filters.role)
+    }
+    if (filters.empresa_id) {
+      exportData = exportData.filter((u) => u.empresa_id === filters.empresa_id)
+    }
+    if (filters.gearbox !== undefined) {
+      exportData = exportData.filter((u) => u.gearbox === filters.gearbox)
+    }
+
+    // Clean data for export
+    const cleanData = exportData.map((user) => ({
+      id: user.id,
+      nombre: user.first_name,
+      apellido: user.last_name,
+      email: user.email,
+      cedula: user.cedula,
+      rol: user.role,
+      empresa: user.empresa?.first_name + ' ' + user.empresa?.last_name || 'N/A',
+      estado: user.gearbox ? 'Habilitado' : 'Bloqueado',
+      disponible: user.disponible || 0,
+      fechaCreacion: user.created,
+      fechaActualizacion: user.updated,
+    }))
+
+    return cleanData
+  }
+
+  /**
+   * Clear store data
+   */
+  function clearUsers() {
     users.value = []
-    companies.value = []
-    loading.value = false
     error.value = null
     currentPage.value = 1
     totalPages.value = 1
   }
 
+  // Helper Functions
+
   /**
-   * Fetch a single user by ID with expanded company data
-   * @param {string} userId - The ID of the user to fetch
-   * @returns {Promise<Object>} The user object with expanded company data
+   * Map user data to consistent format
    */
-  async function fetchUserById(userId) {
-    loading.value = true
-    error.value = null
-
-    try {
-      const user = await api.collection('users').getOne(userId, {
-        expand: 'empresa_id',
-      })
-
-      // Format the user object to match our store's format
-      const formattedUser = {
-        id: user.id,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        email: user.email,
-        username: user.username,
-        cedula: user.cedula,
-        role: user.role,
-        gearbox: user.gearbox,
-        empresa_id: user.empresa_id,
-        created: user.created,
-        updated: user.updated,
-        empresa: user.expand?.empresa_id,
-      }
-
-      return formattedUser
-    } catch (err) {
-      error.value = `Error al cargar el usuario: ${err.message}`
-      console.error('Error fetching user:', err)
-      throw err
-    } finally {
-      loading.value = false
+  function mapUserData(user) {
+    return {
+      id: user.id,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      email: user.email,
+      username: user.username,
+      cedula: user.cedula,
+      role: user.role,
+      gearbox: user.gearbox,
+      empresa_id: user.empresa_id,
+      disponible: user.disponible || 0,
+      assigned_companies: user.assigned_companies || [],
+      created: user.created,
+      updated: user.updated,
+      // Expanded relationships
+      empresa: user.expand?.empresa_id || null,
+      assignedCompaniesData: user.expand?.assigned_companies || [],
     }
   }
 
-  // Export store methods and state
+  /**
+   * Validate user data before operations
+   */
+  function validateUserData(userData, isUpdate = false) {
+    const errors = {}
+
+    if (!userData.first_name?.trim()) {
+      errors.first_name = 'El nombre es requerido'
+    }
+
+    if (!userData.last_name?.trim()) {
+      errors.last_name = 'El apellido es requerido'
+    }
+
+    if (!userData.email?.trim()) {
+      errors.email = 'El email es requerido'
+    } else if (!systemStore.validateEmail(userData.email)) {
+      errors.email = 'El formato del email no es válido'
+    }
+
+    if (!userData.cedula?.trim()) {
+      errors.cedula = 'La cédula es requerida'
+    } else if (!systemStore.validateCedula(userData.cedula)) {
+      errors.cedula = 'La cédula debe tener 10 dígitos numéricos'
+    }
+
+    if (!userData.role) {
+      errors.role = 'El rol es requerido'
+    }
+
+    // Role-specific validations
+    if (['usuario', 'operador'].includes(userData.role) && !userData.empresa_id) {
+      errors.empresa_id = 'La empresa es requerida para este rol'
+    }
+
+    return {
+      isValid: Object.keys(errors).length === 0,
+      errors,
+    }
+  }
+
   return {
     // State
     users,
-    companies,
     loading,
     error,
     currentPage,
     totalPages,
-    itemsPerPage,
 
     // Getters
+    allUsers,
+    myCompanyUsers,
+    usersByRole,
     activeUsers,
-    usersByCompany,
-    userStats,
+    blockedUsers,
+    companies,
+    stats,
 
     // Actions
-    fetchUsersByRole,
-    fetchUserById,
+    fetchUsers,
+    fetchUsersByRole, // Legacy compatibility
     createUser,
     updateUser,
     deleteUser,
     toggleUserStatus,
-    bulkCreateUsers,
-    $reset,
+    updateUserPassword,
+    getUserById,
+    searchUsers,
+    getUserStats,
+    bulkUpdateUsers,
+    exportUsers,
+    clearUsers,
+
+    // **BUSINESS LOGIC PRESERVADA**: Validaciones críticas
+    checkCedulaExists,
+    checkEmailExists,
+
+    // Helpers
+    validateUserData,
   }
 })

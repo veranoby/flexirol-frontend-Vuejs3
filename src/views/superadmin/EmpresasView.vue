@@ -1,431 +1,385 @@
 <template>
-  <div class="container-fluid mt-4">
-    <!-- Header and Actions -->
-    <div class="row mb-4">
-      <div class="col-md-6">
-        <h1><i class="fas fa-building me-2"></i> Gestionar Empresas</h1>
-      </div>
-      <div class="col-md-6 text-end">
-        <button class="btn btn-primary" @click="showCreateModal">
-          <i class="fas fa-plus me-1"></i> Nueva Empresa
-        </button>
-      </div>
-    </div>
-
-    <!-- Filters -->
-    <div class="card mb-4">
-      <div class="card-body">
-        <div class="row g-3">
-          <div class="col-md-4">
-            <label for="search" class="form-label">Buscar</label>
-            <input
-              type="text"
-              class="form-control"
-              id="search"
-              v-model="filters.search"
-              placeholder="Buscar por nombre o email..."
-            />
-          </div>
-          <div class="col-md-3">
-            <label for="status" class="form-label">Estado</label>
-            <select class="form-select" id="status" v-model="filters.status">
-              <option value="">Todos</option>
-              <option value="active">Activas</option>
-              <option value="inactive">Inactivas</option>
-            </select>
-          </div>
-          <div class="col-md-3">
-            <label for="plan" class="form-label">Plan</label>
-            <select class="form-select" id="plan" v-model="filters.plan">
-              <option value="">Todos</option>
-              <option value="flexirol">Flexirol</option>
-              <option value="flexirol2">Flexirol 2</option>
-              <option value="flexirol3">Flexirol 3</option>
-            </select>
-          </div>
-          <div class="col-md-2 d-flex align-items-end">
-            <button class="btn btn-outline-secondary w-100" @click="resetFilters">
-              <i class="fas fa-undo me-1"></i> Limpiar
-            </button>
-          </div>
+  <div class="empresas-view">
+    <div class="container-fluid">
+      <!-- Header -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <h2 class="mb-1">
+            <i class="fas fa-building text-primary me-2"></i>
+            Gestión de Empresas
+          </h2>
+          <p class="text-muted">Administra todas las empresas del sistema</p>
         </div>
       </div>
-    </div>
 
-    <!-- Companies Table -->
-    <div class="card">
-      <div class="card-body p-0">
-        <div v-if="loading" class="text-center p-5">
-          <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Cargando...</span>
+      <!-- Action Bar -->
+      <div class="row mb-4">
+        <div class="col-md-8">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label">Buscar empresa:</label>
+              <input
+                v-model="searchTerm"
+                type="text"
+                class="form-control"
+                placeholder="Nombre o email..."
+              />
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Estado:</label>
+              <select v-model="statusFilter" class="form-select">
+                <option value="">Todas</option>
+                <option value="true">Activas</option>
+                <option value="false">Bloqueadas</option>
+              </select>
+            </div>
           </div>
-          <p class="mt-2">Cargando empresas...</p>
         </div>
-
-        <div v-else-if="filteredCompanies.length === 0" class="text-center p-5">
-          <i class="fas fa-building fa-3x text-muted mb-3"></i>
-          <p class="h5">No se encontraron empresas</p>
-          <p class="text-muted">Intenta ajustar los filtros o crea una nueva empresa</p>
+        <div class="col-md-4 text-end">
+          <button class="btn btn-success" @click="openCreateModal">
+            <i class="fas fa-plus me-1"></i>Nueva Empresa
+          </button>
         </div>
+      </div>
 
-        <div v-else class="table-responsive">
-          <table class="table table-hover mb-0">
-            <thead class="table-light">
-              <tr>
-                <th>Nombre</th>
-                <th>Sucursal</th>
-                <th>Email</th>
-                <th class="text-center">Empleados</th>
-                <th class="text-center">Plan</th>
-                <th class="text-center">Estado</th>
-                <th class="text-end">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="company in paginatedCompanies" :key="company.id">
-                <td class="align-middle">
-                  <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0 me-2">
-                      <i class="fas fa-building text-primary"></i>
-                    </div>
-                    <div class="flex-grow-1">
-                      <strong>{{ company.first_name }}</strong>
-                    </div>
-                  </div>
-                </td>
-                <td class="align-middle">{{ company.last_name || '-' }}</td>
-                <td class="align-middle">
-                  <a :href="'mailto:' + company.email" class="text-decoration-none">
-                    {{ company.email }}
-                  </a>
-                </td>
-                <td class="text-center align-middle">
-                  <span class="badge bg-primary rounded-pill">
-                    {{ company.userCount || 0 }}
-                  </span>
-                </td>
-                <td class="text-center align-middle">
-                  <span class="badge" :class="getPlanBadgeClass(company.flexirol3)">
-                    {{ getPlanName(company.flexirol3) }}
-                  </span>
-                </td>
-                <td class="text-center align-middle">
-                  <span class="badge" :class="company.gearbox ? 'bg-success' : 'bg-secondary'">
-                    {{ company.gearbox ? 'Activa' : 'Inactiva' }}
-                  </span>
-                </td>
-                <td class="text-end align-middle">
-                  <div class="btn-group" role="group">
-                    <button
-                      class="btn btn-sm btn-outline-primary"
-                      @click="viewUsers(company)"
-                      title="Ver usuarios"
-                    >
-                      <i class="fas fa-users"></i>
-                    </button>
-                    <button
-                      class="btn btn-sm btn-outline-secondary"
-                      @click="editCompany(company)"
-                      title="Editar empresa"
-                    >
-                      <i class="fas fa-edit"></i>
-                    </button>
-                    <button
-                      class="btn btn-sm btn-outline-danger"
-                      @click="showDeleteConfirmation(company)"
-                      title="Eliminar empresa"
-                    >
-                      <i class="fas fa-trash"></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+      <!-- Stats Cards -->
+      <div class="row mb-4">
+        <div class="col-md-3">
+          <div class="card bg-primary text-white">
+            <div class="card-body">
+              <h6>Total Empresas</h6>
+              <h3>{{ stats.total }}</h3>
+            </div>
+          </div>
         </div>
+        <div class="col-md-3">
+          <div class="card bg-success text-white">
+            <div class="card-body">
+              <h6>Empresas Activas</h6>
+              <h3>{{ stats.active }}</h3>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card bg-info text-white">
+            <div class="card-body">
+              <h6>Total Empleados</h6>
+              <h3>{{ stats.totalEmployees }}</h3>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="card bg-warning text-white">
+            <div class="card-body">
+              <h6>Sin Excel Actualizado</h6>
+              <h3>{{ stats.withoutExcel }}</h3>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        <!-- Pagination -->
-        <div v-if="filteredCompanies.length > 0" class="card-footer bg-white">
-          <div class="row align-items-center">
-            <div class="col-sm-12 col-md-5">
-              <div class="dataTables_info">
-                Mostrando {{ (currentPage - 1) * itemsPerPage + 1 }} a
-                {{ Math.min(currentPage * itemsPerPage, filteredCompanies.length) }} de
-                {{ filteredCompanies.length }} empresas
+      <!-- Companies Table -->
+      <div class="row">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h5 class="mb-0">
+                <i class="fas fa-building me-2"></i>
+                Empresas ({{ filteredCompanies.length }})
+              </h5>
+              <button class="btn btn-sm btn-outline-primary" @click="refreshCompanies">
+                <i class="fas fa-sync-alt"></i>
+              </button>
+            </div>
+
+            <div class="card-body p-0">
+              <div v-if="loading" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Cargando...</span>
+                </div>
+              </div>
+
+              <div v-else-if="filteredCompanies.length === 0" class="text-center py-5">
+                <i class="fas fa-building fa-3x text-muted mb-3"></i>
+                <p class="text-muted">No hay empresas registradas</p>
+              </div>
+
+              <div v-else class="table-responsive">
+                <table class="table table-hover mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Empresa</th>
+                      <th>Email</th>
+                      <th>Empleados</th>
+                      <th>Estado</th>
+                      <th>Última Act. Excel</th>
+                      <th>Plan</th>
+                      <th>Configuración</th>
+                      <th width="150">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="company in paginatedCompanies" :key="company.id">
+                      <td>
+                        <div class="d-flex align-items-center">
+                          <div class="avatar-sm me-2">
+                            <div class="avatar-initial bg-primary rounded-circle">
+                              {{ company.first_name?.charAt(0) }}{{ company.last_name?.charAt(0) }}
+                            </div>
+                          </div>
+                          <div>
+                            <div class="fw-semibold">
+                              {{ company.first_name }} {{ company.last_name }}
+                            </div>
+                            <small class="text-muted">ID: {{ company.id }}</small>
+                          </div>
+                        </div>
+                      </td>
+                      <td>{{ company.email }}</td>
+                      <td>
+                        <span class="badge bg-info"
+                          >{{ company.employeeCount || 0 }} empleados</span
+                        >
+                      </td>
+                      <td>
+                        <span :class="company.gearbox ? 'badge bg-success' : 'badge bg-danger'">
+                          {{ company.gearbox ? 'Activa' : 'Bloqueada' }}
+                        </span>
+                      </td>
+                      <td>
+                        <span
+                          v-if="company.fecha_excel && company.fecha_excel !== 'No creado'"
+                          class="text-success"
+                        >
+                          {{ formatDate(company.fecha_excel) }}
+                        </span>
+                        <span v-else class="text-danger">
+                          <i class="fas fa-exclamation-triangle me-1"></i>
+                          Sin actualizar
+                        </span>
+                      </td>
+                      <td>
+                        <span v-if="company.flexirol3 === '1'" class="badge bg-warning">
+                          Plan 1: {{ company.flexirol }}%
+                        </span>
+                        <span v-else class="badge bg-info"> Plan 2: ${{ company.flexirol }} </span>
+                      </td>
+                      <td>
+                        <div class="small">
+                          <div>Ciclo: {{ company.dia_inicio }}-{{ company.dia_cierre }}</div>
+                          <div>Freq: {{ company.frecuencia }} sol/mes</div>
+                        </div>
+                      </td>
+                      <td>
+                        <div class="btn-group btn-group-sm">
+                          <button
+                            class="btn btn-outline-primary"
+                            @click="viewEmployees(company)"
+                            title="Ver empleados"
+                          >
+                            <i class="fas fa-users"></i>
+                          </button>
+                          <button
+                            class="btn btn-outline-secondary"
+                            @click="editCompany(company)"
+                            title="Editar"
+                          >
+                            <i class="fas fa-edit"></i>
+                          </button>
+                          <button
+                            class="btn"
+                            :class="company.gearbox ? 'btn-outline-warning' : 'btn-outline-success'"
+                            @click="toggleCompanyStatus(company)"
+                            :title="company.gearbox ? 'Bloquear' : 'Activar'"
+                          >
+                            <i :class="company.gearbox ? 'fas fa-ban' : 'fas fa-check'"></i>
+                          </button>
+                          <button
+                            class="btn btn-outline-danger"
+                            @click="confirmDelete(company)"
+                            title="Eliminar"
+                          >
+                            <i class="fas fa-trash"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Pagination -->
+              <div
+                v-if="totalPages > 1"
+                class="d-flex justify-content-between align-items-center p-3 border-top"
+              >
+                <div class="text-muted">
+                  Mostrando {{ (currentPage - 1) * itemsPerPage + 1 }} a
+                  {{ Math.min(currentPage * itemsPerPage, filteredCompanies.length) }}
+                  de {{ filteredCompanies.length }} empresas
+                </div>
+                <nav>
+                  <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item" :class="{ disabled: currentPage === 1 }">
+                      <button class="page-link" @click="goToPage(currentPage - 1)">Anterior</button>
+                    </li>
+                    <li
+                      v-for="page in visiblePages"
+                      :key="page"
+                      class="page-item"
+                      :class="{ active: page === currentPage }"
+                    >
+                      <button class="page-link" @click="goToPage(page)">{{ page }}</button>
+                    </li>
+                    <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+                      <button class="page-link" @click="goToPage(currentPage + 1)">
+                        Siguiente
+                      </button>
+                    </li>
+                  </ul>
+                </nav>
               </div>
             </div>
-            <div class="col-sm-12 col-md-7">
-              <nav class="d-flex justify-content-end">
-                <ul class="pagination mb-0">
-                  <li class="page-item" :class="{ disabled: currentPage === 1 }">
-                    <button class="page-link" @click="currentPage--" :disabled="currentPage === 1">
-                      Anterior
-                    </button>
-                  </li>
-
-                  <li
-                    v-for="page in totalPages"
-                    :key="page"
-                    class="page-item"
-                    :class="{ active: currentPage === page }"
-                  >
-                    <button class="page-link" @click="currentPage = page">
-                      {{ page }}
-                    </button>
-                  </li>
-
-                  <li class="page-item" :class="{ disabled: currentPage >= totalPages }">
-                    <button
-                      class="page-link"
-                      @click="currentPage++"
-                      :disabled="currentPage >= totalPages"
-                    >
-                      Siguiente
-                    </button>
-                  </li>
-                </ul>
-              </nav>
-            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Create Company Modal -->
-    <div class="modal fade" id="companyModal" tabindex="-1" aria-hidden="true">
+    <!-- Company Form Modal -->
+    <div
+      class="modal fade"
+      id="companyModal"
+      tabindex="-1"
+      aria-hidden="true"
+      ref="companyModalRef"
+    >
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">
-              {{ isEditing ? 'Editar Empresa' : 'Nueva Empresa' }}
+              <i :class="isEditMode ? 'fas fa-edit' : 'fas fa-plus'" class="me-2"></i>
+              {{ isEditMode ? 'Editar Empresa' : 'Nueva Empresa' }}
             </h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-              @click="closeModal"
-            ></button>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
-          <form @submit.prevent="saveCompany">
+
+          <form @submit.prevent="handleSubmit">
             <div class="modal-body">
               <div class="row g-3">
                 <div class="col-md-6">
-                  <label for="companyName" class="form-label">Nombre de la Empresa *</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="companyName"
-                    v-model="formData.first_name"
-                    required
-                  />
+                  <label class="form-label">Nombre de la Empresa *</label>
+                  <input v-model="form.first_name" type="text" class="form-control" required />
                 </div>
                 <div class="col-md-6">
-                  <label for="branch" class="form-label">Sucursal</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="branch"
-                    v-model="formData.last_name"
-                  />
+                  <label class="form-label">Sucursal/Área</label>
+                  <input v-model="form.last_name" type="text" class="form-control" />
                 </div>
                 <div class="col-md-6">
-                  <label for="email" class="form-label">Email *</label>
-                  <input
-                    type="email"
-                    class="form-control"
-                    id="email"
-                    v-model="formData.email"
-                    required
-                  />
+                  <label class="form-label">Email *</label>
+                  <input v-model="form.email" type="email" class="form-control" required />
                 </div>
                 <div class="col-md-6">
-                  <label for="plan" class="form-label">Plan *</label>
-                  <select class="form-select" id="plan" v-model="formData.flexirol3" required>
-                    <option value="1">Flexirol Básico</option>
-                    <option value="2">Flexirol Premium</option>
-                  </select>
-                </div>
-                <div class="col-12">
+                  <label class="form-label">Estado</label>
                   <div class="form-check form-switch">
                     <input
+                      v-model="form.gearbox"
                       class="form-check-input"
                       type="checkbox"
-                      id="activeSwitch"
-                      v-model="formData.gearbox"
+                      id="companyStatus"
                     />
-                    <label class="form-check-label" for="activeSwitch">
-                      {{ formData.gearbox ? 'Activa' : 'Inactiva' }}
+                    <label class="form-check-label" for="companyStatus">
+                      {{ form.gearbox ? 'Activa' : 'Bloqueada' }}
                     </label>
                   </div>
                 </div>
 
-                <!-- Advanced Settings (Collapsible) -->
+                <!-- Configuración del Plan -->
                 <div class="col-12">
-                  <a
-                    class="text-decoration-none"
-                    data-bs-toggle="collapse"
-                    href="#advancedSettings"
-                    role="button"
-                    @click="showAdvancedSettings = !showAdvancedSettings"
-                  >
-                    <i
-                      class="fas"
-                      :class="showAdvancedSettings ? 'fa-chevron-down' : 'fa-chevron-right'"
-                    ></i>
-                    Configuración avanzada
-                  </a>
+                  <h6 class="border-bottom pb-2 mb-3">Configuración del Plan</h6>
+                </div>
 
-                  <div
-                    class="collapse mt-2"
-                    :class="{ show: showAdvancedSettings }"
-                    id="advancedSettings"
-                  >
-                    <div class="card card-body bg-light">
-                      <div class="row g-3">
-                        <div class="col-md-4">
-                          <label for="diaInicio" class="form-label">Día de inicio</label>
-                          <input
-                            type="number"
-                            class="form-control"
-                            id="diaInicio"
-                            v-model.number="formData.dia_inicio"
-                            min="1"
-                            max="28"
-                          />
-                        </div>
-                        <div class="col-md-4">
-                          <label for="diaCierre" class="form-label">Día de cierre</label>
-                          <input
-                            type="number"
-                            class="form-control"
-                            id="diaCierre"
-                            v-model.number="formData.dia_cierre"
-                            min="1"
-                            max="31"
-                          />
-                        </div>
-                        <div class="col-md-4">
-                          <label for="porcentaje" class="form-label">Porcentaje (%)</label>
-                          <input
-                            type="number"
-                            class="form-control"
-                            id="porcentaje"
-                            v-model.number="formData.porcentaje"
-                            min="0"
-                            max="100"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                <div class="col-md-4">
+                  <label class="form-label">Tipo de Plan</label>
+                  <select v-model="form.flexirol3" class="form-select">
+                    <option value="1">Plan 1: Porcentaje por transacción</option>
+                    <option value="2">Plan 2: Valor fijo mensual</option>
+                  </select>
+                </div>
+
+                <div class="col-md-4">
+                  <label class="form-label">
+                    {{ form.flexirol3 === '1' ? 'Porcentaje (%)' : 'Valor Mensual ($)' }}
+                  </label>
+                  <input
+                    v-model.number="form.flexirol"
+                    type="number"
+                    class="form-control"
+                    :step="form.flexirol3 === '1' ? '0.1' : '0.01'"
+                    min="0"
+                  />
+                </div>
+
+                <!-- Configuración del Ciclo -->
+                <div class="col-12">
+                  <h6 class="border-bottom pb-2 mb-3">Configuración del Ciclo de Anticipos</h6>
+                </div>
+
+                <div class="col-md-3">
+                  <label class="form-label">Día Inicio</label>
+                  <input
+                    v-model.number="form.dia_inicio"
+                    type="number"
+                    class="form-control"
+                    min="1"
+                    max="31"
+                  />
+                </div>
+
+                <div class="col-md-3">
+                  <label class="form-label">Día Cierre</label>
+                  <input
+                    v-model.number="form.dia_cierre"
+                    type="number"
+                    class="form-control"
+                    min="1"
+                    max="31"
+                  />
+                </div>
+
+                <div class="col-md-3">
+                  <label class="form-label">Porcentaje Máximo (%)</label>
+                  <input
+                    v-model.number="form.porcentaje"
+                    type="number"
+                    class="form-control"
+                    min="1"
+                    max="100"
+                  />
+                </div>
+
+                <div class="col-md-3">
+                  <label class="form-label">Frecuencia (sol/mes)</label>
+                  <input
+                    v-model.number="form.frecuencia"
+                    type="number"
+                    class="form-control"
+                    min="1"
+                    max="10"
+                  />
                 </div>
               </div>
             </div>
+
             <div class="modal-footer">
-              <button
-                type="button"
-                class="btn btn-outline-secondary"
-                data-bs-dismiss="modal"
-                @click="closeModal"
-              >
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                 Cancelar
               </button>
-              <button type="submit" class="btn btn-primary" :disabled="saving">
-                <span
-                  v-if="saving"
-                  class="spinner-border spinner-border-sm me-1"
-                  role="status"
-                  aria-hidden="true"
-                ></span>
-                {{ isEditing ? 'Guardar cambios' : 'Crear empresa' }}
+              <button type="submit" class="btn btn-primary" :disabled="!isFormValid || submitting">
+                <span v-if="submitting" class="spinner-border spinner-border-sm me-2"></span>
+                {{ isEditMode ? 'Actualizar' : 'Crear' }} Empresa
               </button>
             </div>
           </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Delete Confirmation Modal -->
-    <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header bg-danger text-white">
-            <h5 class="modal-title">Confirmar eliminación</h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            ></button>
-          </div>
-          <div class="modal-body">
-            <p>
-              ¿Estás seguro de que deseas eliminar la empresa
-              <strong>{{ companyToDelete?.first_name }}</strong
-              >?
-            </p>
-            <p class="text-danger">
-              <i class="fas fa-exclamation-triangle me-2"></i>
-              Esta acción eliminará todos los usuarios asociados a esta empresa y no se puede
-              deshacer.
-            </p>
-            <div class="form-check">
-              <input
-                class="form-check-input"
-                type="checkbox"
-                id="confirmDelete"
-                v-model="deleteConfirmed"
-              />
-              <label class="form-check-label" for="confirmDelete">
-                Entiendo que esta acción no se puede deshacer
-              </label>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-              Cancelar
-            </button>
-            <button
-              type="button"
-              class="btn btn-danger"
-              @click="deleteCompany"
-              :disabled="!deleteConfirmed || deleting"
-            >
-              <span
-                v-if="deleting"
-                class="spinner-border spinner-border-sm me-1"
-                role="status"
-                aria-hidden="true"
-              ></span>
-              Sí, eliminar empresa
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Toast Notifications -->
-    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
-      <div
-        id="toast"
-        class="toast"
-        role="alert"
-        aria-live="assertive"
-        aria-atomic="true"
-        :class="toast.variant ? 'text-bg-' + toast.variant : ''"
-      >
-        <div class="d-flex">
-          <div class="toast-body">
-            <i :class="toast.icon + ' me-2'"></i>
-            {{ toast.message }}
-          </div>
-          <button
-            type="button"
-            class="btn-close me-2 m-auto"
-            data-bs-dismiss="toast"
-            aria-label="Close"
-          ></button>
         </div>
       </div>
     </div>
@@ -433,78 +387,73 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Modal, Toast, Tooltip } from 'bootstrap'
-import 'bootstrap/dist/js/bootstrap.bundle.min.js'
+import { useAuthStore } from '@/stores/auth'
 import { useUsersStore } from '@/stores/users'
+import { Modal } from 'bootstrap'
 
 const router = useRouter()
+const authStore = useAuthStore()
 const usersStore = useUsersStore()
 
 // State
-const companies = ref([])
-const loading = ref(true)
-const saving = ref(false)
-const deleting = ref(false)
-const deleteConfirmed = ref(false)
-const showAdvancedSettings = ref(false)
-const companyToDelete = ref(null)
-const currentPage = ref(1)
-const itemsPerPage = 10
+const loading = ref(false)
+const submitting = ref(false)
+const searchTerm = ref('')
+const statusFilter = ref('')
 
-// Filters
-const filters = ref({
-  search: '',
-  status: '',
-  plan: '',
-})
+// Modal
+const companyModalRef = ref(null)
+let companyModal = null
 
-// Form data
-const formData = ref({
+// Form
+const isEditMode = ref(false)
+const form = ref({
   id: null,
   first_name: '',
   last_name: '',
   email: '',
   gearbox: true,
+  flexirol: 10,
+  flexirol2: 10,
   flexirol3: '1',
-  role: 'empresa',
-  dia_inicio: 1,
+  dia_inicio: 2,
   dia_cierre: 28,
-  porcentaje: 30,
-  user_pass: '',
+  porcentaje: 50,
+  dia_bloqueo: 2,
+  frecuencia: 3,
+  dia_reinicio: 4,
 })
 
-// Toast
-const toast = ref({
-  show: false,
-  message: '',
-  variant: 'success',
-  icon: 'fas fa-check-circle',
-})
+// Data
+const companies = ref([])
+const currentPage = ref(1)
+const itemsPerPage = 20
 
 // Computed
 const filteredCompanies = computed(() => {
-  return companies.value.filter((company) => {
-    const matchesSearch =
-      !filters.value.search ||
-      company.first_name.toLowerCase().includes(filters.value.search.toLowerCase()) ||
-      company.email.toLowerCase().includes(filters.value.search.toLowerCase())
+  let filtered = [...companies.value]
 
-    const matchesStatus =
-      !filters.value.status ||
-      (filters.value.status === 'active' && company.gearbox) ||
-      (filters.value.status === 'inactive' && !company.gearbox)
+  if (searchTerm.value) {
+    const search = searchTerm.value.toLowerCase()
+    filtered = filtered.filter(
+      (company) =>
+        company.first_name?.toLowerCase().includes(search) ||
+        company.last_name?.toLowerCase().includes(search) ||
+        company.email?.toLowerCase().includes(search),
+    )
+  }
 
-    const matchesPlan =
-      !filters.value.plan ||
-      (filters.value.plan === 'flexirol' && company.flexirol3 === '1') ||
-      (filters.value.plan === 'flexirol2' && company.flexirol3 === '2') ||
-      (filters.value.plan === 'flexirol3' && company.flexirol3 === '3')
+  if (statusFilter.value !== '') {
+    const isActive = statusFilter.value === 'true'
+    filtered = filtered.filter((company) => company.gearbox === isActive)
+  }
 
-    return matchesSearch && matchesStatus && matchesPlan
-  })
+  return filtered
 })
+
+const totalPages = computed(() => Math.ceil(filteredCompanies.value.length / itemsPerPage))
 
 const paginatedCompanies = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage
@@ -512,243 +461,198 @@ const paginatedCompanies = computed(() => {
   return filteredCompanies.value.slice(start, end)
 })
 
-const totalPages = computed(() => {
-  return Math.ceil(filteredCompanies.value.length / itemsPerPage)
+const visiblePages = computed(() => {
+  const total = totalPages.value
+  const current = currentPage.value
+  const pages = []
+
+  const start = Math.max(1, current - 2)
+  const end = Math.min(total, current + 2)
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i)
+  }
+
+  return pages
+})
+
+const stats = computed(() => {
+  const total = companies.value.length
+  const active = companies.value.filter((c) => c.gearbox).length
+  const totalEmployees = companies.value.reduce((sum, c) => sum + (c.employeeCount || 0), 0)
+  const withoutExcel = companies.value.filter(
+    (c) => !c.fecha_excel || c.fecha_excel === 'No creado',
+  ).length
+
+  return { total, active, totalEmployees, withoutExcel }
+})
+
+const isFormValid = computed(() => {
+  return form.value.first_name && form.value.email
 })
 
 // Methods
-const fetchCompanies = async () => {
+const loadCompanies = async () => {
+  loading.value = true
   try {
-    loading.value = true
-    const response = await usersStore.fetchUsersByRole('empresa')
-    companies.value = response.items || []
-
-    // Add user count to each company
-    for (const company of companies.value) {
-      const users = await usersStore.fetchUsersByRole('usuario', company.id)
-      company.userCount = users.items?.length || 0
-    }
+    const result = await usersStore.fetchUsersByRole('empresa')
+    companies.value = result.map((company) => ({
+      ...company,
+      employeeCount: 0, // TODO: Load employee count
+    }))
   } catch (error) {
-    showToast('Error al cargar las empresas', 'danger', 'fa-exclamation-circle')
-    console.error('Error fetching companies:', error)
+    console.error('Error loading companies:', error)
   } finally {
     loading.value = false
   }
 }
 
-const showCreateModal = () => {
-  formData.value = {
-    id: null,
-    first_name: '',
-    last_name: '',
-    email: '',
-    gearbox: true,
-    flexirol3: '1',
-    role: 'empresa',
-    dia_inicio: 1,
-    dia_cierre: 28,
-    porcentaje: 30,
-    user_pass: '',
-  }
-
-  const modal = new Modal(document.getElementById('companyModal'))
-  modal.show()
+const openCreateModal = () => {
+  isEditMode.value = false
+  resetForm()
+  companyModal.show()
 }
 
 const editCompany = (company) => {
-  formData.value = {
-    id: company.id,
-    first_name: company.first_name,
-    last_name: company.last_name || '',
-    email: company.email,
-    gearbox: company.gearbox,
-    flexirol3: company.flexirol3 || '1',
-    role: 'empresa',
-    dia_inicio: company.dia_inicio || 1,
-    dia_cierre: company.dia_cierre || 28,
-    porcentaje: company.porcentaje || 30,
-    user_pass: '',
-  }
-
-  const modal = new Modal(document.getElementById('companyModal'))
-  modal.show()
+  isEditMode.value = true
+  form.value = { ...company }
+  companyModal.show()
 }
 
-const saveCompany = async () => {
+const handleSubmit = async () => {
+  submitting.value = true
   try {
-    saving.value = true
-
-    // Set username and password for new companies
-    if (!formData.value.id) {
-      formData.value.user_login = formData.value.email.split('@')[0]
-      formData.value.user_pass = formData.value.first_name.toLowerCase().replace(/\s+/g, '')
+    const companyData = {
+      ...form.value,
+      role: 'empresa',
     }
 
-    if (formData.value.id) {
-      // Update existing company
-      await usersStore.updateUser(formData.value.id, formData.value)
-      showToast('Empresa actualizada correctamente', 'success')
+    if (isEditMode.value) {
+      await usersStore.updateUser(form.value.id, companyData)
     } else {
-      // Create new company
-      await usersStore.createUser(formData.value)
-      showToast('Empresa creada correctamente', 'success')
+      await usersStore.createUser(companyData)
     }
 
-    // Refresh companies list
-    await fetchCompanies()
-
-    // Close modal
-    const modal = Modal.getInstance(document.getElementById('companyModal'))
-    modal.hide()
+    companyModal.hide()
+    await loadCompanies()
   } catch (error) {
-    showToast(error.message || 'Error al guardar la empresa', 'danger', 'fa-exclamation-circle')
     console.error('Error saving company:', error)
   } finally {
-    saving.value = false
+    submitting.value = false
   }
 }
 
-const showDeleteConfirmation = (company) => {
-  companyToDelete.value = company
-  const modal = new Modal(document.getElementById('deleteModal'))
-  modal.show()
-}
-
-const deleteCompany = async () => {
-  if (!companyToDelete.value) return
-
+const toggleCompanyStatus = async (company) => {
   try {
-    deleting.value = true
-
-    // Delete the company (and associated users via cascade in the backend)
-    await usersStore.deleteUser(companyToDelete.value.id)
-
-    // Refresh companies list
-    await fetchCompanies()
-
-    // Close modal
-    const modal = Modal.getInstance(document.getElementById('deleteModal'))
-    modal.hide()
-
-    showToast('Empresa eliminada correctamente', 'success')
+    await usersStore.toggleUserStatus(company.id)
+    await loadCompanies()
   } catch (error) {
-    showToast('Error al eliminar la empresa', 'danger', 'fa-exclamation-circle')
-    console.error('Error deleting company:', error)
-  } finally {
-    deleting.value = false
-    companyToDelete.value = null
+    console.error('Error toggling company status:', error)
   }
 }
 
-const viewUsers = (company) => {
+const confirmDelete = (company) => {
+  if (
+    confirm(`¿Eliminar empresa ${company.first_name}? Esto eliminará también todos sus empleados.`)
+  ) {
+    deleteCompany(company)
+  }
+}
+
+const deleteCompany = async (company) => {
+  try {
+    await usersStore.deleteUser(company.id)
+    await loadCompanies()
+  } catch (error) {
+    console.error('Error deleting company:', error)
+  }
+}
+
+const viewEmployees = (company) => {
   router.push({
     name: 'usuarios',
     query: { empresa: company.id },
   })
 }
 
-const resetFilters = () => {
-  filters.value = {
-    search: '',
-    status: '',
-    plan: '',
+const refreshCompanies = () => {
+  loadCompanies()
+}
+
+const goToPage = (page) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
   }
-  currentPage.value = 1
 }
 
-const closeModal = () => {
-  const modal = Modal.getInstance(document.getElementById('companyModal'))
-  if (modal) modal.hide()
-}
-
-const showToast = (message, variant = 'success', icon = 'fa-check-circle') => {
-  toast.value = { message, variant, icon }
-  const toastEl = document.getElementById('toast')
-  const toastInstance = new Toast(toastEl, { autohide: true, delay: 5000 })
-  toastInstance.show()
-}
-
-const getPlanName = (plan) => {
-  const plans = {
-    1: 'Básico',
-    2: 'Premium',
-    3: 'Empresarial',
+const resetForm = () => {
+  form.value = {
+    id: null,
+    first_name: '',
+    last_name: '',
+    email: '',
+    gearbox: true,
+    flexirol: 10,
+    flexirol2: 10,
+    flexirol3: '1',
+    dia_inicio: 2,
+    dia_cierre: 28,
+    porcentaje: 50,
+    dia_bloqueo: 2,
+    frecuencia: 3,
+    dia_reinicio: 4,
   }
-  return plans[plan] || 'Desconocido'
 }
 
-const getPlanBadgeClass = (plan) => {
-  const classes = {
-    1: 'bg-secondary',
-    2: 'bg-primary',
-    3: 'bg-success',
-  }
-  return classes[plan] || 'bg-secondary'
+const formatDate = (dateString) => {
+  return new Date(dateString).toLocaleDateString('es-EC')
 }
 
-// Lifecycle hooks
+// Lifecycle
 onMounted(async () => {
-  await fetchCompanies()
+  companyModal = new Modal(companyModalRef.value)
+  await loadCompanies()
+})
 
-  // Initialize tooltips
-  const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-  tooltipTriggerList.forEach(function (tooltipTriggerEl) {
-    return new Tooltip(tooltipTriggerEl)
-  })
+onUnmounted(() => {
+  if (companyModal) companyModal.dispose()
 })
 </script>
 
 <style scoped>
-.table th {
+.empresas-view {
+  padding: 1rem;
+}
+
+.avatar-sm {
+  width: 40px;
+  height: 40px;
+}
+
+.avatar-initial {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-weight: 600;
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  letter-spacing: 0.5px;
+  color: white;
+  font-size: 14px;
+}
+
+.table th {
+  border-top: none;
+  font-weight: 600;
+  color: #495057;
+  background-color: #f8f9fa;
+}
+
+.card {
+  border: none;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
 }
 
 .badge {
-  font-weight: 500;
-  padding: 0.35em 0.65em;
-}
-
-.btn-group .btn {
-  margin-right: 0.25rem;
-}
-
-.btn-group .btn:last-child {
-  margin-right: 0;
-}
-
-.toast {
-  opacity: 1;
-  transition: opacity 0.3s ease-in-out;
-}
-
-.toast:not(.show) {
-  display: none;
-  opacity: 0;
-}
-
-.loading-spinner {
-  width: 3rem;
-  height: 3rem;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .btn-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .btn-group .btn {
-    margin-right: 0;
-    width: 100%;
-  }
-
-  .table-responsive {
-    font-size: 0.875rem;
-  }
+  font-size: 0.75em;
 }
 </style>
