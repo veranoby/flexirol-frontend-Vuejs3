@@ -515,12 +515,14 @@ import { useCompaniesStore } from '@/stores/companies'
 import { useBankAccountsStore } from '@/stores/bankAccounts'
 import { Modal } from 'bootstrap'
 import * as XLSX from 'xlsx'
+import { useToastSystem } from '@/stores/system'
 
 // Stores
 const authStore = useAuthStore()
 const requestsStore = useUserAdvanceRequestsStore()
 const companiesStore = useCompaniesStore()
 const bankAccountsStore = useBankAccountsStore()
+const { showToast } = useToastSystem()
 
 // State
 const loading = ref(false)
@@ -969,12 +971,6 @@ const exportToExcel = () => {
   XLSX.writeFile(wb, filename)
 
   showToast('Archivo Excel descargado', 'success')
-}
-
-// Toast notifications
-const showToast = (message, type = 'info') => {
-  console.log(`[${type.toUpperCase()}] ${message}`)
-  // TODO: Implement with Bootstrap Toast
 }
 
 // Lifecycle

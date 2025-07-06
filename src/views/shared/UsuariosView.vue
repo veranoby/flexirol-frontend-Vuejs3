@@ -487,14 +487,17 @@ import { useAuthStore } from '@/stores/auth'
 import { useUsersStore } from '@/stores/users'
 import { useCompaniesStore } from '@/stores/companies'
 import { useSystemStore } from '@/stores/system'
+import { useToastSystem } from '@/stores/system'
 import { Modal } from 'bootstrap'
 import * as XLSX from 'xlsx'
+import { validateUserBaseData } from '@/stores/system'
 
 // Stores
 const authStore = useAuthStore()
 const usersStore = useUsersStore()
 const companiesStore = useCompaniesStore()
 const systemStore = useSystemStore()
+const { showToast } = useToastSystem()
 
 // State
 const loading = ref(false)
@@ -769,7 +772,7 @@ const handleSubmitUser = async () => {
 
   try {
     // **BUSINESS LOGIC PRESERVADA**: Validación exacta del legacy
-    const validation = await validateUserData(userForm.value, isEditMode.value)
+    const validation = await validateUserBaseData(userForm.value, isEditMode.value)
     if (!validation.isValid) {
       validationErrors.value = validation.errors
       throw new Error('Validación fallida')
@@ -777,7 +780,7 @@ const handleSubmitUser = async () => {
 
     // **BUSINESS LOGIC PRESERVADA**: Generate username exactly like legacy
     if (!userForm.value.username) {
-      userForm.value.username = generateUsername(
+      userForm.value.username = systemStore.generateUsername(
         userForm.value.first_name,
         userForm.value.last_name,
         userForm.value.cedula,
@@ -924,13 +927,6 @@ const exportToExcel = () => {
   XLSX.writeFile(wb, filename)
 
   showToast('Archivo Excel descargado', 'success')
-}
-
-// Toast notifications (simple implementation)
-const showToast = (message, type = 'info') => {
-  // Simple toast implementation - you can integrate with a toast library
-  console.log(`[${type.toUpperCase()}] ${message}`)
-  // TODO: Implement with Bootstrap Toast or another notification system
 }
 
 // Lifecycle

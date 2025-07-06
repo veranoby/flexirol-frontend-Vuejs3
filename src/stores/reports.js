@@ -412,8 +412,9 @@ export const useReportsStore = defineStore('reports', () => {
     return retornar
   }
 
-  // Exportar Excel bancario con formato especial para Banco Guayaquil y estándar para otros bancos.
-  // Replica la lógica de functions.php:generar_pagos
+  // Exportar Excel bancario con formato UNIVERSAL (compatible Ecuador, USA, global)
+  // ❌ ELIMINADO: Formato especial Banco Guayaquil y lógica por banco
+  // ✅ UNIVERSAL FORMAT: Una sola hoja, columnas internacionales
   async function generateBankingExcel(solicitudes = []) {
     if (solicitudes.length === 0) {
       error.value = 'No hay solicitudes seleccionadas para generar el Excel'
@@ -423,57 +424,23 @@ export const useReportsStore = defineStore('reports', () => {
     excelLoading.value = true
 
     try {
-      // Agrupar por banco
-      const byBank = {}
-      solicitudes.forEach((solicitud) => {
-        const banco = solicitud.banco_nombre || 'OTROS'
-        if (!byBank[banco]) byBank[banco] = []
-        byBank[banco].push(solicitud)
-      })
+      // UNIVERSAL FORMAT: Todas las solicitudes en una sola hoja
+      const universalData = solicitudes.map((sol) => ({
+        'Account Type': sol.tipo_cuenta === 'ahorros' ? 'Savings' : 'Checking',
+        'Account Number': sol.numero_cuenta,
+        'Account Holder': sol.propietario,
+        'ID Number': sol.cedula,
+        Amount: Number(sol.monto_aprobado).toFixed(2),
+        Email: sol.email,
+        Bank: sol.banco_nombre,
+        Date: new Date().toISOString().split('T')[0],
+      }))
 
-      // Crear workbook
       const wb = XLSX.utils.book_new()
-
-      // Procesar cada banco
-      for (const [banco, solicitudesBanco] of Object.entries(byBank)) {
-        let worksheetData = []
-
-        if (banco.toUpperCase().includes('GUAYAQUIL')) {
-          // Formato especial Banco Guayaquil
-          worksheetData = solicitudesBanco.map((sol) => ({
-            PA: 'PA',
-            'CUENTA ORIGINAL FLEXIROL': sol.numero_cuenta,
-            1: '1',
-            '': '',
-            'NRO CTA': sol.numero_cuenta,
-            USD: 'USD',
-            MONTO: Number(sol.monto_aprobado).toFixed(2),
-            CTA: sol.tipo_cuenta === 'ahorros' ? 'A' : 'C',
-            IDENTIFICACION: sol.cedula,
-            NOMBRE: sol.propietario,
-          }))
-        } else {
-          // Formato estándar otros bancos
-          worksheetData = solicitudesBanco.map((sol) => ({
-            'TIPO CUENTA': sol.tipo_cuenta === 'ahorros' ? 'Ahorros' : 'Corriente',
-            'NUMERO CUENTA': sol.numero_cuenta,
-            IDENTIFICACION: sol.cedula,
-            EMAIL: sol.email,
-            NOMBRE: sol.propietario,
-            MONTO: Number(sol.monto_aprobado).toFixed(2),
-            IMPUESTO: (Number(sol.monto_aprobado) * 0.12).toFixed(2),
-            TOTAL: (Number(sol.monto_aprobado) * 1.12).toFixed(2),
-          }))
-        }
-
-        // Agregar worksheet
-        const ws = XLSX.utils.json_to_sheet(worksheetData)
-        XLSX.utils.book_append_sheet(wb, ws, banco.substring(0, 31))
-      }
-
-      // Guardar archivo
+      const ws = XLSX.utils.json_to_sheet(universalData)
+      XLSX.utils.book_append_sheet(wb, ws, 'Universal_Transfers')
       const date = new Date().toISOString().split('T')[0]
-      XLSX.writeFile(wb, `pagos_bancarios_${date}.xlsx`)
+      XLSX.writeFile(wb, `universal_banking_${date}.xlsx`)
 
       // Actualizar estado a 'procesando'
       await Promise.all(
@@ -487,7 +454,7 @@ export const useReportsStore = defineStore('reports', () => {
 
       return true
     } catch (err) {
-      console.error('Error generating Excel:', err)
+      console.error('Error generating universal Excel:', err)
       error.value = 'Error al generar el archivo Excel'
       return false
     } finally {

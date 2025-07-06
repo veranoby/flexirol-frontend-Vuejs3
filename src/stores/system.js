@@ -297,3 +297,36 @@ export const useSystemStore = defineStore('system', () => {
     validateUserBaseData,
   }
 })
+
+// ========== TOAST SYSTEM (Bootstrap 5) ==========
+export const useToastSystem = () => {
+  const showToast = (message, type = 'info', duration = 3000) => {
+    const toastContainer = document.querySelector('.toast-container')
+    if (!toastContainer) return
+    const toastId = `toast-${Date.now()}`
+    const typeClass =
+      type === 'danger'
+        ? 'danger'
+        : type === 'success'
+          ? 'success'
+          : type === 'warning'
+            ? 'warning'
+            : 'info'
+    const toastHTML = `
+      <div id="${toastId}" class="toast align-items-center text-bg-${typeClass}" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+          <div class="toast-body">${message}</div>
+          <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+      </div>
+    `
+    toastContainer.insertAdjacentHTML('beforeend', toastHTML)
+    const toastElement = document.getElementById(toastId)
+    const toast = new window.bootstrap.Toast(toastElement, { delay: duration })
+    toast.show()
+    toastElement.addEventListener('hidden.bs.toast', () => {
+      toastElement.remove()
+    })
+  }
+  return { showToast }
+}
