@@ -1,7 +1,9 @@
-/* Flexirol Original Colors & Styles */
-@import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500&display=swap');
+/* ===== FLEXIROL OPTIMIZED STYLES ===== */
+@import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;600&display=swap');
 
+/* Variables CSS Flexirol */
 :root {
+  /* Colores Flexirol originales */
   --flexirol-primary: #3a6a77;
   --flexirol-secondary: #1d9190;
   --flexirol-tertiary: #39711a;
@@ -10,14 +12,89 @@
   --flexirol-light: #a8d1cb;
   --flexirol-bg-light: #ddf0ed;
   --flexirol-text-secondary: #375479;
+
+  /* Gradientes */
+  --flexirol-gradient: linear-gradient(
+    135deg,
+    var(--flexirol-primary) 0%,
+    var(--flexirol-secondary) 50%,
+    var(--flexirol-light) 100%
+  );
+  --flexirol-gradient-light: linear-gradient(
+    135deg,
+    rgba(58, 106, 119, 0.1) 0%,
+    rgba(29, 145, 144, 0.1) 50%,
+    rgba(168, 209, 203, 0.1) 100%
+  );
+
+  /* Tonos neutros */
+  --flexirol-white: #ffffff;
+  --flexirol-gray-100: #f8f9fa;
+  --flexirol-gray-200: #e9ecef;
+  --flexirol-gray-300: #dee2e6;
+  --flexirol-gray-400: #ced4da;
+  --flexirol-gray-500: #adb5bd;
+  --flexirol-gray-600: #6c757d;
+  --flexirol-gray-700: #495057;
+  --flexirol-gray-800: #343a40;
+
+  /* Shadows & effects */
+  --flexirol-shadow-sm: 0 0.125rem 0.25rem rgba(58, 106, 119, 0.1);
+  --flexirol-shadow: 0 0.5rem 1rem rgba(58, 106, 119, 0.15);
+  --flexirol-shadow-lg: 0 1rem 3rem rgba(58, 106, 119, 0.175);
+
+  /* Border radius */
+  --flexirol-border-radius: 0.5rem;
+  --flexirol-border-radius-lg: 1rem;
+
+  /* Transitions */
+  --flexirol-transition: all 0.3s ease;
 }
 
+/* ===== GLOBAL RESET ===== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
 body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
   font-family: 'Ubuntu', sans-serif;
-  font-size: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--flexirol-gray-700);
+  background: var(--flexirol-white);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Flexirol Button Variants */
+#app {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Force light mode */
+@media (prefers-color-scheme: dark) {
+  html {
+    color-scheme: light;
+  }
+}
+
+/* ===== BUTTONS FLEXIROL ===== */
+.btn {
+  border-radius: var(--flexirol-border-radius);
+  font-weight: 500;
+  transition: var(--flexirol-transition);
+  border: 2px solid transparent;
+  padding: 0.75rem 1.5rem;
+}
+
 .btn-flexirol-primary {
   background-color: var(--flexirol-primary);
   border-color: var(--flexirol-primary);
@@ -27,6 +104,8 @@ body {
 .btn-flexirol-primary:hover {
   background-color: var(--flexirol-secondary);
   border-color: var(--flexirol-secondary);
+  transform: translateY(-2px);
+  box-shadow: var(--flexirol-shadow);
 }
 
 .btn-flexirol-secondary {
@@ -35,75 +114,125 @@ body {
   color: white;
 }
 
+.btn-flexirol-secondary:hover {
+  background-color: var(--flexirol-primary);
+  border-color: var(--flexirol-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--flexirol-shadow);
+}
+
 .btn-flexirol-tertiary {
   background-color: var(--flexirol-tertiary);
   border-color: var(--flexirol-tertiary);
   color: white;
 }
 
-/* Text Colors */
-.text-flexirol-primary {
+/* ===== NAVBAR FLEXIROL ===== */
+.navbar-flexirol {
+  background: var(--flexirol-gradient);
+  box-shadow: var(--flexirol-shadow-sm);
+}
+
+.navbar {
+  background: var(--flexirol-white) !important;
+  box-shadow: var(--flexirol-shadow-sm);
+  border-bottom: 1px solid var(--flexirol-gray-200);
+}
+
+.navbar-brand {
+  color: var(--flexirol-primary) !important;
+  font-weight: 600;
+  font-size: 1.5rem;
+}
+
+.nav-link {
+  color: var(--flexirol-gray-700) !important;
+  font-weight: 500;
+  padding: 0.75rem 1rem !important;
+  border-radius: var(--flexirol-border-radius);
+  margin: 0 0.25rem;
+  transition: var(--flexirol-transition);
+}
+
+.nav-link:hover {
+  background: var(--flexirol-gradient-light);
   color: var(--flexirol-primary) !important;
 }
-.text-flexirol-tertiary {
-  color: var(--flexirol-tertiary) !important;
-}
-.text-flexirol-quaternary {
-  color: var(--flexirol-quaternary) !important;
-}
-.text-flexirol-error {
-  color: var(--flexirol-error) !important;
+
+.nav-link.router-link-active {
+  background: var(--flexirol-primary);
+  color: var(--flexirol-white) !important;
 }
 
-/* Background Colors */
-.bg-flexirol-light {
-  background-color: var(--flexirol-bg-light) !important;
-}
-.bg-flexirol-primary {
-  background-color: var(--flexirol-primary) !important;
-}
-
-/* Flexirol Navbar */
-.navbar-flexirol {
-  background: linear-gradient(
-    90deg,
-    var(--flexirol-primary) 0%,
-    var(--flexirol-secondary) 50%,
-    var(--flexirol-light) 100%
-  );
-}
-
-/* Form Controls Flexirol Style */
+/* ===== FORMS FLEXIROL ===== */
 .form-control:focus {
   border-color: var(--flexirol-secondary);
-  box-shadow: 0 0 0 0.25rem rgba(61, 161, 144, 0.25);
+  box-shadow: 0 0 0 0.25rem rgba(29, 145, 144, 0.25);
 }
 
-/* Card Flexirol Style */
-.card-flexirol {
+.form-check-input:checked {
+  background-color: var(--flexirol-secondary);
+  border-color: var(--flexirol-secondary);
+}
+
+/* ===== CARDS FLEXIROL ===== */
+.card {
   border: none;
-  box-shadow: 0 4px 6px rgba(58, 106, 119, 0.1);
+  border-radius: var(--flexirol-border-radius);
+  box-shadow: var(--flexirol-shadow-sm);
+  overflow: hidden;
 }
 
-.card-flexirol .card-header {
-  background-color: var(--flexirol-bg-light);
+.card-flexirol {
+  box-shadow: var(--flexirol-shadow);
+}
+
+.card-flexirol .card-header,
+.card-header {
+  background: var(--flexirol-bg-light);
   border-bottom: 2px solid var(--flexirol-primary);
   color: var(--flexirol-text-secondary);
-  font-weight: 500;
+  font-weight: 600;
+  padding: 1rem 1.5rem;
 }
 
-/* Table Flexirol Style */
-.table-flexirol thead th {
+.card-body {
+  padding: 1.5rem;
+}
+
+/* ===== TABLES FLEXIROL ===== */
+.table {
+  margin-bottom: 0;
+}
+
+.table-flexirol thead th,
+.table th {
   background-color: var(--flexirol-primary);
   color: white;
   border: none;
+  font-weight: 600;
+  padding: 1rem;
 }
 
-.table-flexirol tbody tr:hover {
+.table-flexirol tbody tr:hover,
+.table-hover tbody tr:hover {
   background-color: var(--flexirol-bg-light);
 }
 
-/* Alert Flexirol Variants */
+.table td {
+  padding: 1rem;
+  border-top: 1px solid var(--flexirol-gray-200);
+  vertical-align: middle;
+}
+
+/* ===== ALERTS FLEXIROL ===== */
+.alert {
+  border: none;
+  border-radius: var(--flexirol-border-radius);
+  padding: 1rem 1.5rem;
+  margin-bottom: 1rem;
+}
+
 .alert-flexirol-success {
   background-color: rgba(57, 113, 26, 0.1);
   border-color: var(--flexirol-tertiary);
@@ -120,4 +249,212 @@ body {
   background-color: rgba(181, 22, 89, 0.1);
   border-color: var(--flexirol-error);
   color: var(--flexirol-error);
+}
+
+.alert-danger {
+  background: rgba(181, 22, 89, 0.1);
+  color: var(--flexirol-error);
+}
+
+.alert-success {
+  background: rgba(57, 113, 26, 0.1);
+  color: var(--flexirol-tertiary);
+}
+
+.alert-warning {
+  background: rgba(255, 140, 0, 0.1);
+  color: var(--flexirol-quaternary);
+}
+
+/* ===== TEXT COLORS ===== */
+.text-flexirol-primary {
+  color: var(--flexirol-primary) !important;
+}
+.text-flexirol-secondary {
+  color: var(--flexirol-secondary) !important;
+}
+.text-flexirol-tertiary {
+  color: var(--flexirol-tertiary) !important;
+}
+.text-flexirol-quaternary {
+  color: var(--flexirol-quaternary) !important;
+}
+.text-flexirol-error {
+  color: var(--flexirol-error) !important;
+}
+
+/* ===== BACKGROUND COLORS ===== */
+.bg-flexirol-light {
+  background-color: var(--flexirol-bg-light) !important;
+}
+.bg-flexirol-primary {
+  background-color: var(--flexirol-primary) !important;
+}
+.bg-flexirol-gradient {
+  background: var(--flexirol-gradient) !important;
+}
+
+/* ===== BADGES ===== */
+.badge {
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--flexirol-border-radius);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.bg-success {
+  background-color: var(--flexirol-tertiary) !important;
+}
+.bg-danger {
+  background-color: var(--flexirol-error) !important;
+}
+.bg-warning {
+  background-color: var(--flexirol-quaternary) !important;
+  color: #000 !important;
+}
+.bg-info {
+  background-color: var(--flexirol-secondary) !important;
+}
+.bg-primary {
+  background-color: var(--flexirol-primary) !important;
+}
+
+/* ===== AVATARS ===== */
+.avatar-sm {
+  width: 32px;
+  height: 32px;
+}
+
+.avatar-md {
+  width: 40px;
+  height: 40px;
+}
+
+.avatar-initial {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.75rem;
+  border-radius: 50%;
+  color: var(--flexirol-white);
+  background: var(--flexirol-gradient);
+}
+
+/* ===== DROPDOWN ===== */
+.dropdown-menu {
+  border: none;
+  border-radius: var(--flexirol-border-radius);
+  box-shadow: var(--flexirol-shadow);
+  border: 1px solid var(--flexirol-gray-200);
+}
+
+/* ===== LOADING STATES ===== */
+.spinner-border {
+  border-color: var(--flexirol-secondary);
+  border-right-color: transparent;
+}
+
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--flexirol-gray-100);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--flexirol-gray-400);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--flexirol-secondary);
+}
+
+/* ===== ANIMATIONS ===== */
+.fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.slide-up {
+  animation: slideUp 0.4s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .navbar-brand {
+    font-size: 1.25rem;
+  }
+
+  .card {
+    margin: 0.5rem;
+  }
+
+  .table {
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 576px) {
+  body {
+    font-size: 12px;
+  }
+
+  .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  .card-body {
+    padding: 1rem;
+  }
+}
+
+/* ===== INVALID FEEDBACK ===== */
+.invalid-feedback {
+  display: block;
+  width: 100%;
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--flexirol-error);
+}
+
+/* ===== UTILITIES ===== */
+.shadow-flexirol {
+  box-shadow: var(--flexirol-shadow) !important;
+}
+.shadow-flexirol-sm {
+  box-shadow: var(--flexirol-shadow-sm) !important;
+}
+.shadow-flexirol-lg {
+  box-shadow: var(--flexirol-shadow-lg) !important;
 }
