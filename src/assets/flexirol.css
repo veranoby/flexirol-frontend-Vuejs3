@@ -89,9 +89,9 @@
   --flexirol-transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
   /* Glassmorphism */
-  --glassmorphism-bg: rgba(255, 255, 255, 0.25);
-  --glassmorphism-border: rgba(255, 255, 255, 0.3);
-  --glassmorphism-backdrop: blur(20px);
+  --glassmorphism-bg: rgba(255, 255, 255, 0.3);
+  --glassmorphism-border: rgba(255, 255, 255, 0.5);
+  --glassmorphism-backdrop: blur(10px);
 
   /* Login gradient */
   --login-gradient: linear-gradient(
@@ -138,7 +138,7 @@ body {
 /* ===== ELEGANT NAVBAR ===== */
 .navbar {
   background: var(--glassmorphism-bg) !important;
-  backdrop-filter: var(--glassmorphism-backdrop);
+  /*  backdrop-filter: var(--glassmorphism-backdrop);*/
   border-bottom: 1px solid var(--glassmorphism-border);
   box-shadow: var(--flexirol-shadow-elegant);
   transition: var(--flexirol-transition-normal);
@@ -289,7 +289,7 @@ body {
 /* ===== ELEGANT CARDS ===== */
 .card {
   background: var(--glassmorphism-bg);
-  backdrop-filter: var(--glassmorphism-backdrop);
+  /*  backdrop-filter: var(--glassmorphism-backdrop);*/
   border: 1px solid var(--glassmorphism-border);
   border-radius: var(--flexirol-radius-lg);
   box-shadow: var(--flexirol-shadow-elegant);
