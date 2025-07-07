@@ -8,6 +8,27 @@ pb.authStore.onChange(() => {
   console.log('Auth state changed:', pb.authStore.isValid)
 })
 
+/**
+ * Builds a safe filter string for PocketBase queries.
+ * @param {Object} filters - Key-value pairs for filtering.
+ * @returns {string} - Encoded filter string.
+ */
+function buildFilter(filters = {}) {
+  return Object.entries(filters)
+    .map(([key, value]) => {
+      // Handle special cases (null, undefined, arrays)
+      if (value === null || value === undefined) {
+        return `${key}=null`
+      }
+      if (Array.isArray(value)) {
+        return `${key}~"${value.map((v) => encodeURIComponent(v)).join('|')}"`
+      }
+      // Default case: encode and wrap in quotes
+      return `${key}="${encodeURIComponent(String(value))}"`
+    })
+    .join(' && ')
+}
+
 // API methods for Flexirol
 export const api = {
   // Auth
@@ -26,12 +47,8 @@ export const api = {
 
   // Users
   async getUsers(filters = {}) {
-    const filterString = Object.entries(filters)
-      .map(([key, value]) => `${key}="${value}"`)
-      .join(' && ')
-
     return await pb.collection('users').getList(1, 1000, {
-      filter: filterString,
+      filter: buildFilter(filters),
       expand: 'company_id',
       sort: '-created',
     })
@@ -101,12 +118,8 @@ export const api = {
 
   // Companies
   async getCompanies(filters = {}) {
-    const filterString = Object.entries(filters)
-      .map(([key, value]) => `${key}="${value}"`)
-      .join(' && ')
-
     return await pb.collection('companies').getList(1, 1000, {
-      filter: filterString,
+      filter: buildFilter(filters),
       sort: '-created',
     })
   },
@@ -125,12 +138,8 @@ export const api = {
 
   // Advance Requests
   async getAdvanceRequests(filters = {}) {
-    const filterString = Object.entries(filters)
-      .map(([key, value]) => `${key}="${value}"`)
-      .join(' && ')
-
     return await pb.collection('advance_requests').getList(1, 1000, {
-      filter: filterString,
+      filter: buildFilter(filters),
       expand: 'user_id,company_id,banco_id',
       sort: '-fecha_solicitud',
     })

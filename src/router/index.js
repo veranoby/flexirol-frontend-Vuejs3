@@ -1,3 +1,6 @@
+// ARCHIVO: src/router/index.js
+// CORRECCIÓN LÍNEA 67: Cambiar ruta de SolicitudesView para superadmin
+
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
@@ -67,10 +70,11 @@ const router = createRouter({
           meta: { title: 'Carga Masiva Excel' },
         },
         {
+          // ✅ CORRECCIÓN CRÍTICA: Cambiar de shared a superadmin
           path: 'solicitudes',
           name: 'superadmin-solicitudes',
-          component: () => import('@/views/shared/SolicitudesView.vue'),
-          meta: { title: 'Gestión de Solicitudes' },
+          component: () => import('@/views/superadmin/SolicitudesView.vue'), // ✅ CORREGIDO
+          meta: { title: 'Dashboard de Solicitudes' },
         },
         {
           path: 'reportes',
@@ -97,9 +101,10 @@ const router = createRouter({
           meta: { title: 'Reportes de la Empresa' },
         },
         {
+          // Empresa/Operador usa shared (genérico)
           path: 'solicitudes',
           name: 'admin-solicitudes',
-          component: () => import('@/views/shared/SolicitudesView.vue'),
+          component: () => import('@/views/shared/SolicitudesView.vue'), // ✅ Correcto para empresa/operador
           meta: { title: 'Solicitudes de Adelantos' },
         },
       ],
@@ -115,9 +120,10 @@ const router = createRouter({
           redirect: '/usuario/solicitudes',
         },
         {
+          // Usuario tiene su propia vista específica
           path: 'solicitudes',
           name: 'usuario-solicitudes',
-          component: () => import('@/views/usuario/SolicitudesView.vue'),
+          component: () => import('@/views/usuario/SolicitudesView.vue'), // ✅ Correcto para usuario
           meta: { title: 'Mis Solicitudes' },
         },
         {
@@ -130,14 +136,10 @@ const router = createRouter({
     },
 
     // ===== LEGACY REDIRECTS (Para compatibilidad) =====
-
-    // Redirect old admin usuarios to consolidated route
     {
       path: '/admin/usuarios',
       redirect: '/usuarios',
     },
-
-    // Redirect old superadmin usuarios to consolidated route
     {
       path: '/superadmin/usuarios',
       redirect: '/usuarios',
@@ -150,7 +152,6 @@ const router = createRouter({
       component: () => import('@/views/error/UnauthorizedView.vue'),
       meta: { title: 'Acceso No Autorizado' },
     },
-
     {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
@@ -161,7 +162,6 @@ const router = createRouter({
 })
 
 // ===== NAVIGATION GUARDS =====
-
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
 
@@ -178,7 +178,6 @@ router.beforeEach(async (to, from, next) => {
 
   // Check guest-only routes
   if (to.meta.requiresGuest && authStore.isAuthenticated) {
-    // Redirect to appropriate dashboard based on role
     const redirectPath = getRoleDashboard(authStore.userRole)
     next(redirectPath)
     return
@@ -186,27 +185,19 @@ router.beforeEach(async (to, from, next) => {
 
   // Check role permissions
   if (to.meta.roles && !to.meta.roles.includes(authStore.userRole)) {
-    console.warn(
-      `Access denied. Required roles: ${to.meta.roles}, User role: ${authStore.userRole}`,
-    )
+    console.warn(`Access denied. User role: ${authStore.userRole}, Required: ${to.meta.roles}`)
     next('/unauthorized')
     return
-  }
-
-  // Set page title
-  if (to.meta.title) {
-    document.title = `${to.meta.title} - FlexiRol`
-  } else {
-    document.title = 'FlexiRol'
   }
 
   next()
 })
 
-// Helper function to get role-based dashboard
-function getRoleDashboard(role) {
-  switch (role) {
+// Helper function for role-based redirects
+function getRoleDashboard(userRole) {
+  switch (userRole) {
     case 'superadmin':
+      return '/dashboard'
     case 'empresa':
     case 'operador':
       return '/dashboard'
@@ -217,164 +208,11 @@ function getRoleDashboard(role) {
   }
 }
 
-// Navigation guard for handling route errors
-router.onError((error) => {
-  console.error('Router error:', error)
-
-  // Handle chunk loading errors (lazy loading failures)
-  if (error.message.includes('Loading chunk')) {
-    // Reload the page to get fresh chunks
-    window.location.reload()
-  }
-})
-
-// Global after hook for analytics, logging, etc.
-router.afterEach((to, from) => {
-  // Log navigation for debugging
-  console.log(`Navigation: ${from.path || 'unknown'} -> ${to.path}`)
-
-  // Here you could add analytics tracking
-  // analytics.track('page_view', { path: to.path, name: to.name })
-})
-
-export default router
-
-// ===== ROUTE HELPERS =====
-
-/**
- * Get available routes for current user role
- * @param {string} userRole - Current user role
- * @returns {Array} Array of route objects with navigation info
- */
-export function getNavigationRoutes(userRole) {
-  const routes = []
-
-  // Common dashboard
-  routes.push({
-    path: '/dashboard',
-    name: 'dashboard',
-    icon: 'fas fa-tachometer-alt',
-    label: 'Dashboard',
-    roles: ['superadmin', 'empresa', 'operador', 'usuario'],
-  })
-
-  // Consolidated usuarios route
-  if (['superadmin', 'empresa'].includes(userRole)) {
-    routes.push({
-      path: '/usuarios',
-      name: 'usuarios',
-      icon: 'fas fa-users',
-      label: userRole === 'superadmin' ? 'Usuarios del Sistema' : 'Mis Empleados',
-      roles: ['superadmin', 'empresa'],
-    })
-  }
-
-  // Superadmin specific
-  if (userRole === 'superadmin') {
-    routes.push(
-      {
-        path: '/superadmin/empresas',
-        name: 'superadmin-empresas',
-        icon: 'fas fa-building',
-        label: 'Empresas',
-        roles: ['superadmin'],
-      },
-      {
-        path: '/superadmin/config',
-        name: 'superadmin-config',
-        icon: 'fas fa-cogs',
-        label: 'Configuración',
-        roles: ['superadmin'],
-      },
-      {
-        path: '/superadmin/solicitudes',
-        name: 'superadmin-solicitudes',
-        icon: 'fas fa-file-invoice-dollar',
-        label: 'Solicitudes',
-        roles: ['superadmin'],
-      },
-      {
-        path: '/superadmin/reportes',
-        name: 'superadmin-reportes',
-        icon: 'fas fa-chart-bar',
-        label: 'Reportes',
-        roles: ['superadmin'],
-      },
-    )
-  }
-
-  // Empresa/Operador specific
-  if (['empresa', 'operador'].includes(userRole)) {
-    routes.push(
-      {
-        path: '/admin/solicitudes',
-        name: 'admin-solicitudes',
-        icon: 'fas fa-file-invoice-dollar',
-        label: 'Solicitudes',
-        roles: ['empresa', 'operador'],
-      },
-      {
-        path: '/admin/reportes',
-        name: 'admin-reportes',
-        icon: 'fas fa-chart-line',
-        label: 'Reportes',
-        roles: ['empresa', 'operador'],
-      },
-    )
-  }
-
-  // Usuario specific
-  if (userRole === 'usuario') {
-    routes.push(
-      {
-        path: '/usuario/solicitudes',
-        name: 'usuario-solicitudes',
-        icon: 'fas fa-hand-holding-usd',
-        label: 'Mis Solicitudes',
-        roles: ['usuario'],
-      },
-      {
-        path: '/usuario/bancos',
-        name: 'usuario-bancos',
-        icon: 'fas fa-university',
-        label: 'Mis Bancos',
-        roles: ['usuario'],
-      },
-    )
-  }
-
-  return routes.filter((route) => route.roles.includes(userRole))
-}
-
-/**
- * Check if user can access a specific route
- * @param {string} routeName - Route name to check
- * @param {string} userRole - User role
- * @returns {boolean} Whether user can access the route
- */
-export function canAccessRoute(routeName, userRole) {
-  const route = router.getRoutes().find((r) => r.name === routeName)
-  if (!route || !route.meta.roles) return true
-  return route.meta.roles.includes(userRole)
-}
-
-/**
- * Get breadcrumb for current route
- * @param {Object} route - Current route object
- * @param {string} userRole - User role for context
- * @returns {Array} Breadcrumb items
- */
+// Breadcrumb helper function (optimizada)
 export function getBreadcrumb(route, userRole) {
   const breadcrumb = []
 
-  // Add dashboard
-  breadcrumb.push({
-    text: 'Dashboard',
-    to: '/dashboard',
-  })
-
-  // Add specific breadcrumb based on route
-  if (route.name === 'usuarios') {
+  if (route.path === '/usuarios') {
     breadcrumb.push({
       text: userRole === 'superadmin' ? 'Usuarios del Sistema' : 'Mis Empleados',
       to: '/usuarios',
@@ -389,18 +227,38 @@ export function getBreadcrumb(route, userRole) {
       breadcrumb.push({ text: 'Empresas' })
     } else if (route.name === 'superadmin-config') {
       breadcrumb.push({ text: 'Configuración' })
+    } else if (route.name === 'superadmin-solicitudes') {
+      breadcrumb.push({ text: 'Dashboard de Solicitudes' })
+    } else if (route.name === 'superadmin-excel') {
+      breadcrumb.push({ text: 'Carga de Usuarios' })
+    } else if (route.name === 'superadmin-reportes') {
+      breadcrumb.push({ text: 'Reportes Históricos' })
     }
   } else if (route.path.startsWith('/admin')) {
     breadcrumb.push({
       text: 'Administración',
       to: '/admin',
     })
+
+    if (route.name === 'admin-solicitudes') {
+      breadcrumb.push({ text: 'Solicitudes' })
+    } else if (route.name === 'admin-reportes') {
+      breadcrumb.push({ text: 'Reportes' })
+    }
   } else if (route.path.startsWith('/usuario')) {
     breadcrumb.push({
       text: 'Mi Área',
       to: '/usuario',
     })
+
+    if (route.name === 'usuario-solicitudes') {
+      breadcrumb.push({ text: 'Mis Solicitudes' })
+    } else if (route.name === 'usuario-bancos') {
+      breadcrumb.push({ text: 'Mis Bancos' })
+    }
   }
 
   return breadcrumb
 }
+
+export default router

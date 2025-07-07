@@ -1,10 +1,9 @@
 <template>
-  <div class="dashboard">
+  <div class="dashboard mt-5">
     <!-- Header -->
     <div class="row mb-4">
       <div class="col-12">
         <h2 class="text-flexirol-primary">
-          <i :class="roleIcon" class="me-2"></i>
           Bienvenido, {{ authStore.user?.name || authStore.user?.email }}
         </h2>
         <p class="text-muted">{{ roleDescription }}</p>
@@ -285,20 +284,6 @@ const userRequests = ref([])
 const userBankAccounts = ref([])
 
 // Computed
-const roleIcon = computed(() => {
-  switch (authStore.userRole) {
-    case 'superadmin':
-      return 'fas fa-crown'
-    case 'empresa':
-      return 'fas fa-building'
-    case 'operador':
-      return 'fas fa-user-cog'
-    case 'usuario':
-      return 'fas fa-user'
-    default:
-      return 'fas fa-user'
-  }
-})
 
 const roleDescription = computed(() => {
   switch (authStore.userRole) {

@@ -1,11 +1,15 @@
 <template>
   <div id="app">
     <!-- Navigation Bar -->
-    <nav v-if="authStore.isAuthenticated" class="navbar navbar-expand-lg navbar-dark bg-primary">
-      <div class="container">
-        <!-- Brand -->
-        <router-link to="/dashboard" class="navbar-brand fw-bold">
-          <i class="fas fa-chart-line me-2"></i>FlexiRol
+    <nav
+      v-if="authStore.isAuthenticated"
+      class="navbar navbar-expand-lg navbar-dark bg-primary shadow-lg"
+    >
+      <div class="container-fluid">
+        <!-- Brand FlexiRol (SIN Dashboard button) -->
+        <router-link to="/dashboard" class="navbar-brand fw-bold d-flex align-items-center">
+          <i class="fas fa-chart-line me-2 text-warning"></i>
+          <span class="text-black-50">FlexiRol</span>
         </router-link>
 
         <!-- Mobile Toggle -->
@@ -21,140 +25,155 @@
           <span class="navbar-toggler-icon"></span>
         </button>
 
-        <!-- Navigation Links -->
+        <!-- Navigation Links Rediseñadas -->
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav me-auto">
-            <!-- Dashboard (All roles) -->
-            <li class="nav-item">
-              <router-link to="/dashboard" class="nav-link">
-                <i class="fas fa-tachometer-alt me-1"></i>Dashboard
-              </router-link>
-            </li>
-
-            <!-- CONSOLIDADO: Usuarios (Superadmin + Empresa) -->
-            <li v-if="canManageUsers" class="nav-item">
-              <router-link to="/usuarios" class="nav-link">
-                <i class="fas fa-users me-1"></i>
-                {{ authStore.isSuperadmin ? 'Usuarios' : 'Empleados' }}
-              </router-link>
-            </li>
-
-            <!-- Superadmin Menu -->
+            <!-- SUPERADMIN NAVIGATION -->
             <template v-if="authStore.isSuperadmin">
-              <li class="nav-item dropdown">
-                <a
-                  class="nav-link dropdown-toggle"
-                  href="#"
-                  role="button"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
+              <!-- Solicitudes (PRINCIPAL) -->
+              <li class="nav-item">
+                <router-link to="/superadmin/solicitudes" class="nav-link px-3 py-2 rounded-3 mx-1">
+                  <i class="fas fa-file-invoice-dollar me-2"></i>
+                  <span class="fw-semibold">Solicitudes</span>
+                </router-link>
+              </li>
+
+              <!-- Usuarios (Empresas) -->
+              <li class="nav-item">
+                <router-link to="/usuarios" class="nav-link px-3 py-2 rounded-3 mx-1">
+                  <i class="fas fa-users me-2"></i>
+                  <span class="fw-semibold">Usuarios</span>
+                </router-link>
+              </li>
+
+              <!-- Reportes -->
+              <li class="nav-item">
+                <router-link to="/superadmin/reportes" class="nav-link px-3 py-2 rounded-3 mx-1">
+                  <i class="fas fa-chart-bar me-2"></i>
+                  <span class="fw-semibold">Reportes</span>
+                </router-link>
+              </li>
+
+              <!-- Configuración -->
+              <li class="nav-item">
+                <router-link to="/superadmin/config" class="nav-link px-3 py-2 rounded-3 mx-1">
+                  <i class="fas fa-cogs me-2"></i>
+                  <span class="fw-semibold">Configuración</span>
+                </router-link>
+              </li>
+
+              <!-- Carga de Usuarios -->
+              <li class="nav-item">
+                <router-link
+                  to="/superadmin/excel-upload"
+                  class="nav-link px-3 py-2 rounded-3 mx-1"
                 >
-                  <i class="fas fa-crown me-1"></i>Admin
-                </a>
-                <ul class="dropdown-menu">
-                  <li>
-                    <router-link to="/superadmin/empresas" class="dropdown-item">
-                      <i class="fas fa-building me-2"></i>Empresas
-                    </router-link>
-                  </li>
-                  <li>
-                    <router-link to="/superadmin/config" class="dropdown-item">
-                      <i class="fas fa-cogs me-2"></i>Configuración
-                    </router-link>
-                  </li>
-                  <li>
-                    <router-link to="/superadmin/excel-upload" class="dropdown-item">
-                      <i class="fas fa-file-excel me-2"></i>Carga Excel
-                    </router-link>
-                  </li>
-                  <li><hr class="dropdown-divider" /></li>
-                  <li>
-                    <router-link to="/superadmin/solicitudes" class="dropdown-item">
-                      <i class="fas fa-file-invoice-dollar me-2"></i>Solicitudes
-                    </router-link>
-                  </li>
-                  <li>
-                    <router-link to="/superadmin/reportes" class="dropdown-item">
-                      <i class="fas fa-chart-bar me-2"></i>Reportes
-                    </router-link>
-                  </li>
-                </ul>
+                  <i class="fas fa-file-excel me-2"></i>
+                  <span class="fw-semibold">Carga Usuarios</span>
+                </router-link>
               </li>
             </template>
 
-            <!-- Empresa/Operador Menu -->
+            <!-- EMPRESA/OPERADOR NAVIGATION -->
             <template v-if="authStore.isEmpresa || authStore.isOperador">
               <li class="nav-item">
-                <router-link to="/admin/solicitudes" class="nav-link">
-                  <i class="fas fa-file-invoice-dollar me-1"></i>Solicitudes
+                <router-link to="/admin/solicitudes" class="nav-link px-3 py-2 rounded-3 mx-1">
+                  <i class="fas fa-file-invoice-dollar me-2"></i>
+                  <span class="fw-semibold">Solicitudes</span>
                 </router-link>
               </li>
               <li class="nav-item">
-                <router-link to="/admin/reportes" class="nav-link">
-                  <i class="fas fa-chart-line me-1"></i>Reportes
+                <router-link to="/usuarios" class="nav-link px-3 py-2 rounded-3 mx-1">
+                  <i class="fas fa-users me-2"></i>
+                  <span class="fw-semibold">Empleados</span>
+                </router-link>
+              </li>
+              <li class="nav-item">
+                <router-link to="/admin/reportes" class="nav-link px-3 py-2 rounded-3 mx-1">
+                  <i class="fas fa-chart-line me-2"></i>
+                  <span class="fw-semibold">Reportes</span>
                 </router-link>
               </li>
             </template>
 
-            <!-- Usuario Menu -->
+            <!-- USUARIO NAVIGATION -->
             <template v-if="authStore.isUsuario">
               <li class="nav-item">
-                <router-link to="/usuario/solicitudes" class="nav-link">
-                  <i class="fas fa-hand-holding-usd me-1"></i>Solicitudes
+                <router-link to="/usuario/solicitudes" class="nav-link px-3 py-2 rounded-3 mx-1">
+                  <i class="fas fa-hand-holding-usd me-2"></i>
+                  <span class="fw-semibold">Mis Solicitudes</span>
                 </router-link>
               </li>
               <li class="nav-item">
-                <router-link to="/usuario/bancos" class="nav-link">
-                  <i class="fas fa-university me-1"></i>Bancos
+                <router-link to="/usuario/bancos" class="nav-link px-3 py-2 rounded-3 mx-1">
+                  <i class="fas fa-university me-2"></i>
+                  <span class="fw-semibold">Mis Bancos</span>
                 </router-link>
               </li>
             </template>
           </ul>
 
-          <!-- User Menu -->
+          <!-- User Menu Rediseñado -->
           <div class="navbar-nav">
             <div class="nav-item dropdown">
               <a
-                class="nav-link dropdown-toggle d-flex align-items-center"
+                class="nav-link dropdown-toggle d-flex align-items-center text-white px-3 py-2 rounded-3"
                 href="#"
                 role="button"
                 data-bs-toggle="dropdown"
                 aria-expanded="false"
               >
                 <!-- User Avatar -->
-                <div class="avatar-sm me-2">
-                  <div class="avatar-initial bg-light text-primary rounded-circle">
-                    {{ userInitials }}
-                  </div>
+                <div
+                  class="avatar-circle bg-light text-primary me-2 d-flex align-items-center justify-content-center rounded-circle"
+                  style="width: 32px; height: 32px; font-size: 14px; font-weight: 600"
+                >
+                  {{ userInitials }}
                 </div>
-                <!-- User Info -->
-                <div class="d-flex flex-column align-items-start">
-                  <span class="fw-semibold">{{ userName }}</span>
-                  <small class="text-light opacity-75">{{ roleLabel }}</small>
+                <div class="d-none d-md-block">
+                  <div class="fw-semibold" style="font-size: 14px">{{ userName }}</div>
+                  <div class="text-black-75" style="font-size: 12px">{{ roleLabel }}</div>
                 </div>
               </a>
-              <ul class="dropdown-menu dropdown-menu-end">
+
+              <!-- Dropdown Menu Bootstrap 5 -->
+              <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="min-width: 200px">
                 <li>
-                  <div class="dropdown-header">
-                    <div class="fw-semibold">{{ userName }}</div>
-                    <small class="text-muted">{{ authStore.user?.email }}</small>
-                  </div>
+                  <h6 class="dropdown-header d-flex align-items-center">
+                    <i class="fas fa-user-circle me-2 text-primary"></i>
+                    {{ userName }}
+                  </h6>
                 </li>
                 <li><hr class="dropdown-divider" /></li>
                 <li>
-                  <a class="dropdown-item" href="#" @click.prevent="goToProfile">
-                    <i class="fas fa-user me-2"></i>Mi Perfil
+                  <a
+                    class="dropdown-item d-flex align-items-center"
+                    href="#"
+                    @click.prevent="goToProfile"
+                  >
+                    <i class="fas fa-user me-3 text-muted" style="width: 16px"></i>
+                    <span>Mi Perfil</span>
                   </a>
                 </li>
                 <li>
-                  <a class="dropdown-item" href="#" @click.prevent="goToSettings">
-                    <i class="fas fa-cog me-2"></i>Configuración
+                  <a
+                    class="dropdown-item d-flex align-items-center"
+                    href="#"
+                    @click.prevent="goToSettings"
+                  >
+                    <i class="fas fa-cog me-3 text-muted" style="width: 16px"></i>
+                    <span>Configuración</span>
                   </a>
                 </li>
                 <li><hr class="dropdown-divider" /></li>
                 <li>
-                  <a class="dropdown-item text-danger" href="#" @click.prevent="logout">
-                    <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                  <a
+                    class="dropdown-item d-flex align-items-center text-danger"
+                    href="#"
+                    @click.prevent="logout"
+                  >
+                    <i class="fas fa-sign-out-alt me-3" style="width: 16px"></i>
+                    <span>Cerrar Sesión</span>
                   </a>
                 </li>
               </ul>
@@ -164,21 +183,34 @@
       </div>
     </nav>
 
-    <!-- Breadcrumb (only for authenticated users) -->
-    <nav v-if="authStore.isAuthenticated && showBreadcrumb" class="breadcrumb-nav bg-light py-2">
-      <div class="container">
-        <nav aria-label="breadcrumb">
-          <ol class="breadcrumb mb-0">
+    <!-- Breadcrumb Mejorado Bootstrap 5 -->
+    <nav
+      v-if="authStore.isAuthenticated && showBreadcrumb"
+      class="breadcrumb-container bg-grey opacity-50 border-bottom"
+    >
+      <div class="container-fluid">
+        <nav aria-label="breadcrumb" class="py-2">
+          <ol class="breadcrumb mb-0 d-flex align-items-center">
+            <li class="breadcrumb-item">
+              <router-link to="/dashboard" class="text-decoration-none d-flex align-items-center">
+                <i class="fas fa-home me-1 text-primary"></i>
+                <span class="text-primary">Inicio</span>
+              </router-link>
+            </li>
             <li
               v-for="(item, index) in breadcrumbItems"
               :key="index"
               class="breadcrumb-item"
-              :class="{ active: index === breadcrumbItems.length - 1 }"
+              :class="{ 'active text-muted': index === breadcrumbItems.length - 1 }"
             >
-              <router-link v-if="item.to && index < breadcrumbItems.length - 1" :to="item.to">
+              <router-link
+                v-if="item.to && index < breadcrumbItems.length - 1"
+                :to="item.to"
+                class="text-decoration-none text-primary"
+              >
                 {{ item.text }}
               </router-link>
-              <span v-else>{{ item.text }}</span>
+              <span v-else class="fw-medium">{{ item.text }}</span>
             </li>
           </ol>
         </nav>
@@ -188,8 +220,13 @@
     <!-- Main Content -->
     <main class="main-content">
       <!-- Loading Overlay -->
-      <div v-if="authStore.isLoading" class="loading-overlay">
-        <div class="spinner-border text-primary" role="status">
+      <!-- Loading Overlay -->
+      <div
+        v-if="authStore.isLoading"
+        class="loading-overlay position-fixed w-100 h-100 d-flex align-items-center justify-content-center"
+        style="top: 0; left: 0; background: rgba(255, 255, 255, 0.8); z-index: 9999"
+      >
+        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem">
           <span class="visually-hidden">Cargando...</span>
         </div>
       </div>
@@ -202,17 +239,20 @@
       </router-view>
     </main>
 
-    <!-- Global Toast Container -->
+    <!-- Bootstrap Toast Container (NO vue-toastification) -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
-      <!-- Toasts will be dynamically added here -->
+      <!-- Los toasts se manejarán con Bootstrap puro desde stores/system.js -->
     </div>
 
-    <!-- Footer (only for authenticated users) -->
-    <footer v-if="authStore.isAuthenticated" class="footer bg-light text-center py-3 mt-5">
-      <div class="container">
-        <span class="text-muted">
-          © {{ currentYear }} FlexiRol.
-          <span class="d-none d-md-inline">Sistema de Gestión de Adelantos Salariales.</span>
+    <!-- Footer -->
+    <footer
+      v-if="authStore.isAuthenticated"
+      class="footer bg-light text-center py-3 border-top mt-auto"
+    >
+      <div class="container-fluid">
+        <span class="text-muted small">
+          © {{ currentYear }} FlexiRol
+          <span class="d-none d-md-inline">- Sistema de Gestión de Adelantos Salariales</span>
         </span>
       </div>
     </footer>
@@ -231,7 +271,6 @@ const route = useRoute()
 const authStore = useAuthStore()
 
 // Computed properties
-const canManageUsers = computed(() => authStore.isSuperadmin || authStore.isEmpresa)
 
 const userName = computed(() => {
   const user = authStore.user
@@ -333,3 +372,54 @@ watch(route, () => {
   }
 })
 </script>
+
+<!-- CSS personalizado optimizado usando flexirol.css -->
+<style scoped>
+/* Usa las variables ya definidas en flexirol.css */
+.navbar {
+  transition: var(--flexirol-transition);
+}
+
+.nav-link {
+  transition: var(--flexirol-transition);
+  border-radius: var(--flexirol-border-radius);
+}
+
+.nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  transform: translateY(-1px);
+}
+
+.nav-link.router-link-active {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+  box-shadow: var(--flexirol-shadow-sm);
+}
+
+.breadcrumb-container {
+  border-bottom: 1px solid var(--flexirol-gray-200);
+}
+
+.dropdown-menu {
+  border-radius: var(--flexirol-border-radius);
+  box-shadow: var(--flexirol-shadow-lg);
+}
+
+.dropdown-item:hover {
+  background-color: var(--flexirol-bg-light);
+}
+
+.avatar-circle {
+  font-family: 'Ubuntu', sans-serif;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>

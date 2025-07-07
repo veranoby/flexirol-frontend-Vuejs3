@@ -231,7 +231,7 @@ import { ref, computed, onMounted } from 'vue'
 import * as XLSX from 'xlsx'
 import { useCompaniesStore } from '@/stores/companies'
 import { useUsersStore } from '@/stores/users'
-import { useToast } from 'vue-toastification'
+import { useSystemStore } from '@/stores/system'
 
 export default {
   name: 'ExcelUploadView',
@@ -239,7 +239,7 @@ export default {
   setup() {
     const companyStore = useCompaniesStore()
     const userStore = useUsersStore()
-    const toast = useToast()
+    const systemStore = useSystemStore()
 
     // Estados reactivos
     const selectedCompany = ref(null)
@@ -259,7 +259,7 @@ export default {
         await companyStore.fetchCompanies()
       } catch (error) {
         console.error('Error al cargar las empresas:', error)
-        toast.error('Error al cargar la lista de empresas')
+        systemStore.showToast('Error al cargar la lista de empresas', 'danger')
       }
     })
 
@@ -478,12 +478,15 @@ export default {
 
     async function processFile() {
       if (!selectedCompany.value || !file.value || previewData.value.length === 0) {
-        toast.error('Por favor, selecciona un archivo válido')
+        systemStore.showToast('Por favor, selecciona un archivo válido', 'danger')
         return
       }
 
       if (errorRows.value.length > 0) {
-        toast.error('Por favor, corrige los errores en el archivo antes de continuar')
+        systemStore.showToast(
+          'Por favor, corrige los errores en el archivo antes de continuar',
+          'danger',
+        )
         return
       }
 
@@ -513,8 +516,9 @@ export default {
         })
 
         // Mostrar notificación de éxito
-        toast.success(
+        systemStore.showToast(
           `Se procesaron ${result.processed} usuarios (${result.created} nuevos, ${result.updated} actualizados)`,
+          'success',
         )
 
         // Actualizar el estado con los resultados
@@ -536,7 +540,7 @@ export default {
           error.response?.data?.message ||
           error.message ||
           'Ocurrió un error al procesar la carga masiva'
-        toast.error(errorMessage)
+        systemStore.showToast(errorMessage, 'danger')
 
         // Actualizar el estado con el error
         uploadResult.value = {
@@ -564,6 +568,7 @@ export default {
       // Stores
       companyStore,
       userStore,
+      systemStore,
 
       // Computed
       companies: computed(() => companyStore.companies || []),

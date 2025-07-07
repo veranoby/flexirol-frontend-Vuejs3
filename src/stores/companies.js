@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, reactive } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { api } from '@/services/pocketbase' // Assuming pocketbase service is configured
+import { pb } from '@/services/pocketbase' // Añadir esta línea
 
 // Helper function to create a default company state
 const defaultCompanyState = () => ({
@@ -58,7 +58,7 @@ export const useCompaniesStore = defineStore('companies', () => {
     loading.value = true
     error.value = null
     try {
-      const record = await api.collection('companies').getOne(companyId)
+      const record = await pb.collection('companies').getOne(companyId) // Cambiado a pb.collection
       _setCompanyConfig(record)
       // console.log('Fetched company config by ID:', companyConfig)
     } catch (e) {
@@ -101,7 +101,7 @@ export const useCompaniesStore = defineStore('companies', () => {
         'Superadmin: No specific company assigned, attempting to fetch first available company.',
       )
       try {
-        const resultList = await api.collection('companies').getList(1, 1, { sort: 'created' })
+        const resultList = await pb.collection('companies').getList(1, 1, { sort: 'created' }) // Cambiado a pb.collection
         if (resultList.items && resultList.items.length > 0) {
           _setCompanyConfig(resultList.items[0])
           // console.log('Superadmin fetched first available company:', companyConfig)
@@ -156,7 +156,7 @@ export const useCompaniesStore = defineStore('companies', () => {
 
     try {
       // Update using the id from the form data, which should match companyConfig.id
-      const updatedRecord = await api.collection('companies').update(idToUpdate, dataForApi)
+      const updatedRecord = await pb.collection('companies').update(idToUpdate, dataForApi) // Cambiado a pb.collection
       // Update local state with the response from the server
       _setCompanyConfig(updatedRecord)
       // console.log('Company configuration updated successfully and local state synced.');
@@ -191,7 +191,7 @@ export const useCompaniesStore = defineStore('companies', () => {
   async function fetchCompanies(params = {}) {
     try {
       loading.value = true
-      const result = await api.getCompanies(params)
+      const result = await pb.getCompanies(params) // Cambiado a pb.getCompanies
       return result // Devuelve { items: [], totalItems: 0 }
     } catch (error) {
       console.error('Error al cargar empresas:', error)
