@@ -10,6 +10,7 @@
             </div>
 
             <!-- Title -->
+            <p class="text-center p-0 m-0 text-black-50 text-opacity-50">FlexiRol</p>
             <h2 class="login-title">Sign In</h2>
 
             <!-- Form -->
