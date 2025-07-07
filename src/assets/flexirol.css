@@ -83,10 +83,24 @@
   --flexirol-shadow-elegant: 0 8px 32px rgba(95, 179, 212, 0.12);
 
   /* Transitions - Smooth and polished */
-  --flexirol-transition-fast: all 0.15s ease-out;
-  --flexirol-transition-normal: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  --flexirol-transition-slow: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  --flexirol-transition-fast: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  --flexirol-transition-normal: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  --flexirol-transition-slow: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   --flexirol-transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* Glassmorphism */
+  --glassmorphism-bg: rgba(255, 255, 255, 0.25);
+  --glassmorphism-border: rgba(255, 255, 255, 0.3);
+  --glassmorphism-backdrop: blur(20px);
+
+  /* Login gradient */
+  --login-gradient: linear-gradient(
+    135deg,
+    rgba(255, 235, 59, 0.6) 0%,
+    rgba(129, 236, 236, 0.6) 25%,
+    rgba(100, 181, 246, 0.6) 50%,
+    rgba(186, 104, 200, 0.6) 100%
+  );
 }
 
 /* ===== GLOBAL RESET & BASE ===== */
@@ -123,10 +137,10 @@ body {
 
 /* ===== ELEGANT NAVBAR ===== */
 .navbar {
-  background: rgba(255, 255, 255, 0.98) !important;
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--flexirol-gray-200);
-  box-shadow: var(--flexirol-shadow-sm);
+  background: var(--glassmorphism-bg) !important;
+  backdrop-filter: var(--glassmorphism-backdrop);
+  border-bottom: 1px solid var(--glassmorphism-border);
+  box-shadow: var(--flexirol-shadow-elegant);
   transition: var(--flexirol-transition-normal);
   padding: var(--flexirol-spacing-md) 0;
   z-index: 1040; /* Ensure navbar is above other elements */
@@ -274,13 +288,13 @@ body {
 
 /* ===== ELEGANT CARDS ===== */
 .card {
-  background: var(--flexirol-gradient-card);
-  border: none;
+  background: var(--glassmorphism-bg);
+  backdrop-filter: var(--glassmorphism-backdrop);
+  border: 1px solid var(--glassmorphism-border);
   border-radius: var(--flexirol-radius-lg);
-  box-shadow: var(--flexirol-shadow-sm);
+  box-shadow: var(--flexirol-shadow-elegant);
   transition: var(--flexirol-transition-normal);
   overflow: hidden;
-  backdrop-filter: blur(10px);
   position: relative;
   z-index: 1; /* Fix: Ensure cards don't interfere with dropdowns */
 }
@@ -427,12 +441,12 @@ body {
 
 /* ===== ELEGANT DROPDOWN ===== */
 .dropdown-menu {
-  border: none;
+  background: var(--glassmorphism-bg);
+  backdrop-filter: var(--glassmorphism-backdrop);
+  border: 1px solid var(--glassmorphism-border);
   border-radius: var(--flexirol-radius-lg);
-  box-shadow: var(--flexirol-shadow-xl);
+  box-shadow: var(--flexirol-shadow-lg);
   padding: var(--flexirol-spacing-sm);
-  background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(20px);
   z-index: 1050; /* Fix: Ensure dropdown appears above cards */
 }
 
@@ -603,4 +617,39 @@ body {
   body {
     color-scheme: light;
   }
+}
+
+/* ===== LOGIN SPECIFIC STYLES ===== */
+.login-view {
+  background: var(--login-gradient);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card {
+  background: var(--glassmorphism-bg);
+  backdrop-filter: var(--glassmorphism-backdrop);
+  border: 1px solid var(--glassmorphism-border);
+  border-radius: var(--flexirol-radius-xl);
+  box-shadow: var(--flexirol-shadow-elegant);
+  padding: var(--flexirol-spacing-2xl);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.login-icon {
+  width: 80px;
+  height: 80px;
+  background: var(--glassmorphism-bg);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--flexirol-spacing-xl);
+  color: var(--flexirol-primary);
+  font-size: var(--flexirol-font-size-2xl);
+  box-shadow: var(--flexirol-shadow-md);
 }

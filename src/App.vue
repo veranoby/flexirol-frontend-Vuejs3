@@ -293,6 +293,13 @@ const goToSettings = () => {
 
 // Lifecycle
 onMounted(() => {
+  // Initialize Bootstrap
+  if (!window.bootstrap) {
+    import('bootstrap/dist/js/bootstrap.bundle.min.js').then(() => {
+      console.log('Bootstrap initialized for dropdowns')
+    })
+  }
+
   // Inicializar auth
   authStore.initAuth()
 

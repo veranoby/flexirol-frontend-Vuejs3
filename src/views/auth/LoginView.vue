@@ -1,5 +1,5 @@
 <template>
-  <div class="login-container">
+  <div class="login-view">
     <div class="container-fluid px-0">
       <div class="row g-0">
         <div class="col-12 col-lg-6 mx-auto">
@@ -215,7 +215,7 @@ onMounted(() => {
 
 <style scoped>
 /* Glass morphism login manteniendo colores Flexirol */
-.login-container {
+.login-view {
   min-height: 100vh;
   width: 100%;
   display: flex;
@@ -227,7 +227,7 @@ onMounted(() => {
   overflow: hidden;
 }
 
-.login-container::before {
+.login-view::before {
   content: '';
   position: absolute;
   top: 0;
@@ -462,7 +462,7 @@ onMounted(() => {
 }
 
 @media (max-width: 576px) {
-  .login-container {
+  .login-view {
     padding: 1rem 0.5rem;
   }
 
