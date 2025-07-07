@@ -190,30 +190,12 @@ export const useCompaniesStore = defineStore('companies', () => {
    */
   async function fetchCompanies(params = {}) {
     try {
-      const result = await api.collection('companies').getList(params.page, params.perPage, {
-        filter: params.search ? `name~"${params.search}"` : '',
-        sort: 'name',
-      })
-      return result.items
-    } catch (error) {
-      console.error('Error fetching companies:', error)
-      return []
-    }
-  }
-
-  async function fetchCompanies() {
-    try {
       loading.value = true
-      const { items } = await companies.fetchCompanies({
-        expand: 'assigned_companies,empresa_id', // Relaciones según schema
-      })
-      companies.value = items.map((company) => ({
-        ...company,
-        userCount: company.expand?.assigned_companies?.length || 0,
-      }))
+      const result = await api.getCompanies(params)
+      return result // Devuelve { items: [], totalItems: 0 }
     } catch (error) {
       console.error('Error al cargar empresas:', error)
-      // showToast se maneja en el componente, no en el store
+      return { items: [], totalItems: 0 }
     } finally {
       loading.value = false
     }
