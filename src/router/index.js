@@ -6,7 +6,7 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: '/login',
+      redirect: '/dashboard',
     },
 
     // Auth routes
@@ -46,7 +46,7 @@ const router = createRouter({
       children: [
         {
           path: '',
-          redirect: '/usuarios', // Redirect to consolidated usuarios
+          redirect: '/dashboard',
         },
         {
           path: 'empresas',
@@ -88,7 +88,7 @@ const router = createRouter({
       children: [
         {
           path: '',
-          redirect: '/usuarios', // Redirect to consolidated usuarios
+          redirect: '/dashboard',
         },
         {
           path: 'reportes',
@@ -207,10 +207,9 @@ router.beforeEach(async (to, from, next) => {
 function getRoleDashboard(role) {
   switch (role) {
     case 'superadmin':
-      return '/usuarios' // Consolidated usuarios view
     case 'empresa':
     case 'operador':
-      return '/usuarios' // Consolidated usuarios view
+      return '/dashboard'
     case 'usuario':
       return '/usuario/solicitudes'
     default:

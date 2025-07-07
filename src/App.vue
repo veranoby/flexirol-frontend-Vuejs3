@@ -293,11 +293,17 @@ const goToSettings = () => {
 
 // Lifecycle
 onMounted(() => {
-  // Initialize auth state
+  // Inicializar auth
   authStore.initAuth()
 
-  // Initialize Bootstrap components after mount
-  import('bootstrap/dist/js/bootstrap.bundle.min.js')
+  // Verificar Bootstrap
+  if (!window.bootstrap) {
+    console.error('Bootstrap no está disponible')
+    // Forzar recarga de Bootstrap
+    import('bootstrap/dist/js/bootstrap.bundle.min.js').then(() => {
+      console.log('Bootstrap recargado correctamente')
+    })
+  }
 })
 
 // Watch for authentication changes

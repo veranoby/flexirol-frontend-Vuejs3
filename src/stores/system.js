@@ -183,55 +183,18 @@ export const useSystemStore = defineStore('system', () => {
   /**
    * Get users by role with optional filters (empresa, cedula)
    * @param {string} role - User role to filter by
-   * @param {string} [orderby='created'] - Field to order by
-   * @param {string} [order='desc'] - Sort order (asc/desc)
    * @param {string|null} [empresa=null] - Company ID to filter by
    * @param {string|null} [cedula=null] - Cedula to filter by
    * @returns {Promise<Array>} List of filtered users with expanded company data
    */
-  async function getUsersByRole(
-    role,
-    orderby = 'created',
-    order = 'desc',
-    empresa = null,
-    cedula = null,
-  ) {
+  async function getUsersByRole(role, empresa = null, cedula = null) {
     try {
-      // Base filter for role
-      let filter = `role = "${role}"`
-
-      // Add empresa filter if provided
-      if (empresa) {
-        filter += ` && empresa_id = "${empresa}"`
-      }
-
-      // Add cedula filter if provided
-      if (cedula) {
-        filter += ` && cedula = "${cedula}"`
-      }
-
-      // Get users with optional expand
-      const result = await api.collection('users').getList(1, 500, {
-        filter,
-        sort: `${order === 'desc' ? '-' : ''}${orderby}`,
-        expand: 'empresa_id',
-      })
-
-      // Map results to consistent format
-      return result.items.map((user) => ({
-        id: user.id,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        email: user.email,
-        cedula: user.cedula,
-        role: user.role,
-        gearbox: user.gearbox,
-        disponible: user.disponible,
-        empresa_id: user.empresa_id,
-        empresa: user.expand?.empresa_id || null,
-        created: user.created,
-        updated: user.updated,
-      }))
+      const filters = {}
+      if (role) filters.role = role
+      if (empresa) filters.company_id = empresa
+      if (cedula) filters.cedula = cedula
+      const result = await api.getUsers(filters)
+      return result.items || result
     } catch (error) {
       console.error('Error in getUsersByRole:', error)
       throw new Error('No se pudo obtener la lista de usuarios')
@@ -293,7 +256,16 @@ export const useSystemStore = defineStore('system', () => {
 export const useToastSystem = () => {
   const showToast = (message, type = 'info', duration = 3000) => {
     const toastContainer = document.querySelector('.toast-container')
-    if (!toastContainer) return
+    if (!toastContainer) {
+      console.warn('Toast container not found')
+      return
+    }
+    if (!window.bootstrap || !window.bootstrap.Toast) {
+      console.warn('Bootstrap Toast not available, fallback to alert:', message)
+      // Fallback: simple alert or console
+      // alert(message)
+      return
+    }
     const toastId = `toast-${Date.now()}`
     const typeClass =
       type === 'danger'

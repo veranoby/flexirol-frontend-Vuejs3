@@ -212,8 +212,8 @@ export const useCompaniesStore = defineStore('companies', () => {
         userCount: company.expand?.assigned_companies?.length || 0,
       }))
     } catch (error) {
-      showToast('Error al cargar empresas', 'danger')
-      console.error(error)
+      console.error('Error al cargar empresas:', error)
+      // showToast se maneja en el componente, no en el store
     } finally {
       loading.value = false
     }

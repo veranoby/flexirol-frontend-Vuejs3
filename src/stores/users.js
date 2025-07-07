@@ -104,7 +104,9 @@ export const useUsersStore = defineStore('users', () => {
 
       const filterString = filterParts.length > 0 ? filterParts.join(' && ') : ''
 
-      const result = await api.collection('users').getList(page, perPage, {
+      const result = await api.getUsers({
+        page,
+        perPage,
         filter: filterString,
         sort: '-created',
         expand: 'company_id',
@@ -180,7 +182,7 @@ export const useUsersStore = defineStore('users', () => {
         newUser.assigned_companies = userData.assigned_companies
       }
 
-      const createdUser = await api.collection('users').create(newUser)
+      const createdUser = await api.createUser(newUser)
 
       // Add to local state
       users.value.unshift(mapUserData(createdUser))
@@ -223,7 +225,7 @@ export const useUsersStore = defineStore('users', () => {
         updateData.assigned_companies = userData.assigned_companies
       }
 
-      const updatedUser = await api.collection('users').update(userId, updateData)
+      const updatedUser = await api.updateUser(userId, updateData)
 
       // Update local state
       const index = users.value.findIndex((user) => user.id === userId)
@@ -252,9 +254,8 @@ export const useUsersStore = defineStore('users', () => {
       if (excludeUserId) {
         filter += ` && id!="${excludeUserId}"`
       }
-
-      const result = await api.collection('users').getFirstListItem(filter, { requestKey: null })
-      return result ? true : false
+      const users = await api.getUsers({ filter })
+      return users.items && users.items.length > 0
     } catch (error) {
       // No user found - that's good
       return false
@@ -268,9 +269,8 @@ export const useUsersStore = defineStore('users', () => {
       if (excludeUserId) {
         filter += ` && id!="${excludeUserId}"`
       }
-
-      const result = await api.collection('users').getFirstListItem(filter, { requestKey: null })
-      return result ? true : false
+      const users = await api.getUsers({ filter })
+      return users.items && users.items.length > 0
     } catch (error) {
       // No user found - that's good
       return false
@@ -298,14 +298,14 @@ export const useUsersStore = defineStore('users', () => {
         )
 
         for (const employee of employeeUsers) {
-          await api.collection('users').delete(employee.id)
+          await api.deleteUser(employee.id)
         }
 
         console.log(`Deleted ${employeeUsers.length} employees of company ${user.first_name}`)
       }
 
       // Borrar el usuario principal
-      await api.collection('users').delete(userId)
+      await api.deleteUser(userId)
 
       // Remove from local state
       users.value = users.value.filter((u) => u.id !== userId || u.company_id === userId)
@@ -328,7 +328,7 @@ export const useUsersStore = defineStore('users', () => {
     if (!user) throw new Error('Usuario no encontrado')
 
     try {
-      const updatedUser = await api.collection('users').update(userId, {
+      const updatedUser = await api.updateUser(userId, {
         gearbox: !user.gearbox,
       })
 
@@ -354,7 +354,7 @@ export const useUsersStore = defineStore('users', () => {
     error.value = null
 
     try {
-      await api.collection('users').update(userId, {
+      await api.updateUser(userId, {
         password: newPassword,
         passwordConfirm: newPassword,
       })
@@ -374,9 +374,7 @@ export const useUsersStore = defineStore('users', () => {
    */
   async function getUserById(userId) {
     try {
-      const user = await api.collection('users').getOne(userId, {
-        expand: 'company_id,assigned_companies',
-      })
+      const user = await api.getUserById(userId)
       return mapUserData(user)
     } catch (err) {
       error.value = `Error al obtener usuario: ${err.message}`
@@ -428,7 +426,7 @@ export const useUsersStore = defineStore('users', () => {
     error.value = null
 
     try {
-      const updates = userIds.map((id) => api.collection('users').update(id, updateData))
+      const updates = userIds.map((id) => api.updateUser(id, updateData))
 
       await Promise.all(updates)
 

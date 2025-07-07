@@ -197,21 +197,7 @@ const handleLogin = async () => {
   const result = await authStore.login(form.value.email, form.value.password)
 
   if (result.success) {
-    const role = authStore.userRole
-    switch (role) {
-      case 'superadmin':
-        router.push('/superadmin/usuarios')
-        break
-      case 'empresa':
-      case 'operador':
-        router.push('/admin/usuarios')
-        break
-      case 'usuario':
-        router.push('/usuario/solicitudes')
-        break
-      default:
-        router.push('/dashboard')
-    }
+    router.push('/dashboard')
   }
 }
 
