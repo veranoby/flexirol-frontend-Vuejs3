@@ -235,7 +235,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #3a6a77 0%, #1d9190 50%, #a8d1cb 100%);
+  background: linear-gradient(135deg, #3a6a77 0%, #1d9190 50%, #fffeb8 100%);
   padding: 2rem 1rem;
   position: relative;
   overflow: hidden;
@@ -267,6 +267,7 @@ onMounted(() => {
   position: relative;
   z-index: 1;
   animation: slideInUp 0.6s ease-out;
+  margin: 0 auto;
 }
 
 @keyframes slideInUp {

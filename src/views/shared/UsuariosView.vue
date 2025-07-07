@@ -490,7 +490,7 @@ import { useSystemStore } from '@/stores/system'
 import { useToastSystem } from '@/stores/system'
 import { Modal } from 'bootstrap'
 import * as XLSX from 'xlsx'
-import { validateUserBaseData } from '@/stores/system'
+//import { validateUserBaseData } from '@/stores/system'
 
 // Stores
 const authStore = useAuthStore()
@@ -772,7 +772,7 @@ const handleSubmitUser = async () => {
 
   try {
     // **BUSINESS LOGIC PRESERVADA**: Validación exacta del legacy
-    const validation = await validateUserBaseData(userForm.value, isEditMode.value)
+    const validation = systemStore.validateUserBaseData(userForm.value, isEditMode.value)
     if (!validation.isValid) {
       validationErrors.value = validation.errors
       throw new Error('Validación fallida')
