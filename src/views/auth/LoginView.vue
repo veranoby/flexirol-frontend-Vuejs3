@@ -1,5 +1,5 @@
 <template>
-  <div class="glass-morphism-container min-h-screen">
+  <div class="glass-morphism-container glass-morphism-bg min-h-screen">
     <v-container fluid class="px-0">
       <v-row no-gutters>
         <v-col cols="12" lg="6" class="mx-auto">
@@ -11,7 +11,7 @@
 
             <!-- Title -->
             <p class="text-center p-0 m-0 indigo-darken-4">FlexiRol</p>
-            <h2 class="text-center p-0 m-0 indigo-darken-4">Sign In</h2>
+            <h2 class="text-center p-0 m-0 !indigo-darken-4">Sign In</h2>
 
             <!-- Form -->
             <v-form @submit.prevent="handleLogin" class="login-form">

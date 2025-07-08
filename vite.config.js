@@ -10,7 +10,6 @@ export default defineConfig({
     // ✅ Vuetify PRIMERO (CSS order importante)
     vuetify({
       autoImport: true,
-      styles: { configFile: 'src/assets/vuetify-variables.scss' },
     }),
     // ✅ Tailwind DESPUÉS
     tailwindcss(),

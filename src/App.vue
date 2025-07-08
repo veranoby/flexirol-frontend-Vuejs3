@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <!-- Navigation Bar -->
-    <v-app-bar v-if="authStore.isAuthenticated" color="primary" dark elevation="2" app>
+    <v-app-bar class="!glass-morphism-bg" v-if="authStore.isAuthenticated" dark elevation="2" app>
       <!-- Brand FlexiRol -->
       <router-link to="/dashboard" class="text-decoration-none d-flex align-items-center">
         <v-icon color="warning" class="me-2">mdi-chart-line</v-icon>

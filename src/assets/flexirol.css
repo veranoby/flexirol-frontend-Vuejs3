@@ -57,10 +57,20 @@ body {
 /* ===== GLASS MORPHISM ===== */
 
 /* Contenedor padre (ej: página completa) */
-.glass-morphism-container {
-  background: linear-gradient(135deg, #3a6a77 0%, #1d9190 50%, #fffeb8 100%);
+.glass-morphism-bg {
+  background: linear-gradient(
+    135deg,
+    #3a6a776d 0%,
+    #1d918f7a 50%,
+
+    #fffc5d7b 100%
+  );
   position: relative;
   overflow: hidden;
+  flex-direction: column; /* Alinea el contenido verticalmente */
+}
+
+.glass-morphism-container {
   min-height: 100vh; /* Asegura que ocupe toda la pantalla */
   display: flex; /* Para centrar contenido si es necesario */
   flex-direction: column; /* Alinea el contenido verticalmente */
@@ -82,7 +92,6 @@ body {
 
 /* Elemento hijo (ej: card, menú) */
 .glass-morphism {
-  background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(10px);
   border-radius: 1rem;
   box-shadow: var(--flexirol-shadow-medium);

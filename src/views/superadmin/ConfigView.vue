@@ -1,11 +1,10 @@
 <template>
   <v-container class="max-w-5xl mx-auto mt-6">
-    <div v-if="authStore.loading || companiesStore.loading" class="flex flex-col items-center justify-center min-h-[200px]">
-      <v-progress-circular
-        indeterminate
-        color="warning"
-        size="40"
-      ></v-progress-circular>
+    <div
+      v-if="authStore.loading || companiesStore.loading"
+      class="flex flex-col items-center justify-center min-h-[200px]"
+    >
+      <v-progress-circular indeterminate color="warning" size="40"></v-progress-circular>
       <p class="mt-3">Loading...</p>
     </div>
 
@@ -31,39 +30,63 @@
           <h4>Configuración de la Empresa</h4>
         </v-card-title>
         <v-card-text>
-          <p class="text-h6">Su configuración de Ciclo de Anticipos mensual ha sido configurada por FlexiRol. Si requiere hacer cambios a estos parámetros, comuníquese por favor con soporte@flexirol.com</p>
+          <p class="text-h6">
+            Su configuración de Ciclo de Anticipos mensual ha sido configurada por FlexiRol. Si
+            requiere hacer cambios a estos parámetros, comuníquese por favor con
+            soporte@flexirol.com
+          </p>
 
           <div class="mb-4">
-            <h5 class="flex items-center"><v-icon class="mr-2">mdi-office-building</v-icon> Nombre de la Empresa</h5>
+            <h5 class="flex items-center">
+              <v-icon class="mr-2">mdi-office-building</v-icon> Nombre de la Empresa
+            </h5>
             <p>{{ companyData.company_name || 'No especificado' }}</p>
           </div>
           <v-divider></v-divider>
           <div class="mb-4">
-            <h5 class="flex items-center"><v-icon class="mr-2">mdi-cash</v-icon> Plan Seleccionado Actual</h5>
+            <h5 class="flex items-center">
+              <v-icon class="mr-2">mdi-cash</v-icon> Plan Seleccionado Actual
+            </h5>
             <p v-if="companyData.flexirol3 === '2'">
-              PLAN 2: Valor fijo/pago mensual recurrente (${{ companyData.flexirol2 }} / mensual) <small>(más IVA)</small>
+              PLAN 2: Valor fijo/pago mensual recurrente (${{ companyData.flexirol2 }} / mensual)
+              <small>(más IVA)</small>
             </p>
             <p v-else>
-              PLAN 1: Porcentaje sobre la transacción ({{ companyData.flexirol }}% del Anticipo) <small>(más IVA)</small>
+              PLAN 1: Porcentaje sobre la transacción ({{ companyData.flexirol }}% del Anticipo)
+              <small>(más IVA)</small>
             </p>
           </div>
           <v-divider></v-divider>
-          <h5 class="flex items-center"><v-icon class="mr-2">mdi-calendar-month</v-icon> Ciclo de Anticipos Mensual</h5>
+          <h5 class="flex items-center">
+            <v-icon class="mr-2">mdi-calendar-month</v-icon> Ciclo de Anticipos Mensual
+          </h5>
           <v-row>
-            <v-col md="6" class="mb-2"><strong>Día de inicio de ciclo:</strong> {{ companyData.dia_inicio }} de cada mes</v-col>
-            <v-col md="6" class="mb-2"><strong>Día de cierre de ciclo:</strong> {{ companyData.dia_cierre }} de cada mes</v-col>
-            <v-col md="6" class="mb-2"><strong>Porcentaje del monto máximo:</strong> {{ companyData.porcentaje }}%</v-col>
+            <v-col md="6" class="mb-2"
+              ><strong>Día de inicio de ciclo:</strong> {{ companyData.dia_inicio }} de cada
+              mes</v-col
+            >
+            <v-col md="6" class="mb-2"
+              ><strong>Día de cierre de ciclo:</strong> {{ companyData.dia_cierre }} de cada
+              mes</v-col
+            >
+            <v-col md="6" class="mb-2"
+              ><strong>Porcentaje del monto máximo:</strong> {{ companyData.porcentaje }}%</v-col
+            >
             <v-col md="6" class="mb-2">
               <strong>Bloqueo de petición:</strong> {{ companyData.dia_bloqueo }} días
               <v-tooltip top>
                 <template v-slot:activator="{ props }">
                   <v-icon v-bind="props" class="ml-1">mdi-help-circle</v-icon>
                 </template>
-                <span>Las solicitudes de peticiones iniciarán y se bloquearán este número de días dentro de su ciclo de Anticipos mensual</span>
+                <span
+                  >Las solicitudes de peticiones iniciarán y se bloquearán este número de días
+                  dentro de su ciclo de Anticipos mensual</span
+                >
               </v-tooltip>
             </v-col>
             <v-col md="6" class="mb-2">
-              <strong>Frecuencia máxima de Anticipos por ciclo:</strong> {{ companyData.frecuencia }} solicitudes mensuales
+              <strong>Frecuencia máxima de Anticipos por ciclo:</strong>
+              {{ companyData.frecuencia }} solicitudes mensuales
               <v-tooltip top>
                 <template v-slot:activator="{ props }">
                   <v-icon v-bind="props" class="ml-1">mdi-help-circle</v-icon>
@@ -77,7 +100,10 @@
                 <template v-slot:activator="{ props }">
                   <v-icon v-bind="props" class="ml-1">mdi-help-circle</v-icon>
                 </template>
-                <span>Al realizarse un depósito, cuántos días después se rehabilita poder solicitar Anticipos</span>
+                <span
+                  >Al realizarse un depósito, cuántos días después se rehabilita poder solicitar
+                  Anticipos</span
+                >
               </v-tooltip>
             </v-col>
           </v-row>
@@ -87,20 +113,28 @@
       <!-- Superadmin Edit View -->
       <v-card v-if="authStore.isSuperadmin" class="shadow-md">
         <v-card-title class="bg-success text-white">
-          <h4 class="flex items-center"><v-icon class="mr-2">mdi-pencil-box</v-icon> Editar Configuración Empresarial</h4>
+          <h4 class="flex items-center">
+            <v-icon class="mr-2">mdi-pencil-box</v-icon> Editar Configuración Empresarial
+          </h4>
         </v-card-title>
         <v-card-text>
           <v-form @submit.prevent="handleSaveConfiguration">
             <v-row>
               <!-- Company Name (Read-only for this form) -->
               <v-col cols="12" class="mb-4">
-                <h5 class="flex items-center"><v-icon class="mr-2">mdi-office-building</v-icon> Empresa: {{ companyData.company_name || 'Cargando...' }}</h5>
+                <h5 class="flex items-center">
+                  <v-icon class="mr-2">mdi-office-building</v-icon> Empresa:
+                  {{ companyData.company_name || 'Cargando...' }}
+                </h5>
                 <small class="text-gray-600">ID: {{ companyData.id }}</small>
               </v-col>
 
               <!-- Plan Configuration -->
               <v-col cols="12">
-                <h5 class="flex items-center"><v-icon class="mr-2">mdi-percent</v-icon> Configuración General de Costo del Servicio</h5>
+                <h5 class="flex items-center">
+                  <v-icon class="mr-2">mdi-percent</v-icon> Configuración General de Costo del
+                  Servicio
+                </h5>
               </v-col>
 
               <v-col md="6" class="mb-6">
@@ -133,7 +167,9 @@
                     ></v-btn>
                     <span class="text-sm bg-gray-100 px-2 py-1 rounded">% del Anticipo</span>
                   </div>
-                  <small v-if="validationErrors.flexirol" class="text-red-600">{{ validationErrors.flexirol }}</small>
+                  <small v-if="validationErrors.flexirol" class="text-red-600">{{
+                    validationErrors.flexirol
+                  }}</small>
                 </v-card>
               </v-col>
 
@@ -167,7 +203,9 @@
                     ></v-btn>
                     <span class="text-sm bg-gray-100 px-2 py-1 rounded">/ mensual</span>
                   </div>
-                  <small v-if="validationErrors.flexirol2" class="text-red-600">{{ validationErrors.flexirol2 }}</small>
+                  <small v-if="validationErrors.flexirol2" class="text-red-600">{{
+                    validationErrors.flexirol2
+                  }}</small>
                 </v-card>
               </v-col>
 
@@ -187,7 +225,10 @@
 
               <!-- Monthly Cycle Configuration -->
               <v-col cols="12">
-                <h5 class="flex items-center"><v-icon class="mr-2">mdi-calendar-month</v-icon> Configuración del Ciclo de Anticipos Mensual</h5>
+                <h5 class="flex items-center">
+                  <v-icon class="mr-2">mdi-calendar-month</v-icon> Configuración del Ciclo de
+                  Anticipos Mensual
+                </h5>
               </v-col>
 
               <!-- dia_inicio -->
@@ -220,7 +261,9 @@
                   ></v-btn>
                   <span class="text-sm bg-gray-100 px-2 py-1 rounded">de cada mes</span>
                 </div>
-                <small v-if="validationErrors.dia_inicio" class="text-red-600">{{ validationErrors.dia_inicio }}</small>
+                <small v-if="validationErrors.dia_inicio" class="text-red-600">{{
+                  validationErrors.dia_inicio
+                }}</small>
               </v-col>
 
               <!-- dia_cierre -->
@@ -253,7 +296,9 @@
                   ></v-btn>
                   <span class="text-sm bg-gray-100 px-2 py-1 rounded">de cada mes</span>
                 </div>
-                <small v-if="validationErrors.dia_cierre" class="text-red-600">{{ validationErrors.dia_cierre }}</small>
+                <small v-if="validationErrors.dia_cierre" class="text-red-600">{{
+                  validationErrors.dia_cierre
+                }}</small>
               </v-col>
 
               <!-- porcentaje -->
@@ -286,7 +331,9 @@
                   ></v-btn>
                   <span class="text-sm bg-gray-100 px-2 py-1 rounded">%</span>
                 </div>
-                <small v-if="validationErrors.porcentaje" class="text-red-600">{{ validationErrors.porcentaje }}</small>
+                <small v-if="validationErrors.porcentaje" class="text-red-600">{{
+                  validationErrors.porcentaje
+                }}</small>
               </v-col>
 
               <!-- dia_bloqueo -->
@@ -297,7 +344,10 @@
                     <template v-slot:activator="{ props }">
                       <v-icon v-bind="props" class="ml-1" size="small">mdi-help-circle</v-icon>
                     </template>
-                    <span>Las solicitudes de peticiones iniciarán y se bloquearán este número de días dentro de su ciclo de Anticipos mensual</span>
+                    <span
+                      >Las solicitudes de peticiones iniciarán y se bloquearán este número de días
+                      dentro de su ciclo de Anticipos mensual</span
+                    >
                   </v-tooltip>
                 </v-label>
                 <div class="flex items-center space-x-2">
@@ -326,7 +376,9 @@
                     :disabled="formState.dia_bloqueo >= 31"
                   ></v-btn>
                 </div>
-                <small v-if="validationErrors.dia_bloqueo" class="text-red-600">{{ validationErrors.dia_bloqueo }}</small>
+                <small v-if="validationErrors.dia_bloqueo" class="text-red-600">{{
+                  validationErrors.dia_bloqueo
+                }}</small>
               </v-col>
 
               <!-- frecuencia -->
@@ -367,7 +419,9 @@
                   ></v-btn>
                   <span class="text-sm bg-gray-100 px-2 py-1 rounded">solicitudes</span>
                 </div>
-                <small v-if="validationErrors.frecuencia" class="text-red-600">{{ validationErrors.frecuencia }}</small>
+                <small v-if="validationErrors.frecuencia" class="text-red-600">{{
+                  validationErrors.frecuencia
+                }}</small>
               </v-col>
 
               <!-- dia_reinicio -->
@@ -378,7 +432,10 @@
                     <template v-slot:activator="{ props }">
                       <v-icon v-bind="props" class="ml-1" size="small">mdi-help-circle</v-icon>
                     </template>
-                    <span>Al realizarse un depósito, cuántos días después se rehabilita poder solicitar Anticipos</span>
+                    <span
+                      >Al realizarse un depósito, cuántos días después se rehabilita poder solicitar
+                      Anticipos</span
+                    >
                   </v-tooltip>
                 </v-label>
                 <div class="flex items-center space-x-2">
@@ -407,7 +464,9 @@
                     :disabled="formState.dia_reinicio >= 31"
                   ></v-btn>
                 </div>
-                <small v-if="validationErrors.dia_reinicio" class="text-red-600">{{ validationErrors.dia_reinicio }}</small>
+                <small v-if="validationErrors.dia_reinicio" class="text-red-600">{{
+                  validationErrors.dia_reinicio
+                }}</small>
               </v-col>
             </v-row>
 
@@ -430,7 +489,9 @@
                 Guardar Todos los Cambios
               </v-btn>
             </div>
-            <small v-if="Object.keys(validationErrors).length > 0" class="text-red-600 block mt-2">Corrija los errores antes de guardar.</small>
+            <small v-if="Object.keys(validationErrors).length > 0" class="text-red-600 block mt-2"
+              >Corrija los errores antes de guardar.</small
+            >
           </v-form>
         </v-card-text>
       </v-card>
@@ -446,7 +507,7 @@
 import { ref, onMounted, watch, reactive, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useCompaniesStore } from '@/stores/companies'
-import { Modal, Tooltip } from 'bootstrap' // Import Modal for potential future use, Tooltip for initialization
+//import { Modal, Tooltip } from 'bootstrap' // Import Modal for potential future use, Tooltip for initialization
 
 const authStore = useAuthStore()
 const companiesStore = useCompaniesStore()
@@ -467,36 +528,41 @@ onMounted(async () => {
   })
 
   if (authStore.user && authStore.isAuthenticated) {
-    await companiesStore.fetchCompanyToConfigure();
+    await companiesStore.fetchCompanyToConfigure()
     if (companiesStore.error) {
       // If the store itself has an error (e.g., "No company ID associated"), display it.
-      viewError.value = companiesStore.error;
+      viewError.value = companiesStore.error
     } else if (!companiesStore.companyConfig || !companiesStore.companyConfig.id) {
       // This case might occur if fetchCompanyToConfigure completes without error but also without setting a company
       // e.g. Superadmin and no companies exist. The store should ideally set an error for this.
-      viewError.value = "No se pudo cargar la configuración de la compañía. Verifique que exista una compañía o que esté asignado a una.";
+      viewError.value =
+        'No se pudo cargar la configuración de la compañía. Verifique que exista una compañía o que esté asignado a una.'
     }
   } else if (!authStore.isAuthenticated) {
-    viewError.value = "Usuario no autenticado. Por favor, inicie sesión.";
+    viewError.value = 'Usuario no autenticado. Por favor, inicie sesión.'
   } else {
-     // Should not happen if authStore.user is null and not authenticated
-    viewError.value = "Error de autenticación desconocido."
+    // Should not happen if authStore.user is null and not authenticated
+    viewError.value = 'Error de autenticación desconocido.'
   }
 })
 
 // Watch for changes in companyConfig from store and update local formState for editing
-watch(() => companiesStore.companyConfig, (newConfig) => {
-  if (newConfig && newConfig.id) { // Ensure newConfig is not null and has an id
-    // Deep copy to avoid direct mutation of store state if formState is modified
-    // and then cancelled.
-    Object.assign(formState, JSON.parse(JSON.stringify(newConfig)))
-    // Clear previous validation errors when data reloads
-    for (const key in validationErrors) {
-      delete validationErrors[key];
+watch(
+  () => companiesStore.companyConfig,
+  (newConfig) => {
+    if (newConfig && newConfig.id) {
+      // Ensure newConfig is not null and has an id
+      // Deep copy to avoid direct mutation of store state if formState is modified
+      // and then cancelled.
+      Object.assign(formState, JSON.parse(JSON.stringify(newConfig)))
+      // Clear previous validation errors when data reloads
+      for (const key in validationErrors) {
+        delete validationErrors[key]
+      }
     }
-  }
-}, { immediate: true, deep: true })
-
+  },
+  { immediate: true, deep: true },
+)
 
 const fieldDefinitions = {
   flexirol: { min: 0, max: 100, label: 'Plan 1: Porcentaje' },
@@ -517,7 +583,8 @@ const validateField = (field, min, max) => {
   }
   const numValue = Number(value)
   if (isNaN(numValue) || numValue < min || numValue > max) {
-    validationErrors[field] = `${fieldDefinitions[field]?.label || field} debe estar entre ${min} y ${max}.`
+    validationErrors[field] =
+      `${fieldDefinitions[field]?.label || field} debe estar entre ${min} y ${max}.`
   } else {
     delete validationErrors[field]
   }
@@ -525,7 +592,7 @@ const validateField = (field, min, max) => {
 
 const incrementField = (field, min, max) => {
   let value = Number(formState[field])
-  if (isNaN(value)) value = min; // default to min if not a number
+  if (isNaN(value)) value = min // default to min if not a number
   if (value < max) {
     formState[field] = value + 1
   }
@@ -534,7 +601,7 @@ const incrementField = (field, min, max) => {
 
 const decrementField = (field, min, max) => {
   let value = Number(formState[field])
-   if (isNaN(value)) value = min; // default to min if not a number
+  if (isNaN(value)) value = min // default to min if not a number
   if (value > min) {
     formState[field] = value - 1
   }
@@ -551,14 +618,14 @@ const showGlobalAlert = (message, type = 'success', duration = 3000) => {
 
 const handleSaveConfiguration = async () => {
   // Perform validation for all fields before attempting to save
-  Object.keys(fieldDefinitions).forEach(field => {
-    const def = fieldDefinitions[field];
-    validateField(field, def.min, def.max);
-  });
+  Object.keys(fieldDefinitions).forEach((field) => {
+    const def = fieldDefinitions[field]
+    validateField(field, def.min, def.max)
+  })
 
   if (Object.keys(validationErrors).length > 0) {
-    showGlobalAlert('Por favor, corrija los errores en el formulario.', 'danger');
-    return;
+    showGlobalAlert('Por favor, corrija los errores en el formulario.', 'danger')
+    return
   }
 
   if (confirm('¿Está seguro de que desea guardar estos cambios?')) {
@@ -579,7 +646,7 @@ const handleSaveConfiguration = async () => {
       // and are meant to be editable through this form.
       // For example, if company_name were editable here:
       // company_name: formState.company_name,
-    };
+    }
 
     const success = await companiesStore.saveCompanyConfig(dataToSaveFromForm)
     if (success) {
@@ -596,9 +663,8 @@ const handleSaveConfiguration = async () => {
 // Ensure formState is populated initially if companyData is already available
 // (e.g. if store was populated by a previous view or kept state)
 if (companiesStore.companyConfig && companiesStore.companyConfig.id) {
-   Object.assign(formState, JSON.parse(JSON.stringify(companiesStore.companyConfig)))
+  Object.assign(formState, JSON.parse(JSON.stringify(companiesStore.companyConfig)))
 }
-
 </script>
 
 <style scoped>
@@ -623,7 +689,7 @@ if (companiesStore.companyConfig && companiesStore.companyConfig.id) {
   flex-grow: 0; /* Prevent input from growing too much */
 }
 .card-flexirol .btn {
-    min-width: 40px;
+  min-width: 40px;
 }
 
 /* Using existing CSS classes from the problem description if they make sense here */
