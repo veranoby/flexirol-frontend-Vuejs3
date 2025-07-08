@@ -276,27 +276,16 @@ export const useReportsStore = defineStore('reports', () => {
 
   // Fetch pending loan requests
   async function fetchSolicitudesPendientes() {
+    loading.value = true
+    error.value = null
     try {
-      loading.value = true
-      const today = new Date()
-      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
-      const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
-
-      const result = await api.collection('solicitudes').getList(1, 200, {
-        filter: `estado = "pendiente" && created >= "${firstDay.toISOString()}" && created <= "${lastDay.toISOString()}"`,
-        expand: 'usuario',
-        sort: '-created',
-      })
-
-      solicitudesPendientes.value = result.items.map((item) => ({
-        ...item,
-        ...(item.expand?.usuario || {}),
-      }))
-      return solicitudesPendientes.value
+      const result = await api.getAdvanceRequestsByStatus('pendiente')
+      solicitudesPendientes.value = result.items || result || []
+      console.log('Pendientes loaded:', solicitudesPendientes.value.length)
     } catch (err) {
       console.error('Error fetching pending requests:', err)
-      error.value = 'Error al cargar las solicitudes pendientes'
-      return []
+      error.value = 'Error al cargar solicitudes pendientes'
+      solicitudesPendientes.value = []
     } finally {
       loading.value = false
     }
@@ -304,23 +293,16 @@ export const useReportsStore = defineStore('reports', () => {
 
   // Fetch processing loan requests
   async function fetchSolicitudesProcesando() {
+    loading.value = true
+    error.value = null
     try {
-      loading.value = true
-      const result = await api.collection('solicitudes').getList(1, 200, {
-        filter: 'estado = "procesando"',
-        expand: 'usuario',
-        sort: '-updated',
-      })
-
-      solicitudesProcesando.value = result.items.map((item) => ({
-        ...item,
-        ...(item.expand?.usuario || {}),
-      }))
-      return solicitudesProcesando.value
+      const result = await api.getAdvanceRequestsByStatus('procesando')
+      solicitudesProcesando.value = result.items || result || []
+      console.log('Procesando loaded:', solicitudesProcesando.value.length)
     } catch (err) {
       console.error('Error fetching processing requests:', err)
-      error.value = 'Error al cargar las solicitudes en proceso'
-      return []
+      error.value = 'Error al cargar solicitudes en proceso'
+      solicitudesProcesando.value = []
     } finally {
       loading.value = false
     }
@@ -328,27 +310,16 @@ export const useReportsStore = defineStore('reports', () => {
 
   // Fetch paid loan requests
   async function fetchSolicitudesPagadas() {
+    loading.value = true
+    error.value = null
     try {
-      loading.value = true
-      const today = new Date()
-      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1)
-
-      const result = await api.collection('solicitudes').getList(1, 200, {
-        filter: `estado = "pagado" && updated >= "${firstDay.toISOString()}"`,
-        expand: 'usuario,empresa',
-        sort: '-updated',
-      })
-
-      solicitudesPagadas.value = result.items.map((item) => ({
-        ...item,
-        ...(item.expand?.usuario || {}),
-        empresa_nombre: item.expand?.empresa?.nombre || 'Sin empresa',
-      }))
-      return solicitudesPagadas.value
+      const result = await api.getAdvanceRequestsByStatus('pagado')
+      solicitudesPagadas.value = result.items || result || []
+      console.log('Pagadas loaded:', solicitudesPagadas.value.length)
     } catch (err) {
       console.error('Error fetching paid requests:', err)
-      error.value = 'Error al cargar las solicitudes pagadas'
-      return []
+      error.value = 'Error al cargar solicitudes pagadas'
+      solicitudesPagadas.value = []
     } finally {
       loading.value = false
     }
@@ -415,16 +386,15 @@ export const useReportsStore = defineStore('reports', () => {
   // Exportar Excel bancario con formato UNIVERSAL (compatible Ecuador, USA, global)
   // ❌ ELIMINADO: Formato especial Banco Guayaquil y lógica por banco
   // ✅ UNIVERSAL FORMAT: Una sola hoja, columnas internacionales
-  async function generateBankingExcel(solicitudes = []) {
-    if (solicitudes.length === 0) {
-      error.value = 'No hay solicitudes seleccionadas para generar el Excel'
-      return
+  async function generateBankingExcel(solicitudes) {
+    if (!solicitudes || solicitudes.length === 0) {
+      error.value = 'No hay solicitudes seleccionadas'
+      return false
     }
 
     excelLoading.value = true
-
     try {
-      // UNIVERSAL FORMAT: Todas las solicitudes en una sola hoja
+      // Lógica para generar Excel (se mantiene igual)
       const universalData = solicitudes.map((sol) => ({
         'Account Type': sol.tipo_cuenta === 'ahorros' ? 'Savings' : 'Checking',
         'Account Number': sol.numero_cuenta,
@@ -442,16 +412,13 @@ export const useReportsStore = defineStore('reports', () => {
       const date = new Date().toISOString().split('T')[0]
       XLSX.writeFile(wb, `universal_banking_${date}.xlsx`)
 
-      // Actualizar estado a 'procesando'
+      // Actualizar estado usando el método de api
       await Promise.all(
-        solicitudes.map((sol) =>
-          api.collection('solicitudes').update(sol.id, { estado: 'procesando' }),
-        ),
+        solicitudes.map((sol) => api.updateAdvanceRequestStatus(sol.id, 'procesando')),
       )
 
       // Refrescar listas
       await Promise.all([fetchSolicitudesPendientes(), fetchSolicitudesProcesando()])
-
       return true
     } catch (err) {
       console.error('Error generating universal Excel:', err)
@@ -462,18 +429,16 @@ export const useReportsStore = defineStore('reports', () => {
     }
   }
 
-  // Confirm payment for a request
   async function confirmarAnticipo(solicitudId) {
     try {
       loading.value = true
-      await api.collection('solicitudes').update(solicitudId, {
+      await api.updateAdvanceRequest(solicitudId, {
         estado: 'pagado',
         fecha_pago: new Date().toISOString(),
       })
 
-      // Refresh lists
+      // Refrescar listas
       await Promise.all([fetchSolicitudesProcesando(), fetchSolicitudesPagadas()])
-
       return true
     } catch (err) {
       console.error('Error confirming payment:', err)
