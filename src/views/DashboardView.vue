@@ -388,18 +388,3 @@ onMounted(() => {
   loadDashboardData()
 })
 </script>
-
-<style scoped>
-.dashboard {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.card-flexirol {
-  transition: transform 0.2s ease-in-out;
-}
-
-.card-flexirol:hover {
-  transform: translateY(-2px);
-}
-</style>

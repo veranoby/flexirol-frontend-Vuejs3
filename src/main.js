@@ -1,31 +1,45 @@
+// ✅ ORDEN CORRECTO para evitar conflictos
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 
-// Vuetify
+// 1. Vuetify styles PRIMERO
 import 'vuetify/styles'
 import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 
-// Tailwind CSS
+// 2. MDI icons
+import '@mdi/font/css/materialdesignicons.css'
+
+// 3. Tailwind DESPUÉS (sobrescribe selectivamente)
 import 'tailwindcss'
-import '@mdi/font/css/materialdesignicons.css' // Ensure you are using css-loader
-// // Global styles
+
+// 4. Tus estilos ÚLTIMOS (máxima prioridad)
 import './assets/flexirol.css'
 
-const app = createApp(App)
 const vuetify = createVuetify({
   components,
   directives,
-  icons: {
-    defaultSet: 'mdi', // This is already the default value - only for display purposes
+  theme: {
+    defaultTheme: 'light',
+    themes: {
+      light: {
+        colors: {
+          primary: '#4a90a4', // Tu color
+          secondary: '#5d8aa8', // Tu color
+          accent: '#39711a', // Tu color
+          warning: '#ff8c00', // Tu color
+          error: '#dc3545', // Tu color
+        },
+      },
+    },
   },
 })
 
-app.use(vuetify) // ✅ Añadir Vuetify
+const app = createApp(App)
+app.use(vuetify)
 app.use(createPinia())
 app.use(router)
-
 app.mount('#app')

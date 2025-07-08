@@ -1,10 +1,20 @@
 import { defineConfig } from 'vite'
 import tailwindcss from '@tailwindcss/vite'
+import vuetify from 'vite-plugin-vuetify'
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig({
-  plugins: [vue(), tailwindcss()],
+  plugins: [
+    vue(),
+    // ✅ Vuetify PRIMERO (CSS order importante)
+    vuetify({
+      autoImport: true,
+      styles: { configFile: 'src/assets/vuetify-variables.scss' },
+    }),
+    // ✅ Tailwind DESPUÉS
+    tailwindcss(),
+  ],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
