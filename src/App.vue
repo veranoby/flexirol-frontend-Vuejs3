@@ -25,7 +25,7 @@
           <span class="navbar-toggler-icon"></span>
         </button>
 
-        <!-- Navigation Links Rediseñadas -->
+        <!-- Navigation Links -->
         <div class="collapse navbar-collapse" id="navbarNav">
           <ul class="navbar-nav me-auto">
             <!-- SUPERADMIN NAVIGATION -->
@@ -38,11 +38,11 @@
                 </router-link>
               </li>
 
-              <!-- Usuarios (Empresas) -->
+              <!-- ✅ EMPRESAS (Cambio de "Usuarios" a "Empresas") -->
               <li class="nav-item">
-                <router-link to="/usuarios" class="nav-link px-3 py-2 rounded-3 mx-1">
-                  <i class="fas fa-users me-2"></i>
-                  <span class="fw-semibold">Usuarios</span>
+                <router-link to="/superadmin/empresas" class="nav-link px-3 py-2 rounded-3 mx-1">
+                  <i class="fas fa-building me-2"></i>
+                  <span class="fw-semibold">Empresas</span>
                 </router-link>
               </li>
 
@@ -82,12 +82,15 @@
                   <span class="fw-semibold">Solicitudes</span>
                 </router-link>
               </li>
+
+              <!-- ✅ EMPLEADOS (Cambio de "Usuarios" a "Empleados") -->
               <li class="nav-item">
-                <router-link to="/usuarios" class="nav-link px-3 py-2 rounded-3 mx-1">
+                <router-link to="/admin/empleados" class="nav-link px-3 py-2 rounded-3 mx-1">
                   <i class="fas fa-users me-2"></i>
                   <span class="fw-semibold">Empleados</span>
                 </router-link>
               </li>
+
               <li class="nav-item">
                 <router-link to="/admin/reportes" class="nav-link px-3 py-2 rounded-3 mx-1">
                   <i class="fas fa-chart-line me-2"></i>
@@ -96,7 +99,7 @@
               </li>
             </template>
 
-            <!-- USUARIO NAVIGATION -->
+            <!-- USUARIO NAVIGATION (sin cambios) -->
             <template v-if="authStore.isUsuario">
               <li class="nav-item">
                 <router-link to="/usuario/solicitudes" class="nav-link px-3 py-2 rounded-3 mx-1">
@@ -113,7 +116,7 @@
             </template>
           </ul>
 
-          <!-- User Menu Rediseñado -->
+          <!-- User Menu (sin cambios) -->
           <div class="navbar-nav">
             <div class="nav-item dropdown">
               <a
@@ -132,11 +135,11 @@
                 </div>
                 <div class="d-none d-md-block">
                   <div class="fw-semibold" style="font-size: 14px">{{ userName }}</div>
-                  <div class="text-black-75" style="font-size: 12px">{{ roleLabel }}</div>
+                  <div class="text-light opacity-75" style="font-size: 12px">{{ roleLabel }}</div>
                 </div>
               </a>
 
-              <!-- Dropdown Menu Bootstrap 5 -->
+              <!-- Dropdown Menu -->
               <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="min-width: 200px">
                 <li>
                   <h6 class="dropdown-header d-flex align-items-center">

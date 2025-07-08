@@ -14,17 +14,18 @@ pb.authStore.onChange(() => {
  * @returns {string} - Encoded filter string.
  */
 function buildFilter(filters = {}) {
+  if (!filters || Object.keys(filters).length === 0) return ''
+
   return Object.entries(filters)
+    .filter(([key, value]) => {
+      if (['page', 'perPage', 'sort', 'expand'].includes(key)) return false
+      return value !== null && value !== undefined
+    })
     .map(([key, value]) => {
-      // Handle special cases (null, undefined, arrays)
-      if (value === null || value === undefined) {
-        return `${key}=null`
-      }
       if (Array.isArray(value)) {
-        return `${key}~"${value.map((v) => encodeURIComponent(v)).join('|')}"`
+        return `${key}~"${value.map((v) => String(v).replace(/"/g, '\\"')).join('|')}"`
       }
-      // Default case: encode and wrap in quotes
-      return `${key}="${encodeURIComponent(String(value))}"`
+      return `${key}="${String(value).replace(/"/g, '\\"')}"`
     })
     .join(' && ')
 }
@@ -46,12 +47,15 @@ export const api = {
   },
 
   // Users
-  async getUsers(filters = {}) {
-    return await pb.collection('users').getList(1, 1000, {
-      filter: buildFilter(filters),
-      expand: 'company_id',
+  async getUsers(filters = {}, page = 1, perPage = 1000) {
+    const params = {
+      page,
+      perPage,
       sort: '-created',
-    })
+      expand: 'company_id',
+      ...(buildFilter(filters) && { filter: buildFilter(filters) }),
+    }
+    return await pb.collection('users').getList(page, perPage, params)
   },
 
   async getUserById(id) {
@@ -117,19 +121,66 @@ export const api = {
   },
 
   // Companies
-  async getCompanies(filters = {}) {
-    return await pb.collection('companies').getList(1, 1000, {
-      filter: buildFilter(filters),
+  async getCompanies(filters = {}, page = 1, perPage = 1000) {
+    const params = {
+      page,
+      perPage,
       sort: '-created',
-    })
+      expand: 'owner_id',
+      fields: 'id,nombre,ruc,owner_id,created',
+      ...(buildFilter(filters) && { filter: buildFilter(filters) }),
+    }
+    return await pb.collection('companies').getList(page, perPage, params)
   },
 
   async getCompanyUsers(companyId) {
     return await this.getUsers({ company_id: companyId })
   },
 
-  async createCompany(companyData) {
-    return await pb.collection('companies').create(companyData)
+  async getCompanyUsersHierarchy(companyId) {
+    if (!companyId) throw new Error('companyId is required')
+
+    const company = await pb.collection('companies').getOne(companyId, {
+      expand: 'owner_id',
+      fields: 'id,nombre,owner_id',
+    })
+
+    const allUsers = await pb.collection('users').getFullList({
+      filter: `company_id="${companyId}" || id="${company.owner_id}"`,
+      sort: 'role,-created',
+      fields: 'id,email,role,first_name,last_name',
+    })
+
+    return {
+      company,
+      hierarchy: {
+        owner: allUsers.find((u) => u.id === company.owner_id),
+        admins: allUsers.filter((u) => u.role === 'empresa' && u.id !== company.owner_id),
+        employees: allUsers.filter((u) => u.role === 'usuario'),
+      },
+    }
+  },
+
+  async createCompanyWithOwner(companyData, ownerData) {
+    if (!companyData?.nombre) throw new Error('Company name is required')
+    if (!ownerData?.email) throw new Error('Owner email is required')
+
+    const company = await pb.collection('companies').create({
+      nombre: companyData.nombre,
+      ruc: companyData.ruc || '',
+    })
+
+    const owner = await pb.collection('users').create({
+      ...ownerData,
+      role: 'empresa',
+      company_id: company.id,
+    })
+
+    await pb.collection('companies').update(company.id, {
+      owner_id: owner.id,
+    })
+
+    return { company, owner }
   },
 
   async updateCompany(id, companyData) {

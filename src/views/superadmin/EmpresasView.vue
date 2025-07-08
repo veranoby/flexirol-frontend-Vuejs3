@@ -1,385 +1,467 @@
+<!-- ARCHIVO: src/views/superadmin/EmpresasView.vue - REEMPLAZAR COMPLETO -->
 <template>
-  <div class="empresas-view">
-    <div class="container-fluid">
-      <!-- Header -->
-      <div class="row mb-4">
-        <div class="col-12">
-          <h2 class="mb-1">
-            <i class="fas fa-building text-primary me-2"></i>
-            Gestión de Empresas
-          </h2>
-          <p class="text-muted">Administra todas las empresas del sistema</p>
-        </div>
+  <div class="empresas-view container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <h2 class="mb-1">
+          <i class="fas fa-building text-primary me-2"></i>
+          Gestión de Empresas
+        </h2>
+        <p class="text-muted">Administra las empresas y sus usuarios en el sistema</p>
       </div>
+    </div>
 
-      <!-- Action Bar -->
-      <div class="row mb-4">
-        <div class="col-md-8">
-          <div class="row g-3">
-            <div class="col-md-4">
-              <label class="form-label">Buscar empresa:</label>
-              <input
-                v-model="searchTerm"
-                type="text"
-                class="form-control"
-                placeholder="Nombre o email..."
-              />
-            </div>
-            <div class="col-md-3">
-              <label class="form-label">Estado:</label>
-              <select v-model="statusFilter" class="form-select">
-                <option value="">Todas</option>
-                <option value="true">Activas</option>
-                <option value="false">Bloqueadas</option>
-              </select>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-4 text-end">
-          <button class="btn btn-success" @click="openCreateModal">
-            <i class="fas fa-plus me-1"></i>Nueva Empresa
-          </button>
-        </div>
-      </div>
-
-      <!-- Stats Cards -->
-      <div class="row mb-4">
-        <div class="col-md-3">
-          <div class="card bg-primary text-white">
-            <div class="card-body">
-              <h6>Total Empresas</h6>
-              <h3>{{ stats.total }}</h3>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card bg-success text-white">
-            <div class="card-body">
-              <h6>Empresas Activas</h6>
-              <h3>{{ stats.active }}</h3>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card bg-info text-white">
-            <div class="card-body">
-              <h6>Total Empleados</h6>
-              <h3>{{ stats.totalEmployees }}</h3>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card bg-warning text-white">
-            <div class="card-body">
-              <h6>Sin Excel Actualizado</h6>
-              <h3>{{ stats.withoutExcel }}</h3>
-            </div>
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+      <div class="col-md-3">
+        <div class="card card-flexirol text-center">
+          <div class="card-body">
+            <i class="fas fa-building fa-2x text-primary mb-2"></i>
+            <h4 class="text-primary">{{ stats.totalCompanies }}</h4>
+            <p class="mb-0">Empresas Activas</p>
           </div>
         </div>
       </div>
-
-      <!-- Companies Table -->
-      <div class="row">
-        <div class="col-12">
-          <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-              <h5 class="mb-0">
-                <i class="fas fa-building me-2"></i>
-                Empresas ({{ filteredCompanies.length }})
-              </h5>
-              <button class="btn btn-sm btn-outline-primary" @click="refreshCompanies">
-                <i class="fas fa-sync-alt"></i>
-              </button>
-            </div>
-
-            <div class="card-body p-0">
-              <div v-if="loading" class="text-center py-5">
-                <div class="spinner-border text-primary" role="status">
-                  <span class="visually-hidden">Cargando...</span>
-                </div>
-              </div>
-
-              <div v-else-if="filteredCompanies.length === 0" class="text-center py-5">
-                <i class="fas fa-building fa-3x text-muted mb-3"></i>
-                <p class="text-muted">No hay empresas registradas</p>
-              </div>
-
-              <div v-else class="table-responsive">
-                <table class="table table-hover mb-0">
-                  <thead class="table-light">
-                    <tr>
-                      <th>Empresa</th>
-                      <th>Email</th>
-                      <th>Empleados</th>
-                      <th>Estado</th>
-                      <th>Última Act. Excel</th>
-                      <th>Plan</th>
-                      <th>Configuración</th>
-                      <th width="150">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="company in paginatedCompanies" :key="company.id">
-                      <td>
-                        <div class="d-flex align-items-center">
-                          <div class="avatar-sm me-2">
-                            <div class="avatar-initial bg-primary rounded-circle">
-                              {{ company.first_name?.charAt(0) }}{{ company.last_name?.charAt(0) }}
-                            </div>
-                          </div>
-                          <div>
-                            <div class="fw-semibold">
-                              {{ company.first_name }} {{ company.last_name }}
-                            </div>
-                            <small class="text-muted">ID: {{ company.id }}</small>
-                          </div>
-                        </div>
-                      </td>
-                      <td>{{ company.email }}</td>
-                      <td>
-                        <span class="badge bg-info"
-                          >{{ company.employeeCount || 0 }} empleados</span
-                        >
-                      </td>
-                      <td>
-                        <span :class="company.gearbox ? 'badge bg-success' : 'badge bg-danger'">
-                          {{ company.gearbox ? 'Activa' : 'Bloqueada' }}
-                        </span>
-                      </td>
-                      <td>
-                        <span
-                          v-if="company.fecha_excel && company.fecha_excel !== 'No creado'"
-                          class="text-success"
-                        >
-                          {{ formatDate(company.fecha_excel) }}
-                        </span>
-                        <span v-else class="text-danger">
-                          <i class="fas fa-exclamation-triangle me-1"></i>
-                          Sin actualizar
-                        </span>
-                      </td>
-                      <td>
-                        <span v-if="company.flexirol3 === '1'" class="badge bg-warning">
-                          Plan 1: {{ company.flexirol }}%
-                        </span>
-                        <span v-else class="badge bg-info"> Plan 2: ${{ company.flexirol }} </span>
-                      </td>
-                      <td>
-                        <div class="small">
-                          <div>Ciclo: {{ company.dia_inicio }}-{{ company.dia_cierre }}</div>
-                          <div>Freq: {{ company.frecuencia }} sol/mes</div>
-                        </div>
-                      </td>
-                      <td>
-                        <div class="btn-group btn-group-sm">
-                          <button
-                            class="btn btn-outline-primary"
-                            @click="viewEmployees(company)"
-                            title="Ver empleados"
-                          >
-                            <i class="fas fa-users"></i>
-                          </button>
-                          <button
-                            class="btn btn-outline-secondary"
-                            @click="editCompany(company)"
-                            title="Editar"
-                          >
-                            <i class="fas fa-edit"></i>
-                          </button>
-                          <button
-                            class="btn"
-                            :class="company.gearbox ? 'btn-outline-warning' : 'btn-outline-success'"
-                            @click="toggleCompanyStatus(company)"
-                            :title="company.gearbox ? 'Bloquear' : 'Activar'"
-                          >
-                            <i :class="company.gearbox ? 'fas fa-ban' : 'fas fa-check'"></i>
-                          </button>
-                          <button
-                            class="btn btn-outline-danger"
-                            @click="confirmDelete(company)"
-                            title="Eliminar"
-                          >
-                            <i class="fas fa-trash"></i>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <!-- Pagination -->
-              <div
-                v-if="totalPages > 1"
-                class="d-flex justify-content-between align-items-center p-3 border-top"
-              >
-                <div class="text-muted">
-                  Mostrando {{ (currentPage - 1) * itemsPerPage + 1 }} a
-                  {{ Math.min(currentPage * itemsPerPage, filteredCompanies.length) }}
-                  de {{ filteredCompanies.length }} empresas
-                </div>
-                <nav>
-                  <ul class="pagination pagination-sm mb-0">
-                    <li class="page-item" :class="{ disabled: currentPage === 1 }">
-                      <button class="page-link" @click="goToPage(currentPage - 1)">Anterior</button>
-                    </li>
-                    <li
-                      v-for="page in visiblePages"
-                      :key="page"
-                      class="page-item"
-                      :class="{ active: page === currentPage }"
-                    >
-                      <button class="page-link" @click="goToPage(page)">{{ page }}</button>
-                    </li>
-                    <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-                      <button class="page-link" @click="goToPage(currentPage + 1)">
-                        Siguiente
-                      </button>
-                    </li>
-                  </ul>
-                </nav>
-              </div>
-            </div>
+      <div class="col-md-3">
+        <div class="card card-flexirol text-center">
+          <div class="card-body">
+            <i class="fas fa-user-tie fa-2x text-success mb-2"></i>
+            <h4 class="text-success">{{ stats.totalOwners }}</h4>
+            <p class="mb-0">Propietarios</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card card-flexirol text-center">
+          <div class="card-body">
+            <i class="fas fa-users fa-2x text-info mb-2"></i>
+            <h4 class="text-info">{{ stats.totalAdmins }}</h4>
+            <p class="mb-0">Administradores</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card card-flexirol text-center">
+          <div class="card-body">
+            <i class="fas fa-user-friends fa-2x text-warning mb-2"></i>
+            <h4 class="text-warning">{{ stats.totalEmployees }}</h4>
+            <p class="mb-0">Empleados</p>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Company Form Modal -->
-    <div
-      class="modal fade"
-      id="companyModal"
-      tabindex="-1"
-      aria-hidden="true"
-      ref="companyModalRef"
-    >
+    <!-- Action Bar -->
+    <div class="row mb-4">
+      <div class="col-md-8">
+        <div class="input-group">
+          <span class="input-group-text">
+            <i class="fas fa-search"></i>
+          </span>
+          <input
+            v-model="searchTerm"
+            type="text"
+            class="form-control"
+            placeholder="Buscar empresas por nombre, RUC o propietario..."
+          />
+        </div>
+      </div>
+      <div class="col-md-4 text-end">
+        <button
+          class="btn btn-primary"
+          data-bs-toggle="modal"
+          data-bs-target="#createCompanyModal"
+          @click="openCreateModal"
+        >
+          <i class="fas fa-plus me-2"></i>Nueva Empresa
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div v-if="loading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Cargando empresas...</span>
+      </div>
+    </div>
+
+    <!-- Companies Table -->
+    <div v-else class="card">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="fas fa-list me-2"></i>Empresas Registradas ({{ filteredCompanies.length }})
+        </h5>
+      </div>
+      <div class="card-body p-0">
+        <div v-if="filteredCompanies.length === 0" class="text-center py-5">
+          <i class="fas fa-building fa-3x text-muted mb-3"></i>
+          <h5 class="text-muted">No hay empresas registradas</h5>
+          <p class="text-muted">Crea la primera empresa para comenzar</p>
+        </div>
+
+        <div v-else class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-dark">
+              <tr>
+                <th>Empresa</th>
+                <th>Propietario</th>
+                <th>Usuarios</th>
+                <th>Estado</th>
+                <th>Fecha Creación</th>
+                <th class="text-center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="company in paginatedCompanies" :key="company.id">
+                <td>
+                  <div>
+                    <strong>{{ company.nombre }}</strong>
+                    <br />
+                    <small class="text-muted">{{ company.ruc || 'Sin RUC' }}</small>
+                  </div>
+                </td>
+                <td>
+                  <div v-if="company.expand?.owner_id">
+                    <strong
+                      >{{ company.expand.owner_id.first_name }}
+                      {{ company.expand.owner_id.last_name }}</strong
+                    >
+                    <br />
+                    <small class="text-muted">{{ company.expand.owner_id.email }}</small>
+                  </div>
+                  <span v-else class="text-muted">Sin propietario asignado</span>
+                </td>
+                <td>
+                  <span class="badge bg-info">{{ company.user_count || 0 }} usuarios</span>
+                </td>
+                <td>
+                  <span class="badge" :class="company.gearbox ? 'bg-success' : 'bg-danger'">
+                    {{ company.gearbox ? 'Activa' : 'Bloqueada' }}
+                  </span>
+                </td>
+                <td>
+                  <small>{{ formatDate(company.created) }}</small>
+                </td>
+                <td class="text-center">
+                  <div class="btn-group btn-group-sm">
+                    <button
+                      class="btn btn-outline-primary"
+                      @click="viewCompanyUsers(company)"
+                      title="Ver usuarios"
+                    >
+                      <i class="fas fa-users"></i>
+                    </button>
+                    <button
+                      class="btn btn-outline-secondary"
+                      @click="editCompany(company)"
+                      title="Editar empresa"
+                    >
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button
+                      class="btn btn-outline-warning"
+                      @click="toggleCompanyStatus(company)"
+                      :title="company.gearbox ? 'Bloquear empresa' : 'Activar empresa'"
+                    >
+                      <i :class="company.gearbox ? 'fas fa-ban' : 'fas fa-check'"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div v-if="totalPages > 1" class="card-footer">
+          <nav aria-label="Paginación de empresas">
+            <ul class="pagination pagination-sm justify-content-center mb-0">
+              <li class="page-item" :class="{ disabled: currentPage === 1 }">
+                <button
+                  class="page-link"
+                  @click="changePage(currentPage - 1)"
+                  :disabled="currentPage === 1"
+                >
+                  Anterior
+                </button>
+              </li>
+              <li
+                v-for="page in visiblePages"
+                :key="page"
+                class="page-item"
+                :class="{ active: page === currentPage }"
+              >
+                <button class="page-link" @click="changePage(page)">{{ page }}</button>
+              </li>
+              <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+                <button
+                  class="page-link"
+                  @click="changePage(currentPage + 1)"
+                  :disabled="currentPage === totalPages"
+                >
+                  Siguiente
+                </button>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Create Company -->
+    <div class="modal fade" id="createCompanyModal" tabindex="-1">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">
-              <i :class="isEditMode ? 'fas fa-edit' : 'fas fa-plus'" class="me-2"></i>
-              {{ isEditMode ? 'Editar Empresa' : 'Nueva Empresa' }}
+              <i class="fas fa-plus-circle me-2"></i>
+              {{ isEditMode ? 'Editar Empresa' : 'Crear Nueva Empresa' }}
             </h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
+          <div class="modal-body">
+            <form @submit.prevent="handleSubmit">
+              <!-- Company Info -->
+              <div class="row mb-3">
+                <h6 class="text-primary">
+                  <i class="fas fa-building me-2"></i>Información de la Empresa
+                </h6>
+              </div>
 
-          <form @submit.prevent="handleSubmit">
-            <div class="modal-body">
-              <div class="row g-3">
-                <div class="col-md-6">
+              <div class="row mb-3">
+                <div class="col-md-8">
                   <label class="form-label">Nombre de la Empresa *</label>
-                  <input v-model="form.first_name" type="text" class="form-control" required />
+                  <input
+                    v-model="companyForm.nombre"
+                    type="text"
+                    class="form-control"
+                    required
+                    placeholder="Ej: Acme Corporation"
+                  />
                 </div>
-                <div class="col-md-6">
-                  <label class="form-label">Sucursal/Área</label>
-                  <input v-model="form.last_name" type="text" class="form-control" />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Email *</label>
-                  <input v-model="form.email" type="email" class="form-control" required />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Estado</label>
-                  <div class="form-check form-switch">
-                    <input
-                      v-model="form.gearbox"
-                      class="form-check-input"
-                      type="checkbox"
-                      id="companyStatus"
-                    />
-                    <label class="form-check-label" for="companyStatus">
-                      {{ form.gearbox ? 'Activa' : 'Bloqueada' }}
-                    </label>
-                  </div>
-                </div>
-
-                <!-- Configuración del Plan -->
-                <div class="col-12">
-                  <h6 class="border-bottom pb-2 mb-3">Configuración del Plan</h6>
-                </div>
-
                 <div class="col-md-4">
-                  <label class="form-label">Tipo de Plan</label>
-                  <select v-model="form.flexirol3" class="form-select">
-                    <option value="1">Plan 1: Porcentaje por transacción</option>
-                    <option value="2">Plan 2: Valor fijo mensual</option>
-                  </select>
-                </div>
-
-                <div class="col-md-4">
-                  <label class="form-label">
-                    {{ form.flexirol3 === '1' ? 'Porcentaje (%)' : 'Valor Mensual ($)' }}
-                  </label>
+                  <label class="form-label">RUC (Opcional)</label>
                   <input
-                    v-model.number="form.flexirol"
-                    type="number"
+                    v-model="companyForm.ruc"
+                    type="text"
                     class="form-control"
-                    :step="form.flexirol3 === '1' ? '0.1' : '0.01'"
-                    min="0"
-                  />
-                </div>
-
-                <!-- Configuración del Ciclo -->
-                <div class="col-12">
-                  <h6 class="border-bottom pb-2 mb-3">Configuración del Ciclo de Anticipos</h6>
-                </div>
-
-                <div class="col-md-3">
-                  <label class="form-label">Día Inicio</label>
-                  <input
-                    v-model.number="form.dia_inicio"
-                    type="number"
-                    class="form-control"
-                    min="1"
-                    max="31"
-                  />
-                </div>
-
-                <div class="col-md-3">
-                  <label class="form-label">Día Cierre</label>
-                  <input
-                    v-model.number="form.dia_cierre"
-                    type="number"
-                    class="form-control"
-                    min="1"
-                    max="31"
-                  />
-                </div>
-
-                <div class="col-md-3">
-                  <label class="form-label">Porcentaje Máximo (%)</label>
-                  <input
-                    v-model.number="form.porcentaje"
-                    type="number"
-                    class="form-control"
-                    min="1"
-                    max="100"
-                  />
-                </div>
-
-                <div class="col-md-3">
-                  <label class="form-label">Frecuencia (sol/mes)</label>
-                  <input
-                    v-model.number="form.frecuencia"
-                    type="number"
-                    class="form-control"
-                    min="1"
-                    max="10"
+                    placeholder="Ej: 1234567890001"
                   />
                 </div>
               </div>
+
+              <!-- Owner Info (solo para crear) -->
+              <div v-if="!isEditMode">
+                <div class="row mb-3">
+                  <h6 class="text-success">
+                    <i class="fas fa-user-tie me-2"></i>Propietario Principal
+                  </h6>
+                </div>
+
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Nombre *</label>
+                    <input
+                      v-model="ownerForm.first_name"
+                      type="text"
+                      class="form-control"
+                      required
+                      placeholder="Ej: Juan"
+                    />
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Apellido *</label>
+                    <input
+                      v-model="ownerForm.last_name"
+                      type="text"
+                      class="form-control"
+                      required
+                      placeholder="Ej: Pérez"
+                    />
+                  </div>
+                </div>
+
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Email *</label>
+                    <input
+                      v-model="ownerForm.email"
+                      type="email"
+                      class="form-control"
+                      required
+                      placeholder="juan.perez@empresa.com"
+                    />
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Cédula *</label>
+                    <input
+                      v-model="ownerForm.cedula"
+                      type="text"
+                      class="form-control"
+                      required
+                      pattern="[0-9]{10}"
+                      placeholder="1234567890"
+                      maxlength="10"
+                    />
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+              Cancelar
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              @click="handleSubmit"
+              :disabled="submitting"
+            >
+              <span v-if="submitting" class="spinner-border spinner-border-sm me-2"></span>
+              {{ isEditMode ? 'Actualizar' : 'Crear Empresa' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Company Users Hierarchy -->
+    <div class="modal fade" id="usersModal" tabindex="-1">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="fas fa-users me-2"></i>
+              Usuarios de {{ selectedCompany?.nombre }}
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div v-if="loadingUsers" class="text-center py-4">
+              <div class="spinner-border text-primary"></div>
             </div>
 
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                Cancelar
-              </button>
-              <button type="submit" class="btn btn-primary" :disabled="!isFormValid || submitting">
-                <span v-if="submitting" class="spinner-border spinner-border-sm me-2"></span>
-                {{ isEditMode ? 'Actualizar' : 'Crear' }} Empresa
-              </button>
+            <div v-else-if="companyUsers">
+              <!-- Owner Section -->
+              <div class="mb-4">
+                <h6 class="text-success"><i class="fas fa-crown me-2"></i>Propietario Principal</h6>
+                <div v-if="companyUsers.hierarchy.owner" class="card bg-light">
+                  <div class="card-body py-2">
+                    <div class="row align-items-center">
+                      <div class="col">
+                        <strong
+                          >{{ companyUsers.hierarchy.owner.first_name }}
+                          {{ companyUsers.hierarchy.owner.last_name }}</strong
+                        >
+                        <br />
+                        <small class="text-muted">{{ companyUsers.hierarchy.owner.email }}</small>
+                      </div>
+                      <div class="col-auto">
+                        <span class="badge bg-success">Propietario</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div v-else class="alert alert-warning">
+                  <i class="fas fa-exclamation-triangle me-2"></i>
+                  Sin propietario asignado
+                </div>
+              </div>
+
+              <!-- Admins Section -->
+              <div class="mb-4">
+                <h6 class="text-primary">
+                  <i class="fas fa-user-tie me-2"></i>Administradores ({{
+                    companyUsers.hierarchy.admins.length
+                  }})
+                </h6>
+                <div v-if="companyUsers.hierarchy.admins.length === 0" class="text-muted">
+                  No hay administradores adicionales
+                </div>
+                <div v-else class="row">
+                  <div
+                    v-for="admin in companyUsers.hierarchy.admins"
+                    :key="admin.id"
+                    class="col-md-6 mb-2"
+                  >
+                    <div class="card">
+                      <div class="card-body py-2">
+                        <div class="row align-items-center">
+                          <div class="col">
+                            <strong>{{ admin.first_name }} {{ admin.last_name }}</strong>
+                            <br />
+                            <small class="text-muted">{{ admin.email }}</small>
+                          </div>
+                          <div class="col-auto">
+                            <span class="badge" :class="admin.gearbox ? 'bg-success' : 'bg-danger'">
+                              {{ admin.gearbox ? 'Activo' : 'Bloqueado' }}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Employees Section -->
+              <div class="mb-4">
+                <h6 class="text-info">
+                  <i class="fas fa-users me-2"></i>Empleados ({{
+                    companyUsers.hierarchy.employees.length
+                  }})
+                </h6>
+                <div v-if="companyUsers.hierarchy.employees.length === 0" class="text-muted">
+                  No hay empleados registrados
+                </div>
+                <div v-else class="row">
+                  <div
+                    v-for="employee in companyUsers.hierarchy.employees"
+                    :key="employee.id"
+                    class="col-md-6 mb-2"
+                  >
+                    <div class="card">
+                      <div class="card-body py-2">
+                        <div class="row align-items-center">
+                          <div class="col">
+                            <strong>{{ employee.first_name }} {{ employee.last_name }}</strong>
+                            <br />
+                            <small class="text-muted"
+                              >{{ employee.email }} • {{ employee.cedula }}</small
+                            >
+                            <br />
+                            <small class="text-primary"
+                              >Disponible: ${{ employee.disponible || 0 }}</small
+                            >
+                          </div>
+                          <div class="col-auto">
+                            <span
+                              class="badge"
+                              :class="employee.gearbox ? 'bg-success' : 'bg-danger'"
+                            >
+                              {{ employee.gearbox ? 'Activo' : 'Bloqueado' }}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div class="text-center">
+                <button class="btn btn-primary me-2">
+                  <i class="fas fa-user-plus me-2"></i>Agregar Usuario
+                </button>
+                <button class="btn btn-success">
+                  <i class="fas fa-file-excel me-2"></i>Cargar Excel
+                </button>
+              </div>
             </div>
-          </form>
+          </div>
         </div>
       </div>
     </div>
@@ -387,121 +469,110 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
-import { useUsersStore } from '@/stores/users'
+import { ref, computed, onMounted } from 'vue'
 import { Modal } from 'bootstrap'
+import { api } from '@/services/pocketbase'
+import { useSystemStore } from '@/stores/system'
 
-const router = useRouter()
-const authStore = useAuthStore()
-const usersStore = useUsersStore()
+const systemStore = useSystemStore()
+const { showToast } = systemStore
 
 // State
+const companies = ref([])
 const loading = ref(false)
 const submitting = ref(false)
+const loadingUsers = ref(false)
 const searchTerm = ref('')
-const statusFilter = ref('')
-
-// Modal
-const companyModalRef = ref(null)
-let companyModal = null
-
-// Form
-const isEditMode = ref(false)
-const form = ref({
-  id: null,
-  first_name: '',
-  last_name: '',
-  email: '',
-  gearbox: true,
-  flexirol: 10,
-  flexirol2: 10,
-  flexirol3: '1',
-  dia_inicio: 2,
-  dia_cierre: 28,
-  porcentaje: 50,
-  dia_bloqueo: 2,
-  frecuencia: 3,
-  dia_reinicio: 4,
-})
-
-// Data
-const companies = ref([])
 const currentPage = ref(1)
 const itemsPerPage = 20
 
-// Computed
+// Modal states
+const isEditMode = ref(false)
+const selectedCompany = ref(null)
+const companyUsers = ref(null)
+
+// Form data
+const companyForm = ref({
+  id: null,
+  nombre: '',
+  ruc: '',
+  gearbox: true,
+})
+
+const ownerForm = ref({
+  first_name: '',
+  last_name: '',
+  email: '',
+  cedula: '',
+})
+
+// Stats
+const stats = computed(() => {
+  const totalCompanies = companies.value.length
+  const totalOwners = companies.value.filter((c) => c.expand?.owner_id).length
+  let totalAdmins = 0
+  let totalEmployees = 0
+
+  companies.value.forEach((company) => {
+    if (company.user_stats) {
+      totalAdmins += company.user_stats.admins || 0
+      totalEmployees += company.user_stats.employees || 0
+    }
+  })
+
+  return {
+    totalCompanies,
+    totalOwners,
+    totalAdmins,
+    totalEmployees,
+  }
+})
+
+// Filtering and pagination
 const filteredCompanies = computed(() => {
-  let filtered = [...companies.value]
+  if (!searchTerm.value) return companies.value
 
-  if (searchTerm.value) {
-    const search = searchTerm.value.toLowerCase()
-    filtered = filtered.filter(
-      (company) =>
-        company.first_name?.toLowerCase().includes(search) ||
-        company.last_name?.toLowerCase().includes(search) ||
-        company.email?.toLowerCase().includes(search),
-    )
-  }
-
-  if (statusFilter.value !== '') {
-    const isActive = statusFilter.value === 'true'
-    filtered = filtered.filter((company) => company.gearbox === isActive)
-  }
-
-  return filtered
+  const search = searchTerm.value.toLowerCase()
+  return companies.value.filter(
+    (company) =>
+      company.nombre?.toLowerCase().includes(search) ||
+      company.ruc?.toLowerCase().includes(search) ||
+      company.expand?.owner_id?.first_name?.toLowerCase().includes(search) ||
+      company.expand?.owner_id?.last_name?.toLowerCase().includes(search) ||
+      company.expand?.owner_id?.email?.toLowerCase().includes(search),
+  )
 })
 
 const totalPages = computed(() => Math.ceil(filteredCompanies.value.length / itemsPerPage))
 
 const paginatedCompanies = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage
-  const end = start + itemsPerPage
-  return filteredCompanies.value.slice(start, end)
+  return filteredCompanies.value.slice(start, start + itemsPerPage)
 })
 
 const visiblePages = computed(() => {
   const total = totalPages.value
   const current = currentPage.value
   const pages = []
-
   const start = Math.max(1, current - 2)
   const end = Math.min(total, current + 2)
 
   for (let i = start; i <= end; i++) {
     pages.push(i)
   }
-
   return pages
-})
-
-const stats = computed(() => {
-  const total = companies.value.length
-  const active = companies.value.filter((c) => c.gearbox).length
-  const totalEmployees = companies.value.reduce((sum, c) => sum + (c.employeeCount || 0), 0)
-  const withoutExcel = companies.value.filter(
-    (c) => !c.fecha_excel || c.fecha_excel === 'No creado',
-  ).length
-
-  return { total, active, totalEmployees, withoutExcel }
-})
-
-const isFormValid = computed(() => {
-  return form.value.first_name && form.value.email
 })
 
 // Methods
 const loadCompanies = async () => {
   loading.value = true
   try {
-    const result = await usersStore.fetchUsersByRole('empresa')
-    companies.value = result.map((company) => ({
-      ...company,
-      employeeCount: 0, // TODO: Load employee count
-    }))
+    const result = await api.getCompanies()
+    companies.value = result.items || []
+    console.log('Companies loaded:', companies.value.length)
   } catch (error) {
     console.error('Error loading companies:', error)
+    showToast('Error al cargar las empresas', 'danger')
   } finally {
     loading.value = false
   }
@@ -509,150 +580,135 @@ const loadCompanies = async () => {
 
 const openCreateModal = () => {
   isEditMode.value = false
-  resetForm()
-  companyModal.show()
+  companyForm.value = { id: null, nombre: '', ruc: '', gearbox: true }
+  ownerForm.value = { first_name: '', last_name: '', email: '', cedula: '' }
 }
 
 const editCompany = (company) => {
   isEditMode.value = true
-  form.value = { ...company }
-  companyModal.show()
+  companyForm.value = {
+    id: company.id,
+    nombre: company.nombre,
+    ruc: company.ruc || '',
+    gearbox: company.gearbox,
+  }
+
+  const modal = new Modal(document.getElementById('createCompanyModal'))
+  modal.show()
 }
 
 const handleSubmit = async () => {
+  if (submitting.value) return
+
   submitting.value = true
   try {
-    const companyData = {
-      ...form.value,
-      role: 'empresa',
-    }
-
     if (isEditMode.value) {
-      await usersStore.updateUser(form.value.id, companyData)
+      await api.updateCompany(companyForm.value.id, {
+        nombre: companyForm.value.nombre,
+        ruc: companyForm.value.ruc,
+      })
+      showToast('Empresa actualizada exitosamente', 'success')
     } else {
-      await usersStore.createUser(companyData)
+      await api.createCompanyWithOwner(companyForm.value, ownerForm.value)
+      showToast('Empresa y propietario creados exitosamente', 'success')
     }
 
-    companyModal.hide()
     await loadCompanies()
+
+    const modal = Modal.getInstance(document.getElementById('createCompanyModal'))
+    modal.hide()
   } catch (error) {
     console.error('Error saving company:', error)
+    showToast('Error al guardar la empresa', 'danger')
   } finally {
     submitting.value = false
   }
 }
 
+const viewCompanyUsers = async (company) => {
+  selectedCompany.value = company
+  loadingUsers.value = true
+
+  const modal = new Modal(document.getElementById('usersModal'))
+  modal.show()
+
+  try {
+    companyUsers.value = await api.getCompanyUsersHierarchy(company.id)
+  } catch (error) {
+    console.error('Error loading company users:', error)
+    showToast('Error al cargar los usuarios de la empresa', 'danger')
+  } finally {
+    loadingUsers.value = false
+  }
+}
+
 const toggleCompanyStatus = async (company) => {
   try {
-    await usersStore.toggleUserStatus(company.id)
-    await loadCompanies()
+    await api.updateCompany(company.id, {
+      gearbox: !company.gearbox,
+    })
+
+    company.gearbox = !company.gearbox
+    showToast(`Empresa ${company.gearbox ? 'activada' : 'bloqueada'} exitosamente`, 'success')
   } catch (error) {
     console.error('Error toggling company status:', error)
+    showToast('Error al cambiar el estado de la empresa', 'danger')
   }
 }
 
-const confirmDelete = (company) => {
-  if (
-    confirm(`¿Eliminar empresa ${company.first_name}? Esto eliminará también todos sus empleados.`)
-  ) {
-    deleteCompany(company)
-  }
-}
-
-const deleteCompany = async (company) => {
-  try {
-    await usersStore.deleteUser(company.id)
-    await loadCompanies()
-  } catch (error) {
-    console.error('Error deleting company:', error)
-  }
-}
-
-const viewEmployees = (company) => {
-  router.push({
-    name: 'usuarios',
-    query: { empresa: company.id },
-  })
-}
-
-const refreshCompanies = () => {
-  loadCompanies()
-}
-
-const goToPage = (page) => {
+const changePage = (page) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page
   }
 }
 
-const resetForm = () => {
-  form.value = {
-    id: null,
-    first_name: '',
-    last_name: '',
-    email: '',
-    gearbox: true,
-    flexirol: 10,
-    flexirol2: 10,
-    flexirol3: '1',
-    dia_inicio: 2,
-    dia_cierre: 28,
-    porcentaje: 50,
-    dia_bloqueo: 2,
-    frecuencia: 3,
-    dia_reinicio: 4,
-  }
-}
-
 const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString('es-EC')
+  return new Date(dateString).toLocaleDateString('es-EC', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  })
 }
 
 // Lifecycle
-onMounted(async () => {
-  companyModal = new Modal(companyModalRef.value)
-  await loadCompanies()
-})
-
-onUnmounted(() => {
-  if (companyModal) companyModal.dispose()
+onMounted(() => {
+  loadCompanies()
 })
 </script>
 
 <style scoped>
 .empresas-view {
-  padding: 1rem;
+  min-height: 100vh;
 }
 
-.avatar-sm {
-  width: 40px;
-  height: 40px;
+.card-flexirol {
+  transition: transform 0.2s ease;
 }
 
-.avatar-initial {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  color: white;
-  font-size: 14px;
+.card-flexirol:hover {
+  transform: translateY(-2px);
+}
+
+.badge {
+  font-size: 0.75em;
+}
+
+.btn-group-sm > .btn {
+  border-radius: 0.25rem;
 }
 
 .table th {
   border-top: none;
   font-weight: 600;
-  color: #495057;
-  background-color: #f8f9fa;
+  background-color: var(--flexirol-primary);
+  color: white;
 }
 
-.card {
-  border: none;
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+.table-hover tbody tr:hover {
+  background-color: var(--flexirol-bg-light);
 }
 
-.badge {
-  font-size: 0.75em;
+.modal-xl {
+  max-width: 1200px;
 }
 </style>

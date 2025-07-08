@@ -1,6 +1,4 @@
-// ARCHIVO: src/router/index.js
-// CORRECCIÓN LÍNEA 67: Cambiar ruta de SolicitudesView para superadmin
-
+// ARCHIVO: src/router/index.js - REEMPLAZAR COMPLETO
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
@@ -28,20 +26,6 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
 
-    // ===== RUTAS CONSOLIDADAS INTELIGENTES =====
-
-    // Usuarios - Componente inteligente único para superadmin y empresa
-    {
-      path: '/usuarios',
-      name: 'usuarios',
-      component: () => import('@/views/shared/UsuariosView.vue'),
-      meta: {
-        requiresAuth: true,
-        roles: ['superadmin', 'empresa'],
-        title: 'Gestión de Usuarios',
-      },
-    },
-
     // ===== RUTAS ESPECIALIZADAS SUPERADMIN =====
     {
       path: '/superadmin',
@@ -52,6 +36,7 @@ const router = createRouter({
           redirect: '/dashboard',
         },
         {
+          // SUPERADMIN VE EMPRESAS (companies collection)
           path: 'empresas',
           name: 'superadmin-empresas',
           component: () => import('@/views/superadmin/EmpresasView.vue'),
@@ -70,10 +55,9 @@ const router = createRouter({
           meta: { title: 'Carga Masiva Excel' },
         },
         {
-          // ✅ CORRECCIÓN CRÍTICA: Cambiar de shared a superadmin
           path: 'solicitudes',
           name: 'superadmin-solicitudes',
-          component: () => import('@/views/superadmin/SolicitudesView.vue'), // ✅ CORREGIDO
+          component: () => import('@/views/superadmin/SolicitudesView.vue'),
           meta: { title: 'Dashboard de Solicitudes' },
         },
         {
@@ -95,16 +79,22 @@ const router = createRouter({
           redirect: '/dashboard',
         },
         {
+          // EMPRESA VE SUS EMPLEADOS (users collection filtrado)
+          path: 'empleados',
+          name: 'admin-empleados',
+          component: () => import('@/views/shared/UsuariosView.vue'),
+          meta: { title: 'Mis Empleados' },
+        },
+        {
           path: 'reportes',
           name: 'admin-reportes',
           component: () => import('@/views/shared/ReportesView.vue'),
           meta: { title: 'Reportes de la Empresa' },
         },
         {
-          // Empresa/Operador usa shared (genérico)
           path: 'solicitudes',
           name: 'admin-solicitudes',
-          component: () => import('@/views/shared/SolicitudesView.vue'), // ✅ Correcto para empresa/operador
+          component: () => import('@/views/shared/SolicitudesView.vue'),
           meta: { title: 'Solicitudes de Adelantos' },
         },
       ],
@@ -120,10 +110,9 @@ const router = createRouter({
           redirect: '/usuario/solicitudes',
         },
         {
-          // Usuario tiene su propia vista específica
           path: 'solicitudes',
           name: 'usuario-solicitudes',
-          component: () => import('@/views/usuario/SolicitudesView.vue'), // ✅ Correcto para usuario
+          component: () => import('@/views/usuario/SolicitudesView.vue'),
           meta: { title: 'Mis Solicitudes' },
         },
         {
@@ -135,14 +124,19 @@ const router = createRouter({
       ],
     },
 
-    // ===== LEGACY REDIRECTS (Para compatibilidad) =====
+    // ===== LEGACY REDIRECTS =====
     {
-      path: '/admin/usuarios',
-      redirect: '/usuarios',
-    },
-    {
-      path: '/superadmin/usuarios',
-      redirect: '/usuarios',
+      path: '/usuarios',
+      redirect: () => {
+        // Redirect based on user role at runtime
+        const authStore = useAuthStore()
+        if (authStore.isSuperadmin) {
+          return '/superadmin/empresas'
+        } else if (authStore.isEmpresa || authStore.isOperador) {
+          return '/admin/empleados'
+        }
+        return '/dashboard'
+      },
     },
 
     // ===== ERROR ROUTES =====
@@ -165,25 +159,21 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
 
-  // Initialize auth if not already done
   if (!authStore.user && !authStore.isLoading) {
     authStore.initAuth()
   }
 
-  // Check authentication requirement
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login')
     return
   }
 
-  // Check guest-only routes
   if (to.meta.requiresGuest && authStore.isAuthenticated) {
     const redirectPath = getRoleDashboard(authStore.userRole)
     next(redirectPath)
     return
   }
 
-  // Check role permissions
   if (to.meta.roles && !to.meta.roles.includes(authStore.userRole)) {
     console.warn(`Access denied. User role: ${authStore.userRole}, Required: ${to.meta.roles}`)
     next('/unauthorized')
@@ -193,11 +183,9 @@ router.beforeEach(async (to, from, next) => {
   next()
 })
 
-// Helper function for role-based redirects
 function getRoleDashboard(userRole) {
   switch (userRole) {
     case 'superadmin':
-      return '/dashboard'
     case 'empresa':
     case 'operador':
       return '/dashboard'
@@ -208,16 +196,11 @@ function getRoleDashboard(userRole) {
   }
 }
 
-// Breadcrumb helper function (optimizada)
-export function getBreadcrumb(route, userRole) {
+// Breadcrumb helper function optimizada
+export function getBreadcrumb(route) {
   const breadcrumb = []
 
-  if (route.path === '/usuarios') {
-    breadcrumb.push({
-      text: userRole === 'superadmin' ? 'Usuarios del Sistema' : 'Mis Empleados',
-      to: '/usuarios',
-    })
-  } else if (route.path.startsWith('/superadmin')) {
+  if (route.path.startsWith('/superadmin')) {
     breadcrumb.push({
       text: 'Administración',
       to: '/superadmin',
@@ -240,7 +223,9 @@ export function getBreadcrumb(route, userRole) {
       to: '/admin',
     })
 
-    if (route.name === 'admin-solicitudes') {
+    if (route.name === 'admin-empleados') {
+      breadcrumb.push({ text: 'Mis Empleados' })
+    } else if (route.name === 'admin-solicitudes') {
       breadcrumb.push({ text: 'Solicitudes' })
     } else if (route.name === 'admin-reportes') {
       breadcrumb.push({ text: 'Reportes' })
