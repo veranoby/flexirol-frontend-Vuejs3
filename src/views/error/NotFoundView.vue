@@ -1,44 +1,49 @@
 <!-- NotFoundView.vue -->
 <template>
   <div class="error-page">
-    <div class="container">
-      <div class="row justify-content-center">
-        <div class="col-md-6 text-center">
+    <v-container>
+      <v-row justify="center">
+        <v-col md="6" class="text-center">
           <div class="error-icon mb-4">
-            <i class="fas fa-search fa-5x text-muted"></i>
+            <v-icon size="80" color="grey-lighten-1">mdi-magnify</v-icon>
           </div>
-          <h1 class="display-4 fw-bold text-dark mb-3">404</h1>
+          <h1 class="display-4 font-weight-bold text-dark mb-3">404</h1>
           <h2 class="h4 mb-4">Página No Encontrada</h2>
           <p class="text-muted mb-4">
             La página que buscas no existe o ha sido movida. Verifica la URL o navega usando el menú
             principal.
           </p>
 
-          <div class="d-flex justify-content-center gap-3">
-            <button @click="goBack" class="btn btn-outline-secondary">
-              <i class="fas fa-arrow-left me-2"></i>Volver
-            </button>
-            <router-link to="/dashboard" class="btn btn-primary">
-              <i class="fas fa-home me-2"></i>Ir al Dashboard
-            </router-link>
+          <div class="d-flex justify-center gap-3 mb-4">
+            <v-btn @click="goBack" variant="outlined" color="secondary">
+              <v-icon left>mdi-arrow-left</v-icon>
+              Volver
+            </v-btn>
+            <v-btn :to="'/dashboard'" color="primary">
+              <v-icon left>mdi-home</v-icon>
+              Ir al Dashboard
+            </v-btn>
           </div>
 
           <div class="mt-5">
             <h6 class="text-muted mb-3">Páginas disponibles:</h6>
-            <div class="d-flex flex-wrap justify-content-center gap-2">
-              <router-link
+            <div class="d-flex flex-wrap justify-center gap-2">
+              <v-btn
                 v-for="route in availableRoutes"
                 :key="route.path"
                 :to="route.path"
-                class="btn btn-sm btn-outline-primary"
+                size="small"
+                variant="outlined"
+                color="primary"
               >
-                <i :class="route.icon + ' me-1'"></i>{{ route.label }}
-              </router-link>
+                <v-icon left>{{ route.icon }}</v-icon>
+                {{ route.label }}
+              </v-btn>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
+        </v-col>
+      </v-row>
+    </v-container>
   </div>
 </template>
 

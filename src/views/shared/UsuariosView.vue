@@ -2,161 +2,187 @@
   <div class="usuarios-view">
     <!-- Loading Spinner -->
     <div v-if="loading" class="d-flex justify-content-center my-5">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Cargando...</span>
-      </div>
+      <v-progress-circular
+        indeterminate
+        color="primary"
+        size="40"
+      ></v-progress-circular>
+      <span class="ml-3">Cargando...</span>
     </div>
 
     <!-- Main Content -->
-    <div v-else class="container-fluid">
+    <v-container v-else fluid>
       <!-- Dynamic Header -->
-      <div class="row mb-4">
-        <div class="col-12">
+      <v-row class="mb-4">
+        <v-col cols="12">
           <h2 class="mb-1">
-            <i :class="roleIcon" class="me-2"></i>
+            <v-icon :class="roleIcon" class="me-2"></v-icon>
             {{ pageTitle }}
           </h2>
           <p class="text-muted">{{ pageDescription }}</p>
-        </div>
-      </div>
+        </v-col>
+      </v-row>
 
       <!-- Action Bar -->
-      <div class="row mb-4">
-        <div class="col-md-8">
+      <v-row class="mb-4">
+        <v-col md="8">
           <!-- Company Selector (Solo Superadmin) -->
-          <div v-if="canSelectCompany" class="row g-3">
-            <div class="col-md-4">
-              <label class="form-label">Empresa:</label>
-              <select v-model="selectedCompanyId" class="form-select" @change="onCompanyChange">
-                <option value="">-- Todas las Empresas --</option>
-                <option v-for="company in availableCompanies" :key="company.id" :value="company.id">
-                  {{ company.first_name }} {{ company.last_name }}
-                </option>
-              </select>
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">Tipo Usuario:</label>
-              <select v-model="selectedUserType" class="form-select">
-                <option value="">Todos</option>
-                <option value="empresa">Empresas</option>
-                <option value="operador">Operadores</option>
-                <option value="usuario">Empleados</option>
-              </select>
-            </div>
-          </div>
+          <v-row v-if="canSelectCompany" class="g-3">
+            <v-col md="4">
+              <v-select
+                v-model="selectedCompanyId"
+                :items="availableCompanies"
+                item-title="first_name"
+                item-value="id"
+                label="Empresa"
+                clearable
+                @update:model-value="onCompanyChange"
+              >
+                <template #prepend-item>
+                  <v-list-item
+                    title="-- Todas las Empresas --"
+                    value=""
+                  ></v-list-item>
+                </template>
+              </v-select>
+            </v-col>
+            <v-col md="4">
+              <v-select
+                v-model="selectedUserType"
+                :items="[
+                  { title: 'Todos', value: '' },
+                  { title: 'Empresas', value: 'empresa' },
+                  { title: 'Operadores', value: 'operador' },
+                  { title: 'Empleados', value: 'usuario' }
+                ]"
+                label="Tipo Usuario"
+                clearable
+              ></v-select>
+            </v-col>
+          </v-row>
 
           <!-- Basic Filters -->
-          <div v-else class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label">Buscar empleados:</label>
-              <div class="input-group">
-                <input
-                  v-model="searchTerm"
-                  type="text"
-                  class="form-control"
-                  placeholder="Nombre, cédula o email..."
-                  @input="onSearch"
-                />
-                <button class="btn btn-outline-secondary" type="button" @click="clearSearch">
-                  <i class="fas fa-times"></i>
-                </button>
-              </div>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label">Estado:</label>
-              <select v-model="statusFilter" class="form-select">
-                <option value="">Todos</option>
-                <option value="true">Habilitados</option>
-                <option value="false">Bloqueados</option>
-              </select>
-            </div>
-          </div>
-        </div>
+          <v-row v-else class="g-3">
+            <v-col md="6">
+              <v-text-field
+                v-model="searchTerm"
+                label="Buscar empleados"
+                placeholder="Nombre, cédula o email..."
+                prepend-inner-icon="mdi-magnify"
+                clearable
+                @input="onSearch"
+                @click:clear="clearSearch"
+              ></v-text-field>
+            </v-col>
+            <v-col md="3">
+              <v-select
+                v-model="statusFilter"
+                :items="[
+                  { title: 'Todos', value: '' },
+                  { title: 'Habilitados', value: 'true' },
+                  { title: 'Bloqueados', value: 'false' }
+                ]"
+                label="Estado"
+                clearable
+              ></v-select>
+            </v-col>
+          </v-row>
+        </v-col>
 
         <!-- Action Buttons -->
-        <div class="col-md-4 text-end">
-          <button
+        <v-col md="4" class="text-end">
+          <v-btn
             v-if="canCreateCompanies"
-            class="btn btn-success me-2"
+            color="success"
+            class="me-2"
             @click="openCreateCompanyModal"
           >
-            <i class="fas fa-building me-1"></i>Nueva Empresa
-          </button>
-          <button class="btn btn-primary" @click="openCreateUserModal">
-            <i class="fas fa-user-plus me-1"></i>
+            <v-icon left>mdi-office-building</v-icon>
+            Nueva Empresa
+          </v-btn>
+          <v-btn color="primary" @click="openCreateUserModal">
+            <v-icon left>mdi-account-plus</v-icon>
             {{ canCreateCompanies ? 'Nuevo Usuario' : 'Nuevo Empleado' }}
-          </button>
-        </div>
-      </div>
+          </v-btn>
+        </v-col>
+      </v-row>
 
       <!-- Stats Cards (Solo Superadmin) -->
-      <div v-if="authStore.isSuperadmin" class="row mb-4">
-        <div class="col-md-3">
-          <div class="card bg-primary text-white">
-            <div class="card-body">
+      <v-row v-if="authStore.isSuperadmin" class="mb-4">
+        <v-col md="3">
+          <v-card color="primary" dark>
+            <v-card-text>
               <h6>Total Empresas</h6>
               <h3>{{ stats.totalCompanies }}</h3>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card bg-success text-white">
-            <div class="card-body">
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col md="3">
+          <v-card color="success" dark>
+            <v-card-text>
               <h6>Total Usuarios</h6>
               <h3>{{ stats.totalUsers }}</h3>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card bg-info text-white">
-            <div class="card-body">
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col md="3">
+          <v-card color="info" dark>
+            <v-card-text>
               <h6>Usuarios Activos</h6>
               <h3>{{ stats.activeUsers }}</h3>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card bg-warning text-white">
-            <div class="card-body">
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col md="3">
+          <v-card color="warning" dark>
+            <v-card-text>
               <h6>Empresa Seleccionada</h6>
               <h3>{{ selectedCompanyUsersCount }}</h3>
-            </div>
-          </div>
-        </div>
-      </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
 
       <!-- Users Table -->
-      <div class="row">
-        <div class="col-12">
-          <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-              <h5 class="mb-0">
-                <i class="fas fa-users me-2"></i>
+      <v-row>
+        <v-col cols="12">
+          <v-card>
+            <v-card-title class="d-flex justify-space-between align-center">
+              <div>
+                <v-icon class="me-2">mdi-account-multiple</v-icon>
                 {{ tableTitle }} ({{ filteredUsers.length }})
-              </h5>
+              </div>
               <div class="d-flex gap-2">
-                <button class="btn btn-sm btn-outline-secondary" @click="refreshUsers">
-                  <i class="fas fa-sync-alt"></i>
-                </button>
-                <button
+                <v-btn
+                  size="small"
+                  variant="outlined"
+                  color="secondary"
+                  @click="refreshUsers"
+                >
+                  <v-icon>mdi-refresh</v-icon>
+                </v-btn>
+                <v-btn
                   v-if="canExportData"
-                  class="btn btn-sm btn-outline-primary"
+                  size="small"
+                  variant="outlined"
+                  color="primary"
                   @click="exportToExcel"
                 >
-                  <i class="fas fa-file-excel me-1"></i>Exportar
-                </button>
+                  <v-icon left>mdi-file-excel</v-icon>
+                  Exportar
+                </v-btn>
               </div>
-            </div>
+            </v-card-title>
 
-            <div class="card-body p-0">
+            <v-card-text class="pa-0">
               <div v-if="filteredUsers.length === 0" class="text-center py-5">
-                <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                <v-icon size="48" class="text-muted mb-3">mdi-account-multiple</v-icon>
                 <p class="text-muted">{{ emptyMessage }}</p>
               </div>
 
-              <div v-else class="table-responsive">
-                <table class="table table-hover mb-0">
-                  <thead class="table-light">
+              <div v-else>
+                <v-table>
+                  <thead>
                     <tr>
                       <th>Nombre</th>
                       <th>Email</th>
@@ -172,14 +198,12 @@
                   <tbody>
                     <tr v-for="user in paginatedUsers" :key="user.id">
                       <td>
-                        <div class="d-flex align-items-center">
-                          <div class="avatar-sm me-2">
-                            <div class="avatar-initial bg-primary rounded-circle">
-                              {{ user.first_name?.[0] }}{{ user.last_name?.[0] }}
-                            </div>
-                          </div>
+                        <div class="d-flex align-center">
+                          <v-avatar size="32" color="primary" class="me-2">
+                            <span class="text-white">{{ user.first_name?.[0] }}{{ user.last_name?.[0] }}</span>
+                          </v-avatar>
                           <div>
-                            <div class="fw-semibold">
+                            <div class="font-weight-medium">
                               {{ user.first_name }} {{ user.last_name }}
                             </div>
                             <small class="text-muted">@{{ user.username || user.cedula }}</small>
@@ -191,293 +215,250 @@
                         <code class="text-dark">{{ user.cedula }}</code>
                       </td>
                       <td v-if="showRoleColumn">
-                        <span :class="getRoleBadgeClass(user.role)">{{
-                          getRoleLabel(user.role)
-                        }}</span>
+                        <v-chip :color="getRoleBadgeColor(user.role)" size="small">
+                          {{ getRoleLabel(user.role) }}
+                        </v-chip>
                       </td>
                       <td v-if="showCompanyColumn">
-                        <span v-if="user.company"
-                          >{{ user.company.first_name }} {{ user.company.last_name }}</span
-                        >
+                        <span v-if="user.company">
+                          {{ user.company.first_name }} {{ user.company.last_name }}
+                        </span>
                         <span v-else class="text-muted">Sin empresa</span>
                       </td>
                       <td>
-                        <span :class="user.gearbox ? 'badge bg-success' : 'badge bg-danger'">
+                        <v-chip :color="user.gearbox ? 'success' : 'error'" size="small">
                           {{ user.gearbox ? 'Habilitado' : 'Bloqueado' }}
-                        </span>
+                        </v-chip>
                       </td>
                       <td v-if="showAmountColumn">
-                        <span class="fw-semibold">${{ user.disponible || 0 }}</span>
+                        <span class="font-weight-medium">${{ user.disponible || 0 }}</span>
                       </td>
                       <td>
                         <small class="text-muted">{{ formatDate(user.created) }}</small>
                       </td>
                       <td>
-                        <div class="btn-group btn-group-sm">
-                          <button
-                            class="btn btn-outline-primary"
+                        <v-btn-group size="small">
+                          <v-btn
+                            variant="outlined"
+                            color="primary"
                             @click="editUser(user)"
                             title="Editar"
                           >
-                            <i class="fas fa-edit"></i>
-                          </button>
-                          <button
-                            class="btn"
-                            :class="user.gearbox ? 'btn-outline-warning' : 'btn-outline-success'"
+                            <v-icon>mdi-pencil</v-icon>
+                          </v-btn>
+                          <v-btn
+                            variant="outlined"
+                            :color="user.gearbox ? 'warning' : 'success'"
                             @click="toggleUserStatus(user)"
                             :title="user.gearbox ? 'Bloquear' : 'Habilitar'"
                           >
-                            <i :class="user.gearbox ? 'fas fa-ban' : 'fas fa-check'"></i>
-                          </button>
-                          <button
+                            <v-icon>{{ user.gearbox ? 'mdi-cancel' : 'mdi-check' }}</v-icon>
+                          </v-btn>
+                          <v-btn
                             v-if="canDeleteUsers"
-                            class="btn btn-outline-danger"
+                            variant="outlined"
+                            color="error"
                             @click="confirmDeleteUser(user)"
                             title="Eliminar"
                           >
-                            <i class="fas fa-trash"></i>
-                          </button>
-                        </div>
+                            <v-icon>mdi-delete</v-icon>
+                          </v-btn>
+                        </v-btn-group>
                       </td>
                     </tr>
                   </tbody>
-                </table>
+                </v-table>
               </div>
 
               <!-- Pagination -->
               <div
                 v-if="totalPages > 1"
-                class="d-flex justify-content-between align-items-center p-3 border-top"
+                class="d-flex justify-space-between align-center pa-3"
               >
                 <div class="text-muted">
                   Mostrando {{ (currentPage - 1) * itemsPerPage + 1 }} a
                   {{ Math.min(currentPage * itemsPerPage, filteredUsers.length) }}
                   de {{ filteredUsers.length }} resultados
                 </div>
-                <nav>
-                  <ul class="pagination pagination-sm mb-0">
-                    <li class="page-item" :class="{ disabled: currentPage === 1 }">
-                      <button class="page-link" @click="goToPage(currentPage - 1)">Anterior</button>
-                    </li>
-                    <li
-                      v-for="page in visiblePages"
-                      :key="page"
-                      class="page-item"
-                      :class="{ active: page === currentPage }"
-                    >
-                      <button class="page-link" @click="goToPage(page)">{{ page }}</button>
-                    </li>
-                    <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-                      <button class="page-link" @click="goToPage(currentPage + 1)">
-                        Siguiente
-                      </button>
-                    </li>
-                  </ul>
-                </nav>
+                <v-pagination
+                  v-model="currentPage"
+                  :length="totalPages"
+                  :total-visible="5"
+                  size="small"
+                ></v-pagination>
               </div>
-            </div>
-          </div>
-        </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+    </v-container>
       </div>
     </div>
 
     <!-- Create/Edit User Modal -->
-    <div class="modal fade" id="userModal" tabindex="-1" aria-hidden="true" ref="userModalRef">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">
-              <i :class="isEditMode ? 'fas fa-edit' : 'fas fa-user-plus'" class="me-2"></i>
-              {{ isEditMode ? 'Editar Usuario' : 'Crear Usuario' }}
-            </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
+    <v-dialog v-model="showUserModal" max-width="800px" persistent>
+      <v-card>
+        <v-card-title>
+          <v-icon :class="isEditMode ? 'mdi-pencil' : 'mdi-account-plus'" class="me-2"></v-icon>
+          {{ isEditMode ? 'Editar Usuario' : 'Crear Usuario' }}
+          <v-spacer></v-spacer>
+          <v-btn icon @click="showUserModal = false">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
 
-          <form @submit.prevent="handleSubmitUser">
-            <div class="modal-body">
-              <div class="row g-3">
-                <!-- Basic Info -->
-                <div class="col-md-6">
-                  <label class="form-label">Nombre *</label>
-                  <input
-                    v-model="userForm.first_name"
-                    type="text"
-                    class="form-control"
-                    :class="{ 'is-invalid': validationErrors.first_name }"
-                    required
-                  />
-                  <div v-if="validationErrors.first_name" class="invalid-feedback">
-                    {{ validationErrors.first_name }}
-                  </div>
-                </div>
+        <v-form @submit.prevent="handleSubmitUser">
+          <v-card-text>
+            <v-row>
+              <!-- Basic Info -->
+              <v-col md="6">
+                <v-text-field
+                  v-model="userForm.first_name"
+                  label="Nombre *"
+                  :error-messages="validationErrors.first_name"
+                  required
+                ></v-text-field>
+              </v-col>
 
-                <div class="col-md-6">
-                  <label class="form-label">
-                    {{ userForm.role === 'empresa' ? 'Sucursal/Área' : 'Apellido' }} *
-                  </label>
-                  <input
-                    v-model="userForm.last_name"
-                    type="text"
-                    class="form-control"
-                    :class="{ 'is-invalid': validationErrors.last_name }"
-                    required
-                  />
-                  <div v-if="validationErrors.last_name" class="invalid-feedback">
-                    {{ validationErrors.last_name }}
-                  </div>
-                </div>
+              <v-col md="6">
+                <v-text-field
+                  v-model="userForm.last_name"
+                  :label="userForm.role === 'empresa' ? 'Sucursal/Área *' : 'Apellido *'"
+                  :error-messages="validationErrors.last_name"
+                  required
+                ></v-text-field>
+              </v-col>
 
-                <div class="col-md-6">
-                  <label class="form-label">Email *</label>
-                  <input
-                    v-model="userForm.email"
-                    type="email"
-                    class="form-control"
-                    :class="{ 'is-invalid': validationErrors.email }"
-                    required
-                  />
-                  <div v-if="validationErrors.email" class="invalid-feedback">
-                    {{ validationErrors.email }}
-                  </div>
-                </div>
+              <v-col md="6">
+                <v-text-field
+                  v-model="userForm.email"
+                  label="Email *"
+                  type="email"
+                  :error-messages="validationErrors.email"
+                  required
+                ></v-text-field>
+              </v-col>
 
-                <div class="col-md-6">
-                  <label class="form-label">Cédula *</label>
-                  <input
-                    v-model="userForm.cedula"
-                    type="text"
-                    class="form-control"
-                    :class="{ 'is-invalid': validationErrors.cedula }"
-                    maxlength="10"
-                    pattern="[0-9]{10}"
-                    required
-                  />
-                  <div v-if="validationErrors.cedula" class="invalid-feedback">
-                    {{ validationErrors.cedula }}
-                  </div>
-                </div>
+              <v-col md="6">
+                <v-text-field
+                  v-model="userForm.cedula"
+                  label="Cédula *"
+                  :error-messages="validationErrors.cedula"
+                  maxlength="10"
+                  required
+                ></v-text-field>
+              </v-col>
 
-                <!-- Role Selection (Solo Superadmin) -->
-                <div v-if="canSelectRole" class="col-md-6">
-                  <label class="form-label">Rol *</label>
-                  <select v-model="userForm.role" class="form-select" required>
-                    <option value="empresa">Empresa</option>
-                    <option value="operador">Operador</option>
-                    <option value="usuario">Usuario/Empleado</option>
-                  </select>
-                </div>
+              <!-- Role Selection (Solo Superadmin) -->
+              <v-col v-if="canSelectRole" md="6">
+                <v-select
+                  v-model="userForm.role"
+                  label="Rol *"
+                  :items="[
+                    { title: 'Empresa', value: 'empresa' },
+                    { title: 'Operador', value: 'operador' },
+                    { title: 'Usuario/Empleado', value: 'usuario' }
+                  ]"
+                  required
+                ></v-select>
+              </v-col>
 
-                <!-- Company Selection (Para Usuarios/Operadores) -->
-                <div v-if="needsCompanySelection" class="col-md-6">
-                  <label class="form-label">Empresa *</label>
-                  <select v-model="userForm.company_id" class="form-select" required>
-                    <option value="">Seleccionar empresa...</option>
-                    <option
-                      v-for="company in availableCompanies"
-                      :key="company.id"
-                      :value="company.id"
-                    >
-                      {{ company.first_name }} {{ company.last_name }}
-                    </option>
-                  </select>
-                </div>
+              <!-- Company Selection (Para Usuarios/Operadores) -->
+              <v-col v-if="needsCompanySelection" md="6">
+                <v-select
+                  v-model="userForm.company_id"
+                  label="Empresa *"
+                  :items="availableCompanies"
+                  item-title="first_name"
+                  item-value="id"
+                  required
+                ></v-select>
+              </v-col>
 
-                <!-- Amount Available (Para Usuarios) -->
-                <div v-if="userForm.role === 'usuario'" class="col-md-6">
-                  <label class="form-label">Monto Disponible</label>
-                  <div class="input-group">
-                    <span class="input-group-text">$</span>
-                    <input
-                      v-model.number="userForm.disponible"
-                      type="number"
-                      class="form-control"
-                      min="0"
-                      step="0.01"
-                    />
-                  </div>
-                </div>
+              <!-- Amount Available (Para Usuarios) -->
+              <v-col v-if="userForm.role === 'usuario'" md="6">
+                <v-text-field
+                  v-model.number="userForm.disponible"
+                  label="Monto Disponible"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  prefix="$"
+                ></v-text-field>
+              </v-col>
 
-                <!-- Status -->
-                <div class="col-md-6">
-                  <label class="form-label">Estado</label>
-                  <div class="form-check form-switch">
-                    <input
-                      v-model="userForm.gearbox"
-                      class="form-check-input"
-                      type="checkbox"
-                      id="userStatus"
-                    />
-                    <label class="form-check-label" for="userStatus">
-                      {{ userForm.gearbox ? 'Habilitado' : 'Bloqueado' }}
-                    </label>
-                  </div>
-                </div>
+              <!-- Status -->
+              <v-col md="6">
+                <v-switch
+                  v-model="userForm.gearbox"
+                  :label="userForm.gearbox ? 'Habilitado' : 'Bloqueado'"
+                  color="success"
+                ></v-switch>
+              </v-col>
 
-                <!-- Password (Solo para nuevos usuarios) -->
-                <div v-if="!isEditMode" class="col-12">
-                  <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
-                    La contraseña inicial será la cédula del usuario. El usuario puede cambiarla
-                    desde su perfil.
-                  </div>
-                </div>
-              </div>
-            </div>
+              <!-- Password (Solo para nuevos usuarios) -->
+              <v-col v-if="!isEditMode" cols="12">
+                <v-alert type="info" variant="tonal">
+                  <v-icon>mdi-information</v-icon>
+                  La contraseña inicial será la cédula del usuario. El usuario puede cambiarla
+                  desde su perfil.
+                </v-alert>
+              </v-col>
+            </v-row>
+          </v-card-text>
 
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                Cancelar
-              </button>
-              <button type="submit" class="btn btn-primary" :disabled="!isFormValid || submitting">
-                <span v-if="submitting" class="spinner-border spinner-border-sm me-2"></span>
-                {{ isEditMode ? 'Actualizar' : 'Crear' }} Usuario
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn variant="outlined" @click="showUserModal = false">
+              Cancelar
+            </v-btn>
+            <v-btn
+              type="submit"
+              color="primary"
+              :loading="submitting"
+              :disabled="!isFormValid || submitting"
+            >
+              {{ isEditMode ? 'Actualizar' : 'Crear' }} Usuario
+            </v-btn>
+          </v-card-actions>
+        </v-form>
+      </v-card>
+    </v-dialog>
 
     <!-- Delete Confirmation Modal -->
-    <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true" ref="deleteModalRef">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">
-              <i class="fas fa-exclamation-triangle text-danger me-2"></i>
-              Confirmar Eliminación
-            </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <p>¿Está seguro de que desea eliminar a este usuario?</p>
-            <div v-if="userToDelete" class="alert alert-warning">
-              <strong>{{ userToDelete.first_name }} {{ userToDelete.last_name }}</strong
-              ><br />
-              <small>{{ userToDelete.email }} | {{ userToDelete.cedula }}</small>
-            </div>
-            <p class="text-danger small">
-              <i class="fas fa-exclamation-triangle me-1"></i>
-              Esta acción no se puede deshacer.
-            </p>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-              Cancelar
-            </button>
-            <button
-              type="button"
-              class="btn btn-danger"
-              @click="handleDeleteUser"
-              :disabled="submitting"
-            >
-              <span v-if="submitting" class="spinner-border spinner-border-sm me-2"></span>
-              Eliminar Usuario
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <v-dialog v-model="showDeleteModal" max-width="400px" persistent>
+      <v-card>
+        <v-card-title>
+          <v-icon color="error" class="me-2">mdi-alert-circle</v-icon>
+          Confirmar Eliminación
+        </v-card-title>
+        <v-card-text>
+          <p>¿Está seguro de que desea eliminar a este usuario?</p>
+          <v-alert v-if="userToDelete" type="warning" variant="tonal">
+            <strong>{{ userToDelete.first_name }} {{ userToDelete.last_name }}</strong><br />
+            <small>{{ userToDelete.email }} | {{ userToDelete.cedula }}</small>
+          </v-alert>
+          <p class="text-error text-caption">
+            <v-icon size="small" class="me-1">mdi-alert-circle</v-icon>
+            Esta acción no se puede deshacer.
+          </p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn variant="outlined" @click="showDeleteModal = false">
+            Cancelar
+          </v-btn>
+          <v-btn
+            color="error"
+            :loading="submitting"
+            @click="handleDeleteUser"
+            :disabled="submitting"
+          >
+            Eliminar Usuario
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -488,7 +469,6 @@ import { useUsersStore } from '@/stores/users'
 import { useCompaniesStore } from '@/stores/companies'
 import { useSystemStore } from '@/stores/system'
 import { useToastSystem } from '@/stores/system'
-import { Modal } from 'bootstrap'
 import * as XLSX from 'xlsx'
 //import { validateUserBaseData } from '@/stores/system'
 
@@ -504,11 +484,9 @@ const loading = ref(false)
 const submitting = ref(false)
 const validationErrors = ref({})
 
-// Modal refs
-const userModalRef = ref(null)
-const deleteModalRef = ref(null)
-let userModal = null
-let deleteModal = null
+// Modal state
+const showUserModal = ref(false)
+const showDeleteModal = ref(false)
 
 // Filters & Search
 const selectedCompanyId = ref('')
@@ -739,14 +717,14 @@ const resetForm = () => {
 const openCreateUserModal = () => {
   isEditMode.value = false
   resetForm()
-  userModal.show()
+  showUserModal.value = true
 }
 
 const openCreateCompanyModal = () => {
   isEditMode.value = false
   resetForm()
   userForm.value.role = 'empresa'
-  userModal.show()
+  showUserModal.value = true
 }
 
 const editUser = (user) => {
@@ -763,7 +741,7 @@ const editUser = (user) => {
     gearbox: user.gearbox,
   }
   validationErrors.value = {}
-  userModal.show()
+  showUserModal.value = true
 }
 
 const handleSubmitUser = async () => {
@@ -812,7 +790,7 @@ const handleSubmitUser = async () => {
       showToast('Usuario creado exitosamente', 'success')
     }
 
-    userModal.hide()
+    showUserModal.value = false
     await loadUsers()
   } catch (error) {
     console.error('Error saving user:', error)
@@ -836,7 +814,7 @@ const toggleUserStatus = async (user) => {
 
 const confirmDeleteUser = (user) => {
   userToDelete.value = user
-  deleteModal.show()
+  showDeleteModal.value = true
 }
 
 const handleDeleteUser = async () => {
@@ -846,7 +824,7 @@ const handleDeleteUser = async () => {
   try {
     await usersStore.deleteUser(userToDelete.value.id)
     showToast('Usuario eliminado exitosamente', 'success')
-    deleteModal.hide()
+    showDeleteModal.value = false
     await loadUsers()
   } catch (error) {
     console.error('Error deleting user:', error)
@@ -905,6 +883,16 @@ const getRoleBadgeClass = (role) => {
   return classes[role] || 'badge bg-secondary'
 }
 
+const getRoleBadgeColor = (role) => {
+  const colors = {
+    superadmin: 'error',
+    empresa: 'primary',
+    operador: 'info',
+    usuario: 'success',
+  }
+  return colors[role] || 'secondary'
+}
+
 // Export functionality
 const exportToExcel = () => {
   const exportData = filteredUsers.value.map((user) => ({
@@ -931,18 +919,8 @@ const exportToExcel = () => {
 
 // Lifecycle
 onMounted(async () => {
-  // Initialize Bootstrap modals
-  userModal = new Modal(userModalRef.value)
-  deleteModal = new Modal(deleteModalRef.value)
-
   // Load initial data
   await Promise.all([loadUsers(), loadCompanies()])
-})
-
-onUnmounted(() => {
-  // Clean up modals
-  if (userModal) userModal.dispose()
-  if (deleteModal) deleteModal.dispose()
 })
 
 // Watch for company selection changes

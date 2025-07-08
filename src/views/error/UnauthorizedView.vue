@@ -1,35 +1,37 @@
 <!-- UnauthorizedView.vue -->
 <template>
   <div class="error-page">
-    <div class="container">
-      <div class="row justify-content-center">
-        <div class="col-md-6 text-center">
+    <v-container>
+      <v-row justify="center">
+        <v-col md="6" class="text-center">
           <div class="error-icon mb-4">
-            <i class="fas fa-ban fa-5x text-warning"></i>
+            <v-icon size="80" color="warning">mdi-cancel</v-icon>
           </div>
-          <h1 class="display-4 fw-bold text-dark mb-3">403</h1>
+          <h1 class="display-4 font-weight-bold text-dark mb-3">403</h1>
           <h2 class="h4 mb-4">Acceso No Autorizado</h2>
           <p class="text-muted mb-4">
             No tienes permisos para acceder a esta página. Si crees que esto es un error, contacta
             con tu administrador.
           </p>
 
-          <div class="d-flex justify-content-center gap-3">
-            <button @click="goBack" class="btn btn-outline-secondary">
-              <i class="fas fa-arrow-left me-2"></i>Volver
-            </button>
-            <router-link :to="dashboardPath" class="btn btn-primary">
-              <i class="fas fa-home me-2"></i>Ir al Dashboard
-            </router-link>
+          <div class="d-flex justify-center gap-3 mb-4">
+            <v-btn @click="goBack" variant="outlined" color="secondary">
+              <v-icon left>mdi-arrow-left</v-icon>
+              Volver
+            </v-btn>
+            <v-btn :to="dashboardPath" color="primary">
+              <v-icon left>mdi-home</v-icon>
+              Ir al Dashboard
+            </v-btn>
           </div>
 
           <div class="mt-5">
-            <h6 class="text-muted">Tu rol actual:</h6>
-            <span class="badge bg-info fs-6">{{ roleLabel }}</span>
+            <h6 class="text-muted mb-3">Tu rol actual:</h6>
+            <v-chip color="info" size="large">{{ roleLabel }}</v-chip>
           </div>
-        </div>
-      </div>
-    </div>
+        </v-col>
+      </v-row>
+    </v-container>
   </div>
 </template>
 

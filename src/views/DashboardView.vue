@@ -1,133 +1,135 @@
 <template>
-  <div class="dashboard mt-5">
+  <v-container class="dashboard mt-5">
     <!-- Header -->
-    <div class="row mb-4">
-      <div class="col-12">
+    <v-row class="mb-4">
+      <v-col cols="12">
         <h2 class="text-flexirol-primary">
           Bienvenido, {{ authStore.user?.name || authStore.user?.email }}
         </h2>
         <p class="text-muted">{{ roleDescription }}</p>
-      </div>
-    </div>
+      </v-col>
+    </v-row>
 
     <!-- Superadmin Dashboard -->
     <template v-if="authStore.isSuperadmin">
-      <div class="row">
-        <div class="col-md-3 col-sm-6 mb-4">
-          <div class="card card-flexirol text-center">
-            <div class="card-body">
-              <i class="fas fa-building fa-2x text-flexirol-primary mb-2"></i>
+      <v-row>
+        <v-col md="3" sm="6" class="mb-4">
+          <v-card class="text-center">
+            <v-card-text>
+              <v-icon class="mb-2" size="36" color="flexirol-primary">mdi-office-building</v-icon>
               <h4 class="text-flexirol-primary">{{ stats.totalCompanies }}</h4>
               <p class="mb-0">Empresas Activas</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3 col-sm-6 mb-4">
-          <div class="card card-flexirol text-center">
-            <div class="card-body">
-              <i class="fas fa-users fa-2x text-flexirol-secondary mb-2"></i>
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col md="3" sm="6" class="mb-4">
+          <v-card class="text-center">
+            <v-card-text>
+              <v-icon class="mb-2" size="36" color="flexirol-secondary">mdi-account</v-icon>
               <h4 class="text-flexirol-secondary">{{ stats.totalUsers }}</h4>
               <p class="mb-0">Usuarios Total</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3 col-sm-6 mb-4">
-          <div class="card card-flexirol text-center">
-            <div class="card-body">
-              <i class="fas fa-money-check-alt fa-2x text-flexirol-tertiary mb-2"></i>
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col md="3" sm="6" class="mb-4">
+          <v-card class="text-center">
+            <v-card-text>
+              <v-icon class="mb-2" size="36" color="flexirol-tertiary">mdi-cash</v-icon>
               <h4 class="text-flexirol-tertiary">{{ stats.totalRequests }}</h4>
               <p class="mb-0">Solicitudes Mes</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3 col-sm-6 mb-4">
-          <div class="card card-flexirol text-center">
-            <div class="card-body">
-              <i class="fas fa-dollar-sign fa-2x text-flexirol-quaternary mb-2"></i>
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col md="3" sm="6" class="mb-4">
+          <v-card class="text-center">
+            <v-card-text>
+              <v-icon class="mb-2" size="36" color="flexirol-quaternary">mdi-currency-usd</v-icon>
               <h4 class="text-flexirol-quaternary">${{ stats.totalAmount }}</h4>
               <p class="mb-0">Monto Total</p>
-            </div>
-          </div>
-        </div>
-      </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
 
-      <div class="row">
-        <div class="col-md-6 mb-4">
-          <div class="card card-flexirol">
-            <div class="card-header"><i class="fas fa-chart-line me-2"></i>Acciones Rápidas</div>
-            <div class="card-body">
-              <router-link to="/superadmin/usuarios" class="btn btn-flexirol-primary me-2 mb-2">
-                <i class="fas fa-user-plus me-1"></i>Gestionar Usuarios
-              </router-link>
-              <router-link to="/superadmin/empresas" class="btn btn-flexirol-secondary me-2 mb-2">
-                <i class="fas fa-building me-1"></i>Gestionar Empresas
-              </router-link>
-              <router-link to="/superadmin/config" class="btn btn-flexirol-tertiary mb-2">
-                <i class="fas fa-cogs me-1"></i>Configuración Global
-              </router-link>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 mb-4">
-          <div class="card card-flexirol">
-            <div class="card-header"><i class="fas fa-clock me-2"></i>Actividad Reciente</div>
-            <div class="card-body">
-              <div v-if="recentActivity.length" class="list-group list-group-flush">
-                <div
+      <v-row>
+        <v-col md="6" class="mb-4">
+          <v-card>
+            <v-card-title><v-icon class="mr-2">mdi-chart-line</v-icon>Acciones Rápidas</v-card-title>
+            <v-card-text>
+              <div class="d-flex flex-column ga-2">
+                <v-btn to="/superadmin/usuarios" color="primary" variant="outlined">
+                  <v-icon class="mr-2">mdi-account-plus</v-icon>Gestionar Usuarios
+                </v-btn>
+                <v-btn to="/superadmin/empresas" color="secondary" variant="outlined">
+                  <v-icon class="mr-2">mdi-office-building</v-icon>Gestionar Empresas
+                </v-btn>
+                <v-btn to="/superadmin/config" color="tertiary" variant="outlined">
+                  <v-icon class="mr-2">mdi-cogs</v-icon>Configuración Global
+                </v-btn>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col md="6" class="mb-4">
+          <v-card>
+            <v-card-title><v-icon class="mr-2">mdi-clock-outline</v-icon>Actividad Reciente</v-card-title>
+            <v-card-text>
+              <v-list v-if="recentActivity.length">
+                <v-list-item
                   v-for="activity in recentActivity"
                   :key="activity.id"
-                  class="list-group-item border-0 px-0"
+                  class="px-0"
                 >
                   <small class="text-muted">{{ formatDate(activity.created) }}</small>
                   <p class="mb-0">{{ activity.description }}</p>
-                </div>
-              </div>
+                </v-list-item>
+              </v-list>
               <p v-else class="text-muted mb-0">No hay actividad reciente</p>
-            </div>
-          </div>
-        </div>
-      </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
     </template>
 
     <!-- Admin Dashboard (Empresa/Operador) -->
     <template v-if="authStore.isEmpresa || authStore.isOperador">
-      <div class="row">
-        <div class="col-md-4 col-sm-6 mb-4">
-          <div class="card card-flexirol text-center">
-            <div class="card-body">
-              <i class="fas fa-users fa-2x text-flexirol-primary mb-2"></i>
+      <v-row>
+        <v-col md="4" sm="6" class="mb-4">
+          <v-card class="text-center">
+            <v-card-text>
+              <v-icon class="mb-2" size="36" color="flexirol-primary">mdi-account</v-icon>
               <h4 class="text-flexirol-primary">{{ stats.myUsers }}</h4>
               <p class="mb-0">Mis Empleados</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-4 col-sm-6 mb-4">
-          <div class="card card-flexirol text-center">
-            <div class="card-body">
-              <i class="fas fa-clock fa-2x text-flexirol-quaternary mb-2"></i>
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col md="4" sm="6" class="mb-4">
+          <v-card class="text-center">
+            <v-card-text>
+              <v-icon class="mb-2" size="36" color="flexirol-quaternary">mdi-timer</v-icon>
               <h4 class="text-flexirol-quaternary">{{ stats.pendingRequests }}</h4>
               <p class="mb-0">Solicitudes Pendientes</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-4 col-sm-6 mb-4">
-          <div class="card card-flexirol text-center">
-            <div class="card-body">
-              <i class="fas fa-check-circle fa-2x text-flexirol-tertiary mb-2"></i>
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col md="4" sm="6" class="mb-4">
+          <v-card class="text-center">
+            <v-card-text>
+              <v-icon class="mb-2" size="36" color="flexirol-tertiary">mdi-check-circle</v-icon>
               <h4 class="text-flexirol-tertiary">{{ stats.approvedThisMonth }}</h4>
               <p class="mb-0">Aprobadas Este Mes</p>
-            </div>
-          </div>
-        </div>
-      </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
 
-      <div class="row">
-        <div class="col-md-8 mb-4">
-          <div class="card card-flexirol">
-            <div class="card-header"><i class="fas fa-list me-2"></i>Solicitudes Recientes</div>
-            <div class="card-body">
-              <div v-if="recentRequests.length" class="table-responsive">
-                <table class="table table-flexirol">
+      <v-row>
+        <v-col md="8" class="mb-4">
+          <v-card>
+            <v-card-title><v-icon class="mr-2">mdi-format-list-bulleted</v-icon>Solicitudes Recientes</v-card-title>
+            <v-card-text>
+              <v-responsive v-if="recentRequests.length">
+                <v-simple-table>
                   <thead>
                     <tr>
                       <th>Usuario</th>
@@ -141,90 +143,91 @@
                       <td>{{ request.expand?.user_id?.name }}</td>
                       <td>${{ request.monto_solicitado }}</td>
                       <td>
-                        <span :class="getStatusClass(request.estado)">
+                        <v-chip :color="getStatusColor(request.estado)" size="small">
                           {{ request.estado }}
-                        </span>
+                        </v-chip>
                       </td>
                       <td>{{ formatDate(request.fecha_solicitud) }}</td>
                     </tr>
                   </tbody>
-                </table>
-              </div>
+                </v-simple-table>
+              </v-responsive>
               <p v-else class="text-muted mb-0">No hay solicitudes recientes</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-4 mb-4">
-          <div class="card card-flexirol">
-            <div class="card-header"><i class="fas fa-tools me-2"></i>Acciones Rápidas</div>
-            <div class="card-body d-grid gap-2">
-              <router-link to="/admin/usuarios" class="btn btn-flexirol-primary">
-                <i class="fas fa-user-cog me-1"></i>Gestionar Empleados
-              </router-link>
-              <router-link to="/admin/reportes" class="btn btn-flexirol-secondary">
-                <i class="fas fa-chart-bar me-1"></i>Ver Reportes
-              </router-link>
-            </div>
-          </div>
-        </div>
-      </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col md="4" class="mb-4">
+          <v-card>
+            <v-card-title><v-icon class="mr-2">mdi-tools</v-icon>Acciones Rápidas</v-card-title>
+            <v-card-text>
+              <div class="d-flex flex-column ga-2">
+                <v-btn to="/admin/usuarios" color="primary" variant="outlined">
+                  <v-icon class="mr-2">mdi-account-cog</v-icon>Gestionar Empleados
+                </v-btn>
+                <v-btn to="/admin/reportes" color="secondary" variant="outlined">
+                  <v-icon class="mr-2">mdi-chart-bar</v-icon>Ver Reportes
+                </v-btn>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
     </template>
 
     <!-- Usuario Dashboard -->
     <template v-if="authStore.isUsuario">
-      <div class="row">
-        <div class="col-md-6 mb-4">
-          <div class="card card-flexirol text-center">
-            <div class="card-body">
-              <i class="fas fa-dollar-sign fa-3x text-flexirol-primary mb-3"></i>
+      <v-row>
+        <v-col md="6" class="mb-4">
+          <v-card class="text-center">
+            <v-card-text>
+              <v-icon class="mb-3" size="48" color="flexirol-primary">mdi-currency-usd</v-icon>
               <h3 class="text-flexirol-primary mb-1">${{ userStats.availableAmount }}</h3>
               <p class="text-muted">Monto Disponible</p>
-              <router-link to="/usuario/solicitudes" class="btn btn-flexirol-primary">
-                <i class="fas fa-money-check-alt me-1"></i>Solicitar Anticipo
-              </router-link>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 mb-4">
-          <div class="card card-flexirol">
-            <div class="card-header">
-              <i class="fas fa-credit-card me-2"></i>Mis Cuentas Bancarias
-            </div>
-            <div class="card-body">
-              <div v-if="userBankAccounts.length">
-                <div
+              <v-btn to="/usuario/solicitudes" color="primary" variant="outlined">
+                <v-icon class="mr-2">mdi-cash-multiple</v-icon>Solicitar Anticipo
+              </v-btn>
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col md="6" class="mb-4">
+          <v-card>
+            <v-card-title>
+              <v-icon class="mr-2">mdi-credit-card</v-icon>Mis Cuentas Bancarias
+            </v-card-title>
+            <v-card-text>
+              <v-list v-if="userBankAccounts.length">
+                <v-list-item
                   v-for="account in userBankAccounts"
                   :key="account.id"
-                  class="d-flex justify-content-between align-items-center mb-2"
+                  class="justify-space-between align-center mb-2"
                 >
                   <div>
-                    <strong>{{ account.banco_nombre }}</strong
-                    ><br />
+                    <strong>{{ account.banco_nombre }}</strong><br />
                     <small class="text-muted">{{ account.numero_cuenta }}</small>
                   </div>
-                  <span :class="account.activa ? 'badge bg-success' : 'badge bg-secondary'">
+                  <v-chip :color="account.activa ? 'success' : 'secondary'" size="small">
                     {{ account.activa ? 'Activa' : 'Inactiva' }}
-                  </span>
-                </div>
-                <hr />
-              </div>
-              <router-link to="/usuario/bancos" class="btn btn-flexirol-secondary">
-                <i class="fas fa-plus me-1"></i>Gestionar Cuentas
-              </router-link>
-            </div>
-          </div>
-        </div>
-      </div>
+                  </v-chip>
+                </v-list-item>
+                <v-divider></v-divider>
+              </v-list>
+              <v-btn to="/usuario/bancos" color="secondary" variant="outlined">
+                <v-icon class="mr-2">mdi-plus</v-icon>Gestionar Cuentas
+              </v-btn>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
 
-      <div class="row">
-        <div class="col-12">
-          <div class="card card-flexirol">
-            <div class="card-header">
-              <i class="fas fa-history me-2"></i>Mis Últimas Solicitudes
-            </div>
-            <div class="card-body">
-              <div v-if="userRequests.length" class="table-responsive">
-                <table class="table table-flexirol">
+      <v-row>
+        <v-col cols="12">
+          <v-card>
+            <v-card-title>
+              <v-icon class="mr-2">mdi-history</v-icon>Mis Últimas Solicitudes
+            </v-card-title>
+            <v-card-text>
+              <v-responsive v-if="userRequests.length">
+                <v-simple-table>
                   <thead>
                     <tr>
                       <th>Monto</th>
@@ -237,23 +240,23 @@
                     <tr v-for="request in userRequests" :key="request.id">
                       <td>${{ request.monto_solicitado }}</td>
                       <td>
-                        <span :class="getStatusClass(request.estado)">
+                        <v-chip :color="getStatusColor(request.estado)" size="small">
                           {{ request.estado }}
-                        </span>
+                        </v-chip>
                       </td>
                       <td>{{ formatDate(request.fecha_solicitud) }}</td>
                       <td>{{ request.expand?.banco_destino?.banco_nombre || '-' }}</td>
                     </tr>
                   </tbody>
-                </table>
-              </div>
+                </v-simple-table>
+              </v-responsive>
               <p v-else class="text-muted mb-0">No tienes solicitudes aún</p>
-            </div>
-          </div>
-        </div>
-      </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
     </template>
-  </div>
+  </v-container>
 </template>
 
 <script setup>
@@ -357,18 +360,18 @@ const loadUserStats = async () => {
   userBankAccounts.value = bankAccounts.items.slice(0, 3)
 }
 
-const getStatusClass = (estado) => {
+const getStatusColor = (estado) => {
   switch (estado) {
     case 'pendiente':
-      return 'badge bg-warning'
+      return 'warning'
     case 'aprobado':
-      return 'badge bg-success'
+      return 'success'
     case 'rechazado':
-      return 'badge bg-danger'
+      return 'error'
     case 'pagado':
-      return 'badge bg-info'
+      return 'info'
     default:
-      return 'badge bg-secondary'
+      return 'secondary'
   }
 }
 
@@ -396,7 +399,4 @@ onMounted(() => {
   transform: translateY(-2px);
 }
 
-.badge {
-  font-size: 0.75em;
-}
 </style>

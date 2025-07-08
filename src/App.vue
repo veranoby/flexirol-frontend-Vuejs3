@@ -1,238 +1,254 @@
 <template>
-  <div id="app">
+  <v-app>
     <!-- Navigation Bar -->
-    <nav
+    <v-app-bar
       v-if="authStore.isAuthenticated"
-      class="navbar navbar-expand-lg navbar-dark bg-primary shadow-lg"
+      color="primary"
+      dark
+      elevation="2"
+      app
     >
-      <div class="container-fluid">
-        <!-- Brand FlexiRol (SIN Dashboard button) -->
-        <router-link to="/dashboard" class="navbar-brand fw-bold d-flex align-items-center">
-          <i class="fas fa-chart-line me-2 text-warning"></i>
-          <span class="text-black-50">FlexiRol</span>
-        </router-link>
+      <!-- Brand FlexiRol -->
+      <router-link to="/dashboard" class="text-decoration-none d-flex align-items-center">
+        <v-icon color="warning" class="me-2">mdi-chart-line</v-icon>
+        <v-toolbar-title class="text-h6 font-weight-bold text-white">
+          FlexiRol
+        </v-toolbar-title>
+      </router-link>
 
-        <!-- Mobile Toggle -->
-        <button
-          class="navbar-toggler"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navbarNav"
-          aria-controls="navbarNav"
-          aria-expanded="false"
-          aria-label="Toggle navigation"
-        >
-          <span class="navbar-toggler-icon"></span>
-        </button>
+      <v-spacer></v-spacer>
 
-        <!-- Navigation Links -->
-        <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav me-auto">
-            <!-- SUPERADMIN NAVIGATION -->
-            <template v-if="authStore.isSuperadmin">
-              <!-- Solicitudes (PRINCIPAL) -->
-              <li class="nav-item">
-                <router-link to="/superadmin/solicitudes" class="nav-link px-3 py-2 rounded-3 mx-1">
-                  <i class="fas fa-file-invoice-dollar me-2"></i>
-                  <span class="fw-semibold">Solicitudes</span>
-                </router-link>
-              </li>
+      <!-- Desktop Navigation -->
+      <div class="hidden-md-and-down">
+        <!-- SUPERADMIN NAVIGATION -->
+        <template v-if="authStore.isSuperadmin">
+          <v-btn
+            :to="'/superadmin/solicitudes'"
+            text
+            class="mx-1"
+            prepend-icon="mdi-file-invoice-dollar"
+          >
+            Solicitudes
+          </v-btn>
+          <v-btn
+            :to="'/superadmin/empresas'"
+            text
+            class="mx-1"
+            prepend-icon="mdi-domain"
+          >
+            Empresas
+          </v-btn>
+          <v-btn
+            :to="'/superadmin/reportes'"
+            text
+            class="mx-1"
+            prepend-icon="mdi-chart-bar"
+          >
+            Reportes
+          </v-btn>
+          <v-btn
+            :to="'/superadmin/config'"
+            text
+            class="mx-1"
+            prepend-icon="mdi-cog"
+          >
+            Configuración
+          </v-btn>
+          <v-btn
+            :to="'/superadmin/excel-upload'"
+            text
+            class="mx-1"
+            prepend-icon="mdi-file-excel"
+          >
+            Carga Usuarios
+          </v-btn>
+        </template>
 
-              <!-- ✅ EMPRESAS (Cambio de "Usuarios" a "Empresas") -->
-              <li class="nav-item">
-                <router-link to="/superadmin/empresas" class="nav-link px-3 py-2 rounded-3 mx-1">
-                  <i class="fas fa-building me-2"></i>
-                  <span class="fw-semibold">Empresas</span>
-                </router-link>
-              </li>
+        <!-- EMPRESA/OPERADOR NAVIGATION -->
+        <template v-if="authStore.isEmpresa || authStore.isOperador">
+          <v-btn
+            :to="'/admin/solicitudes'"
+            text
+            class="mx-1"
+            prepend-icon="mdi-file-invoice-dollar"
+          >
+            Solicitudes
+          </v-btn>
+          <v-btn
+            :to="'/admin/empleados'"
+            text
+            class="mx-1"
+            prepend-icon="mdi-account-group"
+          >
+            Empleados
+          </v-btn>
+          <v-btn
+            :to="'/admin/reportes'"
+            text
+            class="mx-1"
+            prepend-icon="mdi-chart-line"
+          >
+            Reportes
+          </v-btn>
+        </template>
 
-              <!-- Reportes -->
-              <li class="nav-item">
-                <router-link to="/superadmin/reportes" class="nav-link px-3 py-2 rounded-3 mx-1">
-                  <i class="fas fa-chart-bar me-2"></i>
-                  <span class="fw-semibold">Reportes</span>
-                </router-link>
-              </li>
-
-              <!-- Configuración -->
-              <li class="nav-item">
-                <router-link to="/superadmin/config" class="nav-link px-3 py-2 rounded-3 mx-1">
-                  <i class="fas fa-cogs me-2"></i>
-                  <span class="fw-semibold">Configuración</span>
-                </router-link>
-              </li>
-
-              <!-- Carga de Usuarios -->
-              <li class="nav-item">
-                <router-link
-                  to="/superadmin/excel-upload"
-                  class="nav-link px-3 py-2 rounded-3 mx-1"
-                >
-                  <i class="fas fa-file-excel me-2"></i>
-                  <span class="fw-semibold">Carga Usuarios</span>
-                </router-link>
-              </li>
-            </template>
-
-            <!-- EMPRESA/OPERADOR NAVIGATION -->
-            <template v-if="authStore.isEmpresa || authStore.isOperador">
-              <li class="nav-item">
-                <router-link to="/admin/solicitudes" class="nav-link px-3 py-2 rounded-3 mx-1">
-                  <i class="fas fa-file-invoice-dollar me-2"></i>
-                  <span class="fw-semibold">Solicitudes</span>
-                </router-link>
-              </li>
-
-              <!-- ✅ EMPLEADOS (Cambio de "Usuarios" a "Empleados") -->
-              <li class="nav-item">
-                <router-link to="/admin/empleados" class="nav-link px-3 py-2 rounded-3 mx-1">
-                  <i class="fas fa-users me-2"></i>
-                  <span class="fw-semibold">Empleados</span>
-                </router-link>
-              </li>
-
-              <li class="nav-item">
-                <router-link to="/admin/reportes" class="nav-link px-3 py-2 rounded-3 mx-1">
-                  <i class="fas fa-chart-line me-2"></i>
-                  <span class="fw-semibold">Reportes</span>
-                </router-link>
-              </li>
-            </template>
-
-            <!-- USUARIO NAVIGATION (sin cambios) -->
-            <template v-if="authStore.isUsuario">
-              <li class="nav-item">
-                <router-link to="/usuario/solicitudes" class="nav-link px-3 py-2 rounded-3 mx-1">
-                  <i class="fas fa-hand-holding-usd me-2"></i>
-                  <span class="fw-semibold">Mis Solicitudes</span>
-                </router-link>
-              </li>
-              <li class="nav-item">
-                <router-link to="/usuario/bancos" class="nav-link px-3 py-2 rounded-3 mx-1">
-                  <i class="fas fa-university me-2"></i>
-                  <span class="fw-semibold">Mis Bancos</span>
-                </router-link>
-              </li>
-            </template>
-          </ul>
-
-          <!-- User Menu (sin cambios) -->
-          <div class="navbar-nav">
-            <div class="nav-item dropdown">
-              <a
-                class="nav-link dropdown-toggle d-flex align-items-center text-white px-3 py-2 rounded-3"
-                href="#"
-                role="button"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
-              >
-                <!-- User Avatar -->
-                <div
-                  class="avatar-circle bg-light text-primary me-2 d-flex align-items-center justify-content-center rounded-circle"
-                  style="width: 32px; height: 32px; font-size: 14px; font-weight: 600"
-                >
-                  {{ userInitials }}
-                </div>
-                <div class="d-none d-md-block">
-                  <div class="fw-semibold" style="font-size: 14px">{{ userName }}</div>
-                  <div class="text-light opacity-75" style="font-size: 12px">{{ roleLabel }}</div>
-                </div>
-              </a>
-
-              <!-- Dropdown Menu -->
-              <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="min-width: 200px">
-                <li>
-                  <h6 class="dropdown-header d-flex align-items-center">
-                    <i class="fas fa-user-circle me-2 text-primary"></i>
-                    {{ userName }}
-                  </h6>
-                </li>
-                <li><hr class="dropdown-divider" /></li>
-                <li>
-                  <a
-                    class="dropdown-item d-flex align-items-center"
-                    href="#"
-                    @click.prevent="goToProfile"
-                  >
-                    <i class="fas fa-user me-3 text-muted" style="width: 16px"></i>
-                    <span>Mi Perfil</span>
-                  </a>
-                </li>
-                <li>
-                  <a
-                    class="dropdown-item d-flex align-items-center"
-                    href="#"
-                    @click.prevent="goToSettings"
-                  >
-                    <i class="fas fa-cog me-3 text-muted" style="width: 16px"></i>
-                    <span>Configuración</span>
-                  </a>
-                </li>
-                <li><hr class="dropdown-divider" /></li>
-                <li>
-                  <a
-                    class="dropdown-item d-flex align-items-center text-danger"
-                    href="#"
-                    @click.prevent="logout"
-                  >
-                    <i class="fas fa-sign-out-alt me-3" style="width: 16px"></i>
-                    <span>Cerrar Sesión</span>
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
+        <!-- USUARIO NAVIGATION -->
+        <template v-if="authStore.isUsuario">
+          <v-btn
+            :to="'/usuario/solicitudes'"
+            text
+            class="mx-1"
+            prepend-icon="mdi-hand-coin"
+          >
+            Mis Solicitudes
+          </v-btn>
+          <v-btn
+            :to="'/usuario/bancos'"
+            text
+            class="mx-1"
+            prepend-icon="mdi-bank"
+          >
+            Mis Bancos
+          </v-btn>
+        </template>
       </div>
-    </nav>
 
-    <!-- Breadcrumb Mejorado Bootstrap 5 -->
-    <nav
+      <!-- User Menu -->
+      <v-menu>
+        <template v-slot:activator="{ props }">
+          <v-btn
+            v-bind="props"
+            icon
+            class="mx-2"
+          >
+            <v-avatar color="white" size="32">
+              <span class="text-primary font-weight-bold">{{ userInitials }}</span>
+            </v-avatar>
+          </v-btn>
+        </template>
+
+        <v-list min-width="200">
+          <v-list-item>
+            <v-list-item-title class="font-weight-bold">
+              <v-icon class="me-2 text-primary">mdi-account-circle</v-icon>
+              {{ userName }}
+            </v-list-item-title>
+            <v-list-item-subtitle>{{ roleLabel }}</v-list-item-subtitle>
+          </v-list-item>
+          
+          <v-divider></v-divider>
+          
+          <v-list-item @click="goToProfile" prepend-icon="mdi-account">
+            <v-list-item-title>Mi Perfil</v-list-item-title>
+          </v-list-item>
+          
+          <v-list-item @click="goToSettings" prepend-icon="mdi-cog">
+            <v-list-item-title>Configuración</v-list-item-title>
+          </v-list-item>
+          
+          <v-divider></v-divider>
+          
+          <v-list-item @click="logout" prepend-icon="mdi-logout" class="text-error">
+            <v-list-item-title>Cerrar Sesión</v-list-item-title>
+          </v-list-item>
+        </v-list>
+      </v-menu>
+
+      <!-- Mobile Menu -->
+      <v-app-bar-nav-icon
+        class="hidden-lg-and-up"
+        @click="drawer = !drawer"
+      ></v-app-bar-nav-icon>
+    </v-app-bar>
+
+    <!-- Mobile Navigation Drawer -->
+    <v-navigation-drawer
+      v-model="drawer"
+      temporary
+      app
+    >
+      <v-list>
+        <!-- SUPERADMIN NAVIGATION -->
+        <template v-if="authStore.isSuperadmin">
+          <v-list-item :to="'/superadmin/solicitudes'" prepend-icon="mdi-file-invoice-dollar">
+            <v-list-item-title>Solicitudes</v-list-item-title>
+          </v-list-item>
+          <v-list-item :to="'/superadmin/empresas'" prepend-icon="mdi-domain">
+            <v-list-item-title>Empresas</v-list-item-title>
+          </v-list-item>
+          <v-list-item :to="'/superadmin/reportes'" prepend-icon="mdi-chart-bar">
+            <v-list-item-title>Reportes</v-list-item-title>
+          </v-list-item>
+          <v-list-item :to="'/superadmin/config'" prepend-icon="mdi-cog">
+            <v-list-item-title>Configuración</v-list-item-title>
+          </v-list-item>
+          <v-list-item :to="'/superadmin/excel-upload'" prepend-icon="mdi-file-excel">
+            <v-list-item-title>Carga Usuarios</v-list-item-title>
+          </v-list-item>
+        </template>
+
+        <!-- EMPRESA/OPERADOR NAVIGATION -->
+        <template v-if="authStore.isEmpresa || authStore.isOperador">
+          <v-list-item :to="'/admin/solicitudes'" prepend-icon="mdi-file-invoice-dollar">
+            <v-list-item-title>Solicitudes</v-list-item-title>
+          </v-list-item>
+          <v-list-item :to="'/admin/empleados'" prepend-icon="mdi-account-group">
+            <v-list-item-title>Empleados</v-list-item-title>
+          </v-list-item>
+          <v-list-item :to="'/admin/reportes'" prepend-icon="mdi-chart-line">
+            <v-list-item-title>Reportes</v-list-item-title>
+          </v-list-item>
+        </template>
+
+        <!-- USUARIO NAVIGATION -->
+        <template v-if="authStore.isUsuario">
+          <v-list-item :to="'/usuario/solicitudes'" prepend-icon="mdi-hand-coin">
+            <v-list-item-title>Mis Solicitudes</v-list-item-title>
+          </v-list-item>
+          <v-list-item :to="'/usuario/bancos'" prepend-icon="mdi-bank">
+            <v-list-item-title>Mis Bancos</v-list-item-title>
+          </v-list-item>
+        </template>
+      </v-list>
+    </v-navigation-drawer>
+
+    <!-- Breadcrumb -->
+    <v-container
       v-if="authStore.isAuthenticated && showBreadcrumb"
-      class="breadcrumb-container bg-grey opacity-50 border-bottom"
+      fluid
+      class="py-2 bg-grey-lighten-5"
     >
-      <div class="container-fluid">
-        <nav aria-label="breadcrumb" class="py-2">
-          <ol class="breadcrumb mb-0 d-flex align-items-center">
-            <li class="breadcrumb-item">
-              <router-link to="/dashboard" class="text-decoration-none d-flex align-items-center">
-                <i class="fas fa-home me-1 text-primary"></i>
-                <span class="text-primary">Inicio</span>
-              </router-link>
-            </li>
-            <li
-              v-for="(item, index) in breadcrumbItems"
-              :key="index"
-              class="breadcrumb-item"
-              :class="{ 'active text-muted': index === breadcrumbItems.length - 1 }"
-            >
-              <router-link
-                v-if="item.to && index < breadcrumbItems.length - 1"
-                :to="item.to"
-                class="text-decoration-none text-primary"
-              >
-                {{ item.text }}
-              </router-link>
-              <span v-else class="fw-medium">{{ item.text }}</span>
-            </li>
-          </ol>
-        </nav>
-      </div>
-    </nav>
+      <v-breadcrumbs
+        :items="breadcrumbNavigation"
+        divider=">"
+      >
+        <template v-slot:item="{ item }">
+          <v-breadcrumbs-item
+            :to="item.to"
+            :disabled="item.disabled"
+            class="text-body-2"
+          >
+            <v-icon v-if="item.icon" :icon="item.icon" size="small" class="me-1"></v-icon>
+            {{ item.title }}
+          </v-breadcrumbs-item>
+        </template>
+      </v-breadcrumbs>
+    </v-container>
 
     <!-- Main Content -->
-    <main class="main-content">
+    <v-main>
       <!-- Loading Overlay -->
-      <!-- Loading Overlay -->
-      <div
+      <v-overlay
         v-if="authStore.isLoading"
-        class="loading-overlay position-fixed w-100 h-100 d-flex align-items-center justify-content-center"
-        style="top: 0; left: 0; background: rgba(255, 255, 255, 0.8); z-index: 9999"
+        :model-value="authStore.isLoading"
+        class="align-center justify-center"
       >
-        <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem">
-          <span class="visually-hidden">Cargando...</span>
-        </div>
-      </div>
+        <v-progress-circular
+          color="primary"
+          indeterminate
+          size="64"
+        ></v-progress-circular>
+      </v-overlay>
 
       <!-- Router View -->
       <router-view v-slot="{ Component }">
@@ -240,26 +256,41 @@
           <component :is="Component" />
         </transition>
       </router-view>
-    </main>
+    </v-main>
 
-    <!-- Bootstrap Toast Container (NO vue-toastification) -->
-    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
-      <!-- Los toasts se manejarán con Bootstrap puro desde stores/system.js -->
-    </div>
+    <!-- Snackbar para notificaciones -->
+    <v-snackbar
+      v-model="snackbar.show"
+      :color="snackbar.color"
+      :timeout="snackbar.timeout"
+      location="bottom right"
+    >
+      {{ snackbar.message }}
+      <template v-slot:actions>
+        <v-btn
+          variant="text"
+          @click="snackbar.show = false"
+        >
+          Cerrar
+        </v-btn>
+      </template>
+    </v-snackbar>
 
     <!-- Footer -->
-    <footer
+    <v-footer
       v-if="authStore.isAuthenticated"
-      class="footer bg-light text-center py-3 border-top mt-auto"
+      app
+      color="grey-lighten-5"
+      class="text-center border-t"
     >
-      <div class="container-fluid">
-        <span class="text-muted small">
+      <div class="w-100">
+        <span class="text-body-2 text-medium-emphasis">
           © {{ currentYear }} FlexiRol
-          <span class="d-none d-md-inline">- Sistema de Gestión de Adelantos Salariales</span>
+          <span class="d-none d-md-inline"> - Sistema de Gestión de Adelantos Salariales</span>
         </span>
       </div>
-    </footer>
-  </div>
+    </v-footer>
+  </v-app>
 </template>
 
 <script setup>
@@ -267,7 +298,6 @@ import { computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { getBreadcrumb } from '@/router'
-import 'bootstrap/dist/js/bootstrap.bundle.min.js' // ✅ Añadir import global
 
 // Router and stores
 const router = useRouter()

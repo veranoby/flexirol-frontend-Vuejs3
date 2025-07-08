@@ -1,117 +1,132 @@
 <template>
   <div class="reportes-view">
-    <div class="container-fluid">
+    <v-container fluid>
       <!-- Header -->
-      <div class="row mb-4">
-        <div class="col-12">
+      <v-row class="mb-4">
+        <v-col cols="12">
           <h2 class="mb-1">
-            <i :class="roleIcon" class="me-2"></i>
+            <v-icon :class="roleIcon" class="me-2"></v-icon>
             {{ pageTitle }}
           </h2>
           <p class="text-muted">{{ pageDescription }}</p>
-        </div>
-      </div>
+        </v-col>
+      </v-row>
 
       <!-- Filters -->
-      <div class="row mb-4">
-        <div class="col-12">
-          <div class="card">
-            <div class="card-header">
-              <h6 class="mb-0"><i class="fas fa-filter me-2"></i>Filtros de Búsqueda</h6>
-            </div>
-            <div class="card-body">
-              <div class="row g-3">
-                <div v-if="authStore.isSuperadmin" class="col-md-3">
-                  <label class="form-label">Empresa:</label>
-                  <select v-model="filters.empresa_id" class="form-select">
-                    <option value="">Todas las empresas</option>
-                    <option
-                      v-for="company in availableCompanies"
-                      :key="company.id"
-                      :value="company.id"
-                    >
-                      {{ company.first_name }} {{ company.last_name }}
-                    </option>
-                  </select>
-                </div>
+      <v-row class="mb-4">
+        <v-col cols="12">
+          <v-card>
+            <v-card-title>
+              <v-icon class="me-2">mdi-filter</v-icon>
+              Filtros de Búsqueda
+            </v-card-title>
+            <v-card-text>
+              <v-row>
+                <v-col v-if="authStore.isSuperadmin" md="3">
+                  <v-select
+                    v-model="filters.empresa_id"
+                    :items="availableCompanies"
+                    item-title="first_name"
+                    item-value="id"
+                    label="Empresa"
+                    clearable
+                  >
+                    <template #prepend-item>
+                      <v-list-item title="Todas las empresas" value=""></v-list-item>
+                    </template>
+                  </v-select>
+                </v-col>
 
-                <div class="col-md-3">
-                  <label class="form-label">Fecha Desde:</label>
-                  <input v-model="filters.fechaDesde" type="date" class="form-control" />
-                </div>
+                <v-col md="3">
+                  <v-text-field
+                    v-model="filters.fechaDesde"
+                    type="date"
+                    label="Fecha Desde"
+                  ></v-text-field>
+                </v-col>
 
-                <div class="col-md-3">
-                  <label class="form-label">Fecha Hasta:</label>
-                  <input v-model="filters.fechaHasta" type="date" class="form-control" />
-                </div>
+                <v-col md="3">
+                  <v-text-field
+                    v-model="filters.fechaHasta"
+                    type="date"
+                    label="Fecha Hasta"
+                  ></v-text-field>
+                </v-col>
 
-                <div class="col-md-3">
-                  <label class="form-label">Estado:</label>
-                  <select v-model="filters.estado" class="form-select">
-                    <option value="">Todos los estados</option>
-                    <option value="pendiente">Pendientes</option>
-                    <option value="aprobado">Aprobados</option>
-                    <option value="pagado">Pagados</option>
-                    <option value="rechazado">Rechazados</option>
-                  </select>
-                </div>
+                <v-col md="3">
+                  <v-select
+                    v-model="filters.estado"
+                    :items="[
+                      { title: 'Todos los estados', value: '' },
+                      { title: 'Pendientes', value: 'pendiente' },
+                      { title: 'Aprobados', value: 'aprobado' },
+                      { title: 'Pagados', value: 'pagado' },
+                      { title: 'Rechazados', value: 'rechazado' }
+                    ]"
+                    label="Estado"
+                    clearable
+                  ></v-select>
+                </v-col>
 
-                <div class="col-12">
-                  <button class="btn btn-primary me-2" @click="generateReport">
-                    <i class="fas fa-search me-1"></i>Generar Reporte
-                  </button>
-                  <button class="btn btn-outline-secondary me-2" @click="clearFilters">
-                    <i class="fas fa-eraser me-1"></i>Limpiar
-                  </button>
-                  <button
+                <v-col cols="12">
+                  <v-btn color="primary" class="me-2" @click="generateReport">
+                    <v-icon left>mdi-magnify</v-icon>
+                    Generar Reporte
+                  </v-btn>
+                  <v-btn variant="outlined" color="secondary" class="me-2" @click="clearFilters">
+                    <v-icon left>mdi-eraser</v-icon>
+                    Limpiar
+                  </v-btn>
+                  <v-btn
                     v-if="reportData.length > 0"
-                    class="btn btn-success"
+                    color="success"
                     @click="exportToExcel"
                   >
-                    <i class="fas fa-file-excel me-1"></i>Exportar Excel
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+                    <v-icon left>mdi-file-excel</v-icon>
+                    Exportar Excel
+                  </v-btn>
+                </v-col>
+              </v-row>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
 
       <!-- Stats Summary -->
-      <div v-if="reportData.length > 0" class="row mb-4">
-        <div class="col-md-3">
-          <div class="card bg-primary text-white">
-            <div class="card-body">
+      <v-row v-if="reportData.length > 0" class="mb-4">
+        <v-col md="3">
+          <v-card color="primary" dark>
+            <v-card-text>
               <h6>Total Solicitudes</h6>
               <h3>{{ reportStats.total }}</h3>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card bg-warning text-white">
-            <div class="card-body">
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col md="3">
+          <v-card color="warning" dark>
+            <v-card-text>
               <h6>Monto Solicitado</h6>
               <h3>${{ reportStats.totalSolicitado.toLocaleString() }}</h3>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card bg-success text-white">
-            <div class="card-body">
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col md="3">
+          <v-card color="success" dark>
+            <v-card-text>
               <h6>Monto Aprobado</h6>
               <h3>${{ reportStats.totalAprobado.toLocaleString() }}</h3>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card bg-info text-white">
-            <div class="card-body">
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col md="3">
+          <v-card color="info" dark>
+            <v-card-text>
               <h6>Tasa Aprobación</h6>
               <h3>{{ reportStats.tasaAprobacion }}%</h3>
-            </div>
-          </div>
-        </div>
-      </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
 
       <!-- Report Results -->
       <div class="row">

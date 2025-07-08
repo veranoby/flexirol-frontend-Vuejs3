@@ -1,233 +1,266 @@
 <template>
-  <div class="container-fluid mt-4">
-    <div class="card">
-      <div class="card-header bg-primary text-white">
+  <v-container fluid class="mt-4">
+    <v-card>
+      <v-card-title class="bg-primary text-white">
         <h4 class="mb-0">Gestión de Solicitudes</h4>
-      </div>
+      </v-card-title>
       
-      <div class="card-body">
-        <ul class="nav nav-tabs" id="solicitudesTabs" role="tablist">
-          <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="pendientes-tab" data-bs-toggle="tab" 
-                    data-bs-target="#pendientes" type="button" role="tab"
-                    @click="fetchPendientes">
-              Pendientes
-              <span v-if="solicitudesPendientes.length > 0" class="badge bg-danger ms-2">
-                {{ solicitudesPendientes.length }}
-              </span>
-            </button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="procesando-tab" data-bs-toggle="tab" 
-                    data-bs-target="#procesando" type="button" role="tab"
-                    @click="fetchProcesando">
-              En Proceso
-              <span v-if="solicitudesProcesando.length > 0" class="badge bg-warning text-dark ms-2">
-                {{ solicitudesProcesando.length }}
-              </span>
-            </button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="pagadas-tab" data-bs-toggle="tab" 
-                    data-bs-target="#pagadas" type="button" role="tab"
-                    @click="fetchPagadas">
-              Pagadas
-            </button>
-          </li>
-        </ul>
+      <v-card-text>
+        <v-tabs v-model="currentTab" color="primary">
+          <v-tab value="pendientes" @click="fetchPendientes">
+            Pendientes
+            <v-chip v-if="solicitudesPendientes.length > 0" color="error" size="small" class="ms-2">
+              {{ solicitudesPendientes.length }}
+            </v-chip>
+          </v-tab>
+          <v-tab value="procesando" @click="fetchProcesando">
+            En Proceso
+            <v-chip v-if="solicitudesProcesando.length > 0" color="warning" size="small" class="ms-2">
+              {{ solicitudesProcesando.length }}
+            </v-chip>
+          </v-tab>
+          <v-tab value="pagadas" @click="fetchPagadas">
+            Pagadas
+          </v-tab>
+        </v-tabs>
         
-        <div class="tab-content p-3 border border-top-0 rounded-bottom">
-          <!-- Tab Pendientes -->
-          <div class="tab-pane fade show active" id="pendientes" role="tabpanel" aria-labelledby="pendientes-tab">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <h5>Solicitudes Pendientes</h5>
-              <button class="btn btn-success" @click="generarExcel" :disabled="selectedSolicitudes.length === 0 || excelLoading">
-                <span v-if="excelLoading" class="spinner-border spinner-border-sm me-1"></span>
-                {{ excelLoading ? 'Generando...' : 'Generar Excel Bancario' }}
-              </button>
-            </div>
-            
-            <div v-if="loading" class="text-center my-5">
-              <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Cargando...</span>
+        <v-card-text class="pa-0">
+          <v-tabs-window v-model="currentTab">
+            <!-- Tab Pendientes -->
+            <v-tabs-window-item value="pendientes">
+              <div class="d-flex justify-space-between align-center mb-3">
+                <h5>Solicitudes Pendientes</h5>
+                <v-btn
+                  color="success"
+                  @click="generarExcel"
+                  :disabled="selectedSolicitudes.length === 0 || excelLoading"
+                  :loading="excelLoading"
+                >
+                  {{ excelLoading ? 'Generando...' : 'Generar Excel Bancario' }}
+                </v-btn>
               </div>
-              <p class="mt-2">Cargando solicitudes pendientes...</p>
-            </div>
-            
-            <div v-else>
-              <div class="table-responsive">
-                <table class="table table-hover table-striped">
-                  <thead class="table-light">
-                    <tr>
-                      <th width="50">
-                        <input type="checkbox" class="form-check-input" 
-                               :checked="selectedSolicitudes.length === solicitudesPendientes.length"
-                               @change="toggleSelectAll">
-                      </th>
-                      <th># Solicitud</th>
-                      <th>Fecha</th>
-                      <th>Usuario</th>
-                      <th>Banco</th>
-                      <th>Cuenta</th>
-                      <th class="text-end">Monto</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-for="solicitud in solicitudesPendientes" :key="solicitud.id">
-                      <td>
-                        <input type="checkbox" class="form-check-input" 
-                               :checked="isSolicitudSelected(solicitud)"
-                               @change="toggleSolicitud(solicitud, $event.target.checked)">
-                      </td>
-                      <td>{{ solicitud.id }}</td>
-                      <td>{{ formatDate(solicitud.created) }}</td>
-                      <td>{{ solicitud.nombre || 'N/A' }}</td>
-                      <td>{{ solicitud.banco_nombre || 'N/A' }}</td>
-                      <td>{{ solicitud.numero_cuenta || 'N/A' }}</td>
-                      <td class="text-end">${{ formatNumber(solicitud.monto_solicitado) }}</td>
-                      <td>
-                        <button class="btn btn-sm btn-outline-primary" @click="verDetalle(solicitud)">
-                          <i class="fas fa-eye"></i> Ver
-                        </button>
-                      </td>
-                    </tr>
-                    <tr v-if="solicitudesPendientes.length === 0">
-                      <td colspan="8" class="text-center py-4">
-                        No hay solicitudes pendientes
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+              
+              <div v-if="loading" class="text-center my-5">
+                <v-progress-circular
+                  indeterminate
+                  color="primary"
+                  size="40"
+                ></v-progress-circular>
+                <p class="mt-2">Cargando solicitudes pendientes...</p>
               </div>
-            </div>
-          </div>
+              
+              <div v-else>
+                <v-card>
+                  <v-table>
+                    <thead>
+                      <tr>
+                        <th width="50">
+                          <v-checkbox
+                            :model-value="selectedSolicitudes.length === solicitudesPendientes.length"
+                            @update:model-value="toggleSelectAll"
+                          ></v-checkbox>
+                        </th>
+                        <th># Solicitud</th>
+                        <th>Fecha</th>
+                        <th>Usuario</th>
+                        <th>Banco</th>
+                        <th>Cuenta</th>
+                        <th class="text-end">Monto</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="solicitud in solicitudesPendientes" :key="solicitud.id">
+                        <td>
+                          <v-checkbox
+                            :model-value="isSolicitudSelected(solicitud)"
+                            @update:model-value="(value) => toggleSolicitud(solicitud, value)"
+                          ></v-checkbox>
+                        </td>
+                        <td>{{ solicitud.id }}</td>
+                        <td>{{ formatDate(solicitud.created) }}</td>
+                        <td>{{ solicitud.nombre || 'N/A' }}</td>
+                        <td>{{ solicitud.banco_nombre || 'N/A' }}</td>
+                        <td>{{ solicitud.numero_cuenta || 'N/A' }}</td>
+                        <td class="text-end">${{ formatNumber(solicitud.monto_solicitado) }}</td>
+                        <td>
+                          <v-btn
+                            size="small"
+                            variant="outlined"
+                            color="primary"
+                            @click="verDetalle(solicitud)"
+                          >
+                            <v-icon left>mdi-eye</v-icon>
+                            Ver
+                          </v-btn>
+                        </td>
+                      </tr>
+                      <tr v-if="solicitudesPendientes.length === 0">
+                        <td colspan="8" class="text-center py-4">
+                          No hay solicitudes pendientes
+                        </td>
+                      </tr>
+                    </tbody>
+                  </v-table>
+                </v-card>
+              </div>
+            </v-tabs-window-item>
           
-          <!-- Tab Procesando -->
-          <div class="tab-pane fade" id="procesando" role="tabpanel" aria-labelledby="procesando-tab">
-            <h5 class="mb-3">Solicitudes en Proceso</h5>
+            <!-- Tab Procesando -->
+            <v-tabs-window-item value="procesando">
+              <h5 class="mb-3">Solicitudes en Proceso</h5>
+              
+              <div v-if="loading" class="text-center my-5">
+                <v-progress-circular
+                  indeterminate
+                  color="primary"
+                  size="40"
+                ></v-progress-circular>
+              </div>
+              
+              <div v-else>
+                <v-card>
+                  <v-table>
+                    <thead>
+                      <tr>
+                        <th># Solicitud</th>
+                        <th>Fecha</th>
+                        <th>Usuario</th>
+                        <th>Banco</th>
+                        <th>Cuenta</th>
+                        <th class="text-end">Monto</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="solicitud in solicitudesProcesando" :key="solicitud.id">
+                        <td>{{ solicitud.id }}</td>
+                        <td>{{ formatDate(solicitud.updated) }}</td>
+                        <td>{{ solicitud.nombre || 'N/A' }}</td>
+                        <td>{{ solicitud.banco_nombre || 'N/A' }}</td>
+                        <td>{{ solicitud.numero_cuenta || 'N/A' }}</td>
+                        <td class="text-end">${{ formatNumber(solicitud.monto_aprobado) }}</td>
+                        <td>
+                          <v-btn
+                            size="small"
+                            color="success"
+                            class="mr-2"
+                            @click="confirmarPago(solicitud.id)"
+                          >
+                            <v-icon left>mdi-check</v-icon>
+                            Confirmar Pago
+                          </v-btn>
+                          <v-btn
+                            size="small"
+                            variant="outlined"
+                            color="secondary"
+                            @click="verDetalle(solicitud)"
+                          >
+                            <v-icon>mdi-eye</v-icon>
+                          </v-btn>
+                        </td>
+                      </tr>
+                      <tr v-if="solicitudesProcesando.length === 0">
+                        <td colspan="7" class="text-center py-4">
+                          No hay solicitudes en proceso
+                        </td>
+                      </tr>
+                    </tbody>
+                  </v-table>
+                </v-card>
+              </div>
+            </v-tabs-window-item>
             
-            <div v-if="loading" class="text-center my-5">
-              <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Cargando...</span>
+            <!-- Tab Pagadas -->
+            <v-tabs-window-item value="pagadas">
+              <h5 class="mb-3">Solicitudes Pagadas</h5>
+              
+              <v-row class="mb-3">
+                <v-col md="4">
+                  <v-text-field
+                    v-model="filters.search"
+                    label="Buscar"
+                    prepend-inner-icon="mdi-magnify"
+                    clearable
+                  ></v-text-field>
+                </v-col>
+                <v-col md="3">
+                  <v-select
+                    v-model="filters.banco"
+                    :items="bancos"
+                    label="Todos los bancos"
+                    clearable
+                  ></v-select>
+                </v-col>
+                <v-col md="3">
+                  <v-text-field
+                    v-model="filters.fecha"
+                    type="date"
+                    label="Fecha"
+                  ></v-text-field>
+                </v-col>
+                <v-col md="2">
+                  <v-btn
+                    variant="outlined"
+                    color="secondary"
+                    block
+                    @click="resetFilters"
+                  >
+                    <v-icon left>mdi-refresh</v-icon>
+                    Limpiar
+                  </v-btn>
+                </v-col>
+              </v-row>
+              
+              <div v-if="loading" class="text-center my-5">
+                <v-progress-circular
+                  indeterminate
+                  color="primary"
+                  size="40"
+                ></v-progress-circular>
               </div>
-            </div>
-            
-            <div v-else class="table-responsive">
-              <table class="table table-hover">
-                <thead class="table-light">
-                  <tr>
-                    <th># Solicitud</th>
-                    <th>Fecha</th>
-                    <th>Usuario</th>
-                    <th>Banco</th>
-                    <th>Cuenta</th>
-                    <th class="text-end">Monto</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="solicitud in solicitudesProcesando" :key="solicitud.id">
-                    <td>{{ solicitud.id }}</td>
-                    <td>{{ formatDate(solicitud.updated) }}</td>
-                    <td>{{ solicitud.nombre || 'N/A' }}</td>
-                    <td>{{ solicitud.banco_nombre || 'N/A' }}</td>
-                    <td>{{ solicitud.numero_cuenta || 'N/A' }}</td>
-                    <td class="text-end">${{ formatNumber(solicitud.monto_aprobado) }}</td>
-                    <td>
-                      <button class="btn btn-sm btn-success me-2" 
-                              @click="confirmarPago(solicitud.id)">
-                        <i class="fas fa-check"></i> Confirmar Pago
-                      </button>
-                      <button class="btn btn-sm btn-outline-secondary" 
-                              @click="verDetalle(solicitud)">
-                        <i class="fas fa-eye"></i>
-                      </button>
-                    </td>
-                  </tr>
-                  <tr v-if="solicitudesProcesando.length === 0">
-                    <td colspan="7" class="text-center py-4">
-                      No hay solicitudes en proceso
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-          
-          <!-- Tab Pagadas -->
-          <div class="tab-pane fade" id="pagadas" role="tabpanel" aria-labelledby="pagadas-tab">
-            <h5 class="mb-3">Solicitudes Pagadas</h5>
-            
-            <div class="row mb-3">
-              <div class="col-md-4">
-                <div class="input-group">
-                  <span class="input-group-text">
-                    <i class="fas fa-search"></i>
-                  </span>
-                  <input type="text" class="form-control" placeholder="Buscar..." v-model="filters.search">
-                </div>
+              
+              <div v-else>
+                <v-card>
+                  <v-table>
+                    <thead>
+                      <tr>
+                        <th># Solicitud</th>
+                        <th>Fecha Pago</th>
+                        <th>Usuario</th>
+                        <th>Empresa</th>
+                        <th>Banco</th>
+                        <th class="text-end">Monto</th>
+                        <th>Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="solicitud in solicitudesFiltradas" :key="solicitud.id">
+                        <td>{{ solicitud.id }}</td>
+                        <td>{{ formatDate(solicitud.fecha_pago) }}</td>
+                        <td>{{ solicitud.nombre || 'N/A' }}</td>
+                        <td>{{ solicitud.empresa_nombre || 'N/A' }}</td>
+                        <td>{{ solicitud.banco_nombre || 'N/A' }}</td>
+                        <td class="text-end">${{ formatNumber(solicitud.monto_aprobado) }}</td>
+                        <td>
+                          <v-chip color="success" size="small">Pagado</v-chip>
+                        </td>
+                      </tr>
+                      <tr v-if="solicitudesPagadas.length === 0">
+                        <td colspan="7" class="text-center py-4">
+                          No hay solicitudes pagadas
+                        </td>
+                      </tr>
+                    </tbody>
+                  </v-table>
+                </v-card>
               </div>
-              <div class="col-md-3">
-                <select class="form-select" v-model="filters.banco">
-                  <option value="">Todos los bancos</option>
-                  <option v-for="banco in bancos" :key="banco" :value="banco">{{ banco }}</option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <input type="date" class="form-control" v-model="filters.fecha">
-              </div>
-              <div class="col-md-2">
-                <button class="btn btn-outline-secondary w-100" @click="resetFilters">
-                  <i class="fas fa-sync"></i> Limpiar
-                </button>
-              </div>
-            </div>
-            
-            <div v-if="loading" class="text-center my-5">
-              <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Cargando...</span>
-              </div>
-            </div>
-            
-            <div v-else class="table-responsive">
-              <table class="table table-hover">
-                <thead class="table-light">
-                  <tr>
-                    <th># Solicitud</th>
-                    <th>Fecha Pago</th>
-                    <th>Usuario</th>
-                    <th>Empresa</th>
-                    <th>Banco</th>
-                    <th class="text-end">Monto</th>
-                    <th>Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="solicitud in solicitudesFiltradas" :key="solicitud.id">
-                    <td>{{ solicitud.id }}</td>
-                    <td>{{ formatDate(solicitud.fecha_pago) }}</td>
-                    <td>{{ solicitud.nombre || 'N/A' }}</td>
-                    <td>{{ solicitud.empresa_nombre || 'N/A' }}</td>
-                    <td>{{ solicitud.banco_nombre || 'N/A' }}</td>
-                    <td class="text-end">${{ formatNumber(solicitud.monto_aprobado) }}</td>
-                    <td>
-                      <span class="badge bg-success">Pagado</span>
-                    </td>
-                  </tr>
-                  <tr v-if="solicitudesPagadas.length === 0">
-                    <td colspan="7" class="text-center py-4">
-                      No hay solicitudes pagadas
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+            </v-tabs-window-item>
+          </v-tabs-window>
+        </v-card-text>
+      </v-card-text>
+    </v-card>
+  </v-container>
 </template>
 
 <script setup>
@@ -239,6 +272,7 @@ const reportsStore = useReportsStore()
 // State
 const loading = ref(false)
 const excelLoading = ref(false)
+const currentTab = ref('pendientes')
 const filters = ref({
   search: '',
   banco: '',
@@ -246,12 +280,10 @@ const filters = ref({
 })
 
 // Computed
-const {
-  solicitudesPendientes,
-  solicitudesProcesando,
-  solicitudesPagadas,
-  selectedSolicitudes
-} = reportsStore
+const solicitudesPendientes = computed(() => reportsStore.solicitudesPendientes)
+const solicitudesProcesando = computed(() => reportsStore.solicitudesProcesando)
+const solicitudesPagadas = computed(() => reportsStore.solicitudesPagadas)
+const selectedSolicitudes = computed(() => reportsStore.selectedSolicitudes)
 
 const bancos = [
   'Pacífico', 'Guayaquil', 'Pichincha', 'Produbanco',
@@ -259,7 +291,7 @@ const bancos = [
 ]
 
 const solicitudesFiltradas = computed(() => {
-  return solicitudesPagadas.filter(sol => {
+  return solicitudesPagadas.value.filter(sol => {
     const matchesSearch = !filters.value.search || 
       (sol.nombre && sol.nombre.toLowerCase().includes(filters.value.search.toLowerCase())) ||
       (sol.empresa_nombre && sol.empresa_nombre.toLowerCase().includes(filters.value.search.toLowerCase()))

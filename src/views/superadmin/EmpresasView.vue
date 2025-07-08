@@ -1,213 +1,191 @@
 <!-- ARCHIVO: src/views/superadmin/EmpresasView.vue - REEMPLAZAR COMPLETO -->
 <template>
-  <div class="empresas-view container-fluid py-4">
-    <!-- Header -->
-    <div class="row mb-4">
-      <div class="col-12">
-        <h2 class="mb-1">
-          <i class="fas fa-building text-primary me-2"></i>
-          Gestión de Empresas
-        </h2>
-        <p class="text-muted">Administra las empresas y sus usuarios en el sistema</p>
-      </div>
-    </div>
+  <div class="empresas-view">
+    <v-container fluid class="py-4">
+      <!-- Header -->
+      <v-row class="mb-4">
+        <v-col cols="12">
+          <h2 class="mb-1">
+            <v-icon class="text-primary me-2">mdi-office-building</v-icon>
+            Gestión de Empresas
+          </h2>
+          <p class="text-muted">Administra las empresas y sus usuarios en el sistema</p>
+        </v-col>
+      </v-row>
 
-    <!-- Stats Cards -->
-    <div class="row mb-4">
-      <div class="col-md-3">
-        <div class="card card-flexirol text-center">
-          <div class="card-body">
-            <i class="fas fa-building fa-2x text-primary mb-2"></i>
-            <h4 class="text-primary">{{ stats.totalCompanies }}</h4>
-            <p class="mb-0">Empresas Activas</p>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card card-flexirol text-center">
-          <div class="card-body">
-            <i class="fas fa-user-tie fa-2x text-success mb-2"></i>
-            <h4 class="text-success">{{ stats.totalOwners }}</h4>
-            <p class="mb-0">Propietarios</p>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card card-flexirol text-center">
-          <div class="card-body">
-            <i class="fas fa-users fa-2x text-info mb-2"></i>
-            <h4 class="text-info">{{ stats.totalAdmins }}</h4>
-            <p class="mb-0">Administradores</p>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card card-flexirol text-center">
-          <div class="card-body">
-            <i class="fas fa-user-friends fa-2x text-warning mb-2"></i>
-            <h4 class="text-warning">{{ stats.totalEmployees }}</h4>
-            <p class="mb-0">Empleados</p>
-          </div>
-        </div>
-      </div>
-    </div>
+      <!-- Stats Cards -->
+      <v-row class="mb-4">
+        <v-col md="3">
+          <v-card class="card-flexirol text-center">
+            <v-card-text>
+              <v-icon class="mb-2" size="32" color="primary">mdi-office-building</v-icon>
+              <h4 class="text-primary">{{ stats.totalCompanies }}</h4>
+              <p class="mb-0">Empresas Activas</p>
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col md="3">
+          <v-card class="card-flexirol text-center">
+            <v-card-text>
+              <v-icon class="mb-2" size="32" color="success">mdi-account-tie</v-icon>
+              <h4 class="text-success">{{ stats.totalOwners }}</h4>
+              <p class="mb-0">Propietarios</p>
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col md="3">
+          <v-card class="card-flexirol text-center">
+            <v-card-text>
+              <v-icon class="mb-2" size="32" color="info">mdi-account-multiple</v-icon>
+              <h4 class="text-info">{{ stats.totalAdmins }}</h4>
+              <p class="mb-0">Administradores</p>
+            </v-card-text>
+          </v-card>
+        </v-col>
+        <v-col md="3">
+          <v-card class="card-flexirol text-center">
+            <v-card-text>
+              <v-icon class="mb-2" size="32" color="warning">mdi-account-group</v-icon>
+              <h4 class="text-warning">{{ stats.totalEmployees }}</h4>
+              <p class="mb-0">Empleados</p>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
 
-    <!-- Action Bar -->
-    <div class="row mb-4">
-      <div class="col-md-8">
-        <div class="input-group">
-          <span class="input-group-text">
-            <i class="fas fa-search"></i>
-          </span>
-          <input
+      <!-- Action Bar -->
+      <v-row class="mb-4">
+        <v-col md="8">
+          <v-text-field
             v-model="searchTerm"
-            type="text"
-            class="form-control"
-            placeholder="Buscar empresas por nombre, RUC o propietario..."
-          />
-        </div>
-      </div>
-      <div class="col-md-4 text-end">
-        <button
-          class="btn btn-primary"
-          data-bs-toggle="modal"
-          data-bs-target="#createCompanyModal"
-          @click="openCreateModal"
-        >
-          <i class="fas fa-plus me-2"></i>Nueva Empresa
-        </button>
-      </div>
-    </div>
+            label="Buscar empresas"
+            placeholder="Buscar por nombre, RUC o propietario..."
+            prepend-inner-icon="mdi-magnify"
+            clearable
+          ></v-text-field>
+        </v-col>
+        <v-col md="4" class="text-end">
+          <v-btn
+            color="primary"
+            @click="openCreateModal"
+          >
+            <v-icon left>mdi-plus</v-icon>
+            Nueva Empresa
+          </v-btn>
+        </v-col>
+      </v-row>
 
-    <!-- Loading State -->
-    <div v-if="loading" class="text-center py-5">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Cargando empresas...</span>
+      <!-- Loading State -->
+      <div v-if="loading" class="text-center py-5">
+        <v-progress-circular
+          indeterminate
+          color="primary"
+          size="40"
+        ></v-progress-circular>
+        <p class="mt-3">Cargando empresas...</p>
       </div>
-    </div>
 
-    <!-- Companies Table -->
-    <div v-else class="card">
-      <div class="card-header">
-        <h5 class="mb-0">
-          <i class="fas fa-list me-2"></i>Empresas Registradas ({{ filteredCompanies.length }})
-        </h5>
-      </div>
-      <div class="card-body p-0">
-        <div v-if="filteredCompanies.length === 0" class="text-center py-5">
-          <i class="fas fa-building fa-3x text-muted mb-3"></i>
-          <h5 class="text-muted">No hay empresas registradas</h5>
-          <p class="text-muted">Crea la primera empresa para comenzar</p>
-        </div>
+      <!-- Companies Table -->
+      <v-card v-else>
+        <v-card-title>
+          <v-icon left class="me-2">mdi-format-list-bulleted</v-icon>
+          Empresas Registradas ({{ filteredCompanies.length }})
+        </v-card-title>
+        <v-card-text class="pa-0">
+          <div v-if="filteredCompanies.length === 0" class="text-center py-5">
+            <v-icon size="48" class="text-muted mb-3">mdi-office-building</v-icon>
+            <h5 class="text-muted">No hay empresas registradas</h5>
+            <p class="text-muted">Crea la primera empresa para comenzar</p>
+          </div>
 
-        <div v-else class="table-responsive">
-          <table class="table table-hover mb-0">
-            <thead class="table-dark">
-              <tr>
-                <th>Empresa</th>
-                <th>Propietario</th>
-                <th>Usuarios</th>
-                <th>Estado</th>
-                <th>Fecha Creación</th>
-                <th class="text-center">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="company in paginatedCompanies" :key="company.id">
-                <td>
-                  <div>
-                    <strong>{{ company.nombre }}</strong>
-                    <br />
-                    <small class="text-muted">{{ company.ruc || 'Sin RUC' }}</small>
-                  </div>
-                </td>
-                <td>
-                  <div v-if="company.expand?.owner_id">
-                    <strong
-                      >{{ company.expand.owner_id.first_name }}
-                      {{ company.expand.owner_id.last_name }}</strong
-                    >
-                    <br />
-                    <small class="text-muted">{{ company.expand.owner_id.email }}</small>
-                  </div>
-                  <span v-else class="text-muted">Sin propietario asignado</span>
-                </td>
-                <td>
-                  <span class="badge bg-info">{{ company.user_count || 0 }} usuarios</span>
-                </td>
-                <td>
-                  <span class="badge" :class="company.gearbox ? 'bg-success' : 'bg-danger'">
-                    {{ company.gearbox ? 'Activa' : 'Bloqueada' }}
-                  </span>
-                </td>
-                <td>
-                  <small>{{ formatDate(company.created) }}</small>
-                </td>
-                <td class="text-center">
-                  <div class="btn-group btn-group-sm">
-                    <button
-                      class="btn btn-outline-primary"
-                      @click="viewCompanyUsers(company)"
-                      title="Ver usuarios"
-                    >
-                      <i class="fas fa-users"></i>
-                    </button>
-                    <button
-                      class="btn btn-outline-secondary"
-                      @click="editCompany(company)"
-                      title="Editar empresa"
-                    >
-                      <i class="fas fa-edit"></i>
-                    </button>
-                    <button
-                      class="btn btn-outline-warning"
-                      @click="toggleCompanyStatus(company)"
-                      :title="company.gearbox ? 'Bloquear empresa' : 'Activar empresa'"
-                    >
-                      <i :class="company.gearbox ? 'fas fa-ban' : 'fas fa-check'"></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+          <div v-else>
+            <v-table>
+              <thead>
+                <tr>
+                  <th>Empresa</th>
+                  <th>Propietario</th>
+                  <th>Usuarios</th>
+                  <th>Estado</th>
+                  <th>Fecha Creación</th>
+                  <th class="text-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="company in paginatedCompanies" :key="company.id">
+                  <td>
+                    <div>
+                      <strong>{{ company.nombre }}</strong>
+                      <br />
+                      <small class="text-muted">{{ company.ruc || 'Sin RUC' }}</small>
+                    </div>
+                  </td>
+                  <td>
+                    <div v-if="company.expand?.owner_id">
+                      <strong>
+                        {{ company.expand.owner_id.first_name }}
+                        {{ company.expand.owner_id.last_name }}
+                      </strong>
+                      <br />
+                      <small class="text-muted">{{ company.expand.owner_id.email }}</small>
+                    </div>
+                    <span v-else class="text-muted">Sin propietario asignado</span>
+                  </td>
+                  <td>
+                    <v-chip color="info" size="small">{{ company.user_count || 0 }} usuarios</v-chip>
+                  </td>
+                  <td>
+                    <v-chip :color="company.gearbox ? 'success' : 'error'" size="small">
+                      {{ company.gearbox ? 'Activa' : 'Bloqueada' }}
+                    </v-chip>
+                  </td>
+                  <td>
+                    <small>{{ formatDate(company.created) }}</small>
+                  </td>
+                  <td class="text-center">
+                    <v-btn-group size="small">
+                      <v-btn
+                        variant="outlined"
+                        color="primary"
+                        @click="viewCompanyUsers(company)"
+                        title="Ver usuarios"
+                      >
+                        <v-icon>mdi-account-multiple</v-icon>
+                      </v-btn>
+                      <v-btn
+                        variant="outlined"
+                        color="secondary"
+                        @click="editCompany(company)"
+                        title="Editar empresa"
+                      >
+                        <v-icon>mdi-pencil</v-icon>
+                      </v-btn>
+                      <v-btn
+                        variant="outlined"
+                        :color="company.gearbox ? 'warning' : 'success'"
+                        @click="toggleCompanyStatus(company)"
+                        :title="company.gearbox ? 'Bloquear empresa' : 'Activar empresa'"
+                      >
+                        <v-icon>{{ company.gearbox ? 'mdi-cancel' : 'mdi-check' }}</v-icon>
+                      </v-btn>
+                    </v-btn-group>
+                  </td>
+                </tr>
+              </tbody>
+            </v-table>
+          </div>
 
-        <!-- Pagination -->
-        <div v-if="totalPages > 1" class="card-footer">
-          <nav aria-label="Paginación de empresas">
-            <ul class="pagination pagination-sm justify-content-center mb-0">
-              <li class="page-item" :class="{ disabled: currentPage === 1 }">
-                <button
-                  class="page-link"
-                  @click="changePage(currentPage - 1)"
-                  :disabled="currentPage === 1"
-                >
-                  Anterior
-                </button>
-              </li>
-              <li
-                v-for="page in visiblePages"
-                :key="page"
-                class="page-item"
-                :class="{ active: page === currentPage }"
-              >
-                <button class="page-link" @click="changePage(page)">{{ page }}</button>
-              </li>
-              <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-                <button
-                  class="page-link"
-                  @click="changePage(currentPage + 1)"
-                  :disabled="currentPage === totalPages"
-                >
-                  Siguiente
-                </button>
-              </li>
-            </ul>
-          </nav>
-        </div>
-      </div>
-    </div>
+          <!-- Pagination -->
+          <div v-if="totalPages > 1" class="pa-3">
+            <v-pagination
+              v-model="currentPage"
+              :length="totalPages"
+              :total-visible="5"
+              size="small"
+            ></v-pagination>
+          </div>
+        </v-card-text>
+      </v-card>
+    </v-container>
 
     <!-- Modal: Create Company -->
     <div class="modal fade" id="createCompanyModal" tabindex="-1">

@@ -1,448 +1,349 @@
-# Flexirol Migration + Optimization Project - Cursor AI Rules
+# FlexiRol V2 - Vuetify Migration Phase - Cursor AI Rules
 
-## 🎯 PROJECT CONTEXT
+## 🎯 CURRENT PROJECT STATE
 
-**STRATEGIC APPROACH**: This is a MIGRATION + OPTIMIZATION project from WordPress + Vue 2 to Vue 3 + Pinia + PocketBase.
-**KEY PRINCIPLE**: Preserve business logic exactly while modernizing architecture AND eliminating redundancies.
-**TARGET MARKET**: Ecuador → USA expansion (requires flexible, scalable solutions)
+**MIGRATION STATUS**: 85% Complete - WordPress → Vue 3 + PocketBase ✅ DONE
+**ACTIVE PHASE**: Bootstrap → Vuetify + Tailwind UI framework migration
+**DEADLINE**: 1 week for complete UI migration
+**PRINCIPLE**: Change only UI skin, preserve business logic soul
 
-Legacy code: `legacy-code/` folder → Modern SPA with universal Excel generation
-
-## 🏗️ OPTIMIZED ARCHITECTURE
-
-### Stack Components
-
-- **Frontend**: Vue 3 + Composition API + Pinia + Vue Router + Bootstrap 5
-- **Backend**: PocketBase (auth, CRUD, real-time subscriptions)
-- **Excel**: XLSX.js client-side - **UNIVERSAL FORMAT** (no bank-specific formats)
-- **Storage**: NO localStorage/sessionStorage - reactive state only
-- **Styling**: Bootstrap 5 utility classes only
-
-### Optimized File Structure
+## 🏗️ TECH STACK (CURRENT)
 
 ```
-src/
-├── stores/              # Pinia stores (business logic)
-├── views/
-│   ├── auth/           # Login, register
-│   ├── shared/         # 🆕 Smart components (role-conditional)
-│   │   ├── UsuariosView.vue      # Superadmin + Empresa
-│   │   ├── SolicitudesView.vue   # Superadmin + Operador
-│   │   └── ReportesView.vue      # Empresa + Operador
-│   ├── superadmin/     # Exclusive superadmin functions
-│   │   ├── EmpresasView.vue
-│   │   ├── ConfigView.vue
-│   │   └── ExcelUploadView.vue
-│   └── usuario/        # End-user only
-│       ├── BancosView.vue
-│       └── DashboardView.vue
-├── components/         # Reusable UI components
-├── services/          # API services (PocketBase)
-└── router/           # Vue Router config
+Frontend: Vue 3 + Composition API + Vuetify + Tailwind + Pinia
+Backend: PocketBase (auth, CRUD, real-time)
+Excel: XLSX.js universal format
+Icons: Material Design Icons (mdi)
+Styling: Vuetify components + Tailwind utilities
+Storage: Reactive state only (NO localStorage/sessionStorage)
 ```
 
-## 🚀 OPTIMIZATION PRINCIPLES
+## 🚀 MIGRATION RULES
 
-### Smart Component Strategy
-
-- **ONE intelligent component** instead of multiple role-specific duplicates
-- **Conditional logic** based on user role within single component
-- **Shared business logic** eliminates 70% code duplication
-
-```javascript
-// Pattern: Smart component with role conditions
-const canManageAllUsers = computed(() => authStore.isSuperadmin)
-const visibleUsers = computed(() => {
-  return authStore.isSuperadmin ? allSystemUsers.value : myCompanyUsers.value
-})
-```
-
-### Universal Excel Strategy
-
-**ELIMINATED**: Bank-specific formats (Guayaquil 14-column special format, etc.)
-**IMPLEMENTED**: Single universal format compatible with any bank worldwide
-
-```javascript
-// Universal Excel format (international compatibility)
-const generateUniversalBankingExcel = (solicitudes) => {
-  // Standard format: Tipo Cuenta | Número | Nombre | Identificación | Monto | Email
-  // Works in Ecuador, USA, and globally
-}
-```
-
-### Legacy Consolidation Rules
+### 1. UI MIGRATION ONLY
 
 ```
-BEFORE (Legacy duplicates):
-├── superadmin/UsuariosView.vue     # All users management
-├── admin/UsuariosView.vue          # Company users (didn't exist)
-└── CheckUsuariosView.vue           # Search/filters
+✅ CHANGE: Bootstrap components → Vuetify components
+✅ CHANGE: Bootstrap classes → Tailwind/Vuetify classes
+✅ CHANGE: Modal triggers → v-model reactive
+✅ CHANGE: Form validation display → Vuetify patterns
 
-AFTER (Optimized):
-└── shared/UsuariosView.vue         # Smart component handles all cases
+❌ PRESERVE: All business logic in <script setup>
+❌ PRESERVE: All stores and their functions
+❌ PRESERVE: All API calls and data flow
+❌ PRESERVE: All user roles and permissions
+❌ PRESERVE: All validation rules and messages
 ```
 
-## 📋 MIGRATION + OPTIMIZATION WORKFLOW
-
-### 1. Legacy Analysis Pattern
-
-```
-ANALYZE BOTH FILES:
-├── legacy-code/[role]/js/[component].js    # Vue 2 logic
-└── legacy-code/[role]/dashboard-[component].php  # Template + server logic
-
-CONSOLIDATE INTO:
-├── stores/[domain].js              # Business logic
-└── views/shared/[Component]View.vue  # Smart UI component
-```
-
-### 2. Component Consolidation Strategy
-
-**Priority Order:**
-
-1. **Merge similar views** → Create smart shared components
-2. **Eliminate CheckUsuarios** → Integrate into UsuariosView
-3. **Simplify Excel** → Universal format only
-4. **Clean architecture** → Remove redundant stores/functions
-
-### 3. Role-Based Smart Components
+### 2. COMPONENT MAPPING STANDARDS
 
 ```vue
-<!-- Pattern: Single component, conditional behavior -->
+<!-- Bootstrap → Vuetify Direct Mappings -->
+
+<!-- Buttons -->
+<button class="btn btn-primary"> → <v-btn color="primary" variant="elevated">
+<button class="btn btn-outline-secondary"> → <v-btn color="secondary" variant="outlined">
+
+<!-- Cards -->
+<div class="card"> → <v-card>
+<div class="card-header"> → <v-card-title>
+<div class="card-body"> → <v-card-text>
+
+<!-- Forms -->
+<input class="form-control"> → <v-text-field variant="outlined">
+<select class="form-select"> → <v-select variant="outlined">
+<textarea class="form-control"> → <v-textarea variant="outlined">
+
+<!-- Tables -->
+<table class="table table-hover"> → <v-data-table>
+
+<!-- Modals -->
+<div class="modal fade" id="modal"> → <v-dialog v-model="showModal">
+
+<!-- Alerts -->
+<div class="alert alert-success"> → <v-alert type="success" variant="elevated">
+```
+
+### 3. VUETIFY PATTERNS
+
+```vue
+<!-- Consistent Vuetify Structure -->
 <template>
-  <div class="container mt-4">
-    <!-- Superadmin sees everything -->
+  <v-container fluid>
+    <v-row>
+      <v-col cols="12">
+        <v-card>
+          <v-card-title>
+            <v-icon class="mr-2">mdi-icon-name</v-icon>
+            Title
+            <v-spacer></v-spacer>
+            <v-btn color="primary">Action</v-btn>
+          </v-card-title>
+          <v-card-text>
+            <!-- Content -->
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-container>
+</template>
+
+<!-- Modal Pattern -->
+<v-dialog v-model="showModal" max-width="600px" persistent>
+  <v-card>
+    <v-card-title>Modal Title</v-card-title>
+    <v-card-text>
+      <v-form ref="form" v-model="formValid">
+        <!-- Form fields -->
+      </v-form>
+    </v-card-text>
+    <v-card-actions>
+      <v-spacer></v-spacer>
+      <v-btn @click="closeModal">Cancelar</v-btn>
+      <v-btn color="primary" :disabled="!formValid" @click="submit">
+        Guardar
+      </v-btn>
+    </v-card-actions>
+  </v-card>
+</v-dialog>
+```
+
+### 4. SMART COMPONENT PRESERVATION
+
+```vue
+<!-- MAINTAIN: Smart role-based components -->
+<template>
+  <v-container>
+    <!-- Superadmin exclusive -->
     <div v-if="authStore.isSuperadmin">
-      <CompanySelector v-model="selectedCompany" />
-      <AllUsersTable :users="allUsers" />
+      <CompanySelector />
+      <AllUsersTable />
     </div>
 
-    <!-- Company admin sees only their users -->
+    <!-- Company admin only -->
     <div v-else-if="authStore.isEmpresa">
-      <MyUsersTable :users="myCompanyUsers" />
+      <MyEmployeesTable />
     </div>
-  </div>
+  </v-container>
 </template>
 
 <script setup>
-// Single component handles multiple roles intelligently
-const users = computed(() => {
-  if (authStore.isSuperadmin) return allSystemUsers.value
-  if (authStore.isEmpresa) return myCompanyUsers.value
+// PRESERVE: All existing business logic
+const authStore = useAuthStore()
+const usersStore = useUsersStore()
+
+// PRESERVE: All computed properties and methods
+const visibleUsers = computed(() => {
+  if (authStore.isSuperadmin) return usersStore.allUsers
+  if (authStore.isEmpresa) return usersStore.companyUsers
   return []
 })
-</script>
-```
 
-## 🔧 PINIA STORE STANDARDS
-
-### Consolidated Store Pattern
-
-```javascript
-export const useUsersStore = defineStore('users', () => {
-  // State
-  const allUsers = ref([]) // For superadmin
-  const companyUsers = ref([]) // For empresa
-  const loading = ref(false)
-  const error = ref(null)
-
-  // Smart getters based on role
-  const visibleUsers = computed(() => {
-    const authStore = useAuthStore()
-    if (authStore.isSuperadmin) return allUsers.value
-    if (authStore.isEmpresa) return companyUsers.value
-    return []
-  })
-
-  // Unified actions (no duplication)
-  async function fetchUsers(scope = 'auto') {
-    const authStore = useAuthStore()
-    loading.value = true
-
-    try {
-      if (scope === 'auto') {
-        scope = authStore.isSuperadmin ? 'all' : 'company'
-      }
-
-      if (scope === 'all') {
-        const result = await api.collection('users').getList()
-        allUsers.value = result.items
-      } else {
-        const result = await api.collection('users').getList(1, 50, {
-          filter: `empresa_id="${authStore.user.empresa_id}"`,
-        })
-        companyUsers.value = result.items
-      }
-    } catch (err) {
-      error.value = `Error fetching users: ${err.message}`
-    } finally {
-      loading.value = false
-    }
-  }
-
-  return { allUsers, companyUsers, visibleUsers, fetchUsers }
-})
-```
-
-## 📊 UNIVERSAL EXCEL STANDARDS
-
-### Simplified Excel Generation
-
-```javascript
-// ELIMINATED: Complex bank-specific formats from legacy
-// IMPLEMENTED: Universal international format
-
-const generateUniversalExcel = (data, type = 'banking') => {
-  const workbook = XLSX.utils.book_new()
-
-  if (type === 'banking') {
-    // Universal banking format (works globally)
-    const excelData = data.map((item) => ({
-      'Tipo Cuenta': item.tipo_cuenta === 'ahorros' ? 'Savings' : 'Checking',
-      'Número Cuenta': item.numero_cuenta,
-      Titular: item.propietario,
-      Identificación: item.cedula,
-      Monto: item.monto_aprobado,
-      Email: item.email,
-      Banco: item.banco_nombre,
-    }))
-  } else if (type === 'report') {
-    // Universal report format
-    const excelData = data.map((item) => ({
-      Nombre: item.nombre,
-      Empresa: item.empresa,
-      Fecha: item.fecha,
-      Monto: item.monto_solicitado,
-      Estado: item.estado,
-    }))
-  }
-
-  const worksheet = XLSX.utils.json_to_sheet(excelData)
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Data')
-
-  const filename = `${type}_${new Date().toISOString().split('T')[0]}.xlsx`
-  XLSX.writeFile(workbook, filename)
-
-  console.log(`Universal Excel generated: ${filename}`)
+// PRESERVE: All existing functions exactly
+const handleSubmit = async () => {
+  // Keep exact same logic
 }
+</script>
 ```
 
 ## 🔒 BUSINESS LOGIC PRESERVATION
 
-### Critical Legacy Functions (Preserve Exactly)
+### Critical Functions (DO NOT MODIFY)
 
 ```javascript
-// From functions.php - MUST preserve exactly
+// From stores/system.js - PRESERVE EXACTLY
 const validateCedula = (cedula) => /^[0-9]{10}$/.test(cedula)
 
 const habilitado_switch = (userInfo, companyInfo, userRequests) => {
-  // EXACT legacy logic - don't modify
+  // EXACT legacy logic - critical for business
   if (!companyInfo.fecha_excel || companyInfo.fecha_excel === 'No creado') {
     return {
       enabled: false,
       message: 'Su Empresa no ha cargado sus Datos actualizados de Anticipos',
     }
   }
-
-  if (userInfo.gearbox !== 'true' || companyInfo.gearbox !== 'true') {
-    return { enabled: false, message: 'Usuario Bloqueado por Admin' }
-  }
-
-  // Continue with exact legacy logic...
+  // ... continue with EXACT same logic
 }
 
-// Bank account 24-hour verification rule
 const isUnderVerification = (createdDate) => {
-  const accountDate = new Date(createdDate)
-  const currentDate = new Date()
-  const timeDifference = currentDate - accountDate
-  const oneDayInMs = 86400000
-  return timeDifference <= oneDayInMs
+  // 24-hour bank account verification rule
+  return new Date() - new Date(createdDate) <= 86400000
 }
 ```
 
-## 📱 SMART COMPONENT PATTERNS
+### User Roles Matrix (PRESERVE)
 
-### Conditional Rendering by Role
+```
+| Component | Superadmin | Empresa | Operador | Usuario |
+|-----------|------------|---------|----------|---------|
+| UsuariosView | ✅ All | ✅ Employees | ❌ | ❌ |
+| SolicitudesView | ✅ Process | ❌ | ✅ Process | ✅ Create |
+| ReportesView | ✅ Global | ✅ Company | ✅ Operations | ❌ |
+| EmpresasView | ✅ | ❌ | ❌ | ❌ |
+| BancosView | ❌ | ❌ | ❌ | ✅ |
+```
+
+## 📱 VUETIFY SPECIFIC RULES
+
+### 1. Icons Usage
 
 ```vue
-<template>
-  <div class="container mt-4">
-    <!-- Universal header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2>{{ pageTitle }}</h2>
-      <button v-if="canCreate" @click="openCreateModal" class="btn btn-primary">
-        <i class="fas fa-plus"></i> {{ createButtonText }}
-      </button>
-    </div>
+<!-- Use MDI icons consistently -->
+<v-icon>mdi-account</v-icon>
+<!-- Users -->
+<v-icon>mdi-domain</v-icon>
+<!-- Companies -->
+<v-icon>mdi-file-document</v-icon>
+<!-- Requests -->
+<v-icon>mdi-bank</v-icon>
+<!-- Bank accounts -->
+<v-icon>mdi-chart-line</v-icon>
+<!-- Reports -->
+<v-icon>mdi-cog</v-icon>
+<!-- Settings -->
+```
 
-    <!-- Smart filters (conditional) -->
-    <div class="row mb-3">
-      <!-- Company selector (superadmin only) -->
-      <div v-if="authStore.isSuperadmin" class="col-md-4">
-        <select v-model="selectedCompany" class="form-select">
-          <option value="">Todas las empresas</option>
-          <option v-for="company in companies" :key="company.id" :value="company.id">
-            {{ company.name }}
-          </option>
-        </select>
-      </div>
+### 2. Form Validation
 
-      <!-- Universal search -->
-      <div class="col-md-4">
-        <input v-model="searchTerm" class="form-control" placeholder="Buscar..." />
-      </div>
-    </div>
-
-    <!-- Smart content based on role -->
-    <component :is="currentComponent" :data="visibleData" @action="handleAction" />
-  </div>
-</template>
+```vue
+<!-- Vuetify validation pattern -->
+<v-text-field
+  v-model="userForm.cedula"
+  label="Cédula *"
+  :rules="[rules.required, rules.cedula]"
+  variant="outlined"
+  maxlength="10"
+  required
+/>
 
 <script setup>
-const authStore = useAuthStore()
-const usersStore = useUsersStore()
-
-// Smart computed properties
-const pageTitle = computed(() => {
-  if (authStore.isSuperadmin) return 'Gestión de Usuarios del Sistema'
-  if (authStore.isEmpresa) return 'Mis Empleados'
-  return 'Usuarios'
-})
-
-const canCreate = computed(() => authStore.isSuperadmin || authStore.isEmpresa)
-
-const createButtonText = computed(() =>
-  authStore.isSuperadmin ? 'Crear Usuario' : 'Crear Empleado',
-)
-
-const currentComponent = computed(() => {
-  if (authStore.isSuperadmin) return 'AdminUsersTable'
-  if (authStore.isEmpresa) return 'CompanyUsersTable'
-  return 'ReadOnlyUsersTable'
-})
-
-const visibleData = computed(() => usersStore.visibleUsers)
+const rules = {
+  required: (v) => !!v || 'Campo requerido',
+  email: (v) => /.+@.+\..+/.test(v) || 'Email inválido',
+  cedula: (v) => /^[0-9]{10}$/.test(v) || 'Cédula debe tener 10 dígitos',
+}
 </script>
 ```
 
-## 🎨 BOOTSTRAP 5 OPTIMIZATION
-
-### Streamlined UI Patterns
+### 3. Table Standards
 
 ```vue
-<!-- Unified table component (works for all roles) -->
-<div class="table-responsive">
-  <table class="table table-hover">
-    <thead class="table-light">
-      <tr>
-        <th>Nombre</th>
-        <th>Email</th>
-        <th v-if="showCompanyColumn">Empresa</th>
-        <th v-if="showAdvancedActions">Estado</th>
-        <th class="text-end">Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr v-for="user in users" :key="user.id">
-        <td>{{ user.full_name }}</td>
-        <td>{{ user.email }}</td>
-        <td v-if="showCompanyColumn">{{ user.empresa_nombre }}</td>
-        <td v-if="showAdvancedActions">
-          <span :class="getStatusClass(user.gearbox)">
-            {{ user.gearbox === 'true' ? 'Activo' : 'Bloqueado' }}
-          </span>
-        </td>
-        <td class="text-end">
-          <button 
-            v-if="canEdit(user)" 
-            @click="editUser(user)" 
-            class="btn btn-sm btn-outline-primary me-1"
-          >
-            <i class="fas fa-edit"></i>
-          </button>
-          <button 
-            v-if="canDelete(user)" 
-            @click="deleteUser(user)" 
-            class="btn btn-sm btn-outline-danger"
-          >
-            <i class="fas fa-trash"></i>
-          </button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+<!-- Use v-data-table for complex tables -->
+<v-data-table
+  :headers="headers"
+  :items="items"
+  :loading="loading"
+  :search="searchTerm"
+  class="elevation-1"
+>
+  <template v-slot:item.status="{ item }">
+    <v-chip
+      :color="item.gearbox ? 'success' : 'error'"
+      size="small"
+      variant="elevated"
+    >
+      {{ item.gearbox ? 'Activo' : 'Bloqueado' }}
+    </v-chip>
+  </template>
+  
+  <template v-slot:item.actions="{ item }">
+    <v-btn size="small" icon @click="editItem(item)">
+      <v-icon>mdi-pencil</v-icon>
+    </v-btn>
+  </template>
+</v-data-table>
 ```
 
-## 🚫 OPTIMIZATION ANTI-PATTERNS
+## 📋 MIGRATION CHECKLIST PER FILE
 
-### What NOT to Do
+### Pre-Migration Analysis
 
-- **DON'T create separate views** for similar functionality across roles
-- **DON'T implement bank-specific Excel formats** - use universal format
-- **DON'T duplicate validation logic** across stores
-- **DON'T create CheckUsuarios** as separate view - integrate into UsuariosView
-- **DON'T preserve outdated WordPress patterns** - optimize while migrating
+- [ ] Identify all Bootstrap components in template
+- [ ] Map each to exact Vuetify equivalent
+- [ ] Identify all Bootstrap classes to replace
+- [ ] Note any jQuery/Bootstrap JS usage
 
-### Legacy Elimination Rules
+### During Migration
 
-```javascript
-// ELIMINATE these legacy patterns:
-❌ Multiple views: superadmin/UsuariosView + admin/UsuariosView + CheckUsuarios
-❌ Bank-specific Excel: Guayaquil format, Pacífico format, etc.
-❌ Duplicate CRUD: Same logic in multiple stores
-❌ Role-specific routes: /superadmin/usuarios vs /admin/usuarios
+- [ ] Replace template Bootstrap → Vuetify (preserve all v-model, @click)
+- [ ] Update CSS classes Bootstrap → Tailwind/Vuetify
+- [ ] Convert modals to v-dialog with v-model
+- [ ] Replace form validation display with Vuetify patterns
+- [ ] Keep 100% of <script setup> logic unchanged
 
-// REPLACE with optimized patterns:
-✅ Single smart view: shared/UsuariosView with role conditions
-✅ Universal Excel: One format for all banks globally
-✅ Consolidated stores: Smart stores with role-based getters
-✅ Dynamic routes: /usuarios with permission-based content
-```
+### Post-Migration Verification
 
-## 📚 OPTIMIZATION CHECKLIST
+- [ ] All user flows work identically
+- [ ] All business validations preserved
+- [ ] All API calls functioning
+- [ ] All role permissions respected
+- [ ] Responsive design maintained
+- [ ] No console errors
 
-### Before Starting Component
+## 🚫 CRITICAL PROHIBITIONS
 
-- [ ] Identify similar components to consolidate
-- [ ] Plan smart component with role conditions
-- [ ] Eliminate redundant legacy patterns
-- [ ] Design universal data formats
+### NEVER CHANGE
 
-### During Development
+- Store functions and business logic
+- API service calls or data structures
+- User permission logic or role checks
+- Validation rules or error messages
+- Excel generation logic (already universal)
+- PocketBase integration
+- Router configuration or guards
 
-- [ ] Build one smart component instead of multiple
-- [ ] Implement universal Excel (no bank-specific formats)
-- [ ] Use role-based conditional rendering
-- [ ] Consolidate duplicate business logic
+### ONLY CHANGE
 
-### Before Commit
-
-- [ ] No duplicate components for similar functionality
-- [ ] Universal formats implemented
-- [ ] Smart role-based components working
-- [ ] Legacy redundancies eliminated
-- [ ] Code reduction achieved (target: 70% less)
+- HTML template from Bootstrap → Vuetify
+- CSS classes from Bootstrap → Tailwind/Vuetify
+- Modal triggers from jQuery → v-model
+- Form presentation (keep validation logic)
+- Icon presentation (FontAwesome → MDI)
 
 ## 🎯 SUCCESS CRITERIA
 
-### Functional Parity + Optimization
+### Functional Parity
 
-- ✅ All legacy user flows preserved exactly
-- ✅ 70% code reduction through consolidation
-- ✅ Universal Excel works globally (Ecuador + USA)
-- ✅ Smart components handle multiple roles
-- ✅ Architecture ready for international expansion
+- All user workflows identical to Bootstrap version
+- All business rules functioning exactly the same
+- All forms validate with same rules
+- All tables sort/filter identically
+- All modals open/close properly
 
-### Modern + Scalable Standards
+### UI Improvements
 
-- ✅ Vue 3 Composition API with smart components
-- ✅ Pinia with consolidated, role-aware stores
-- ✅ Bootstrap 5 responsive with conditional UI
-- ✅ Universal client-side Excel generation
-- ✅ Scalable architecture for new markets
+- Modern Material Design appearance
+- Better mobile responsiveness
+- Improved accessibility compliance
+- Consistent icon usage (MDI)
+- Enhanced user feedback (snackbars, loading states)
+
+## 💡 OPTIMIZATION OPPORTUNITIES
+
+### During Migration, Also Fix
+
+- Replace any remaining aria-hidden modal conflicts
+- Improve loading states with v-skeleton-loader
+- Add better error handling with v-alert
+- Enhance mobile experience with v-bottom-sheet
+- Add confirmation dialogs with v-dialog
+
+### Performance Enhancements
+
+- Use v-lazy for large lists
+- Implement v-virtual-scroll for huge datasets
+- Add proper loading indicators
+- Optimize table rendering with virtual scrolling
 
 ---
 
-**OPTIMIZATION MANTRA**: One smart component beats three dumb ones. Universal format beats bank-specific chaos. Preserve business logic, eliminate technical debt.
+**MIGRATION MANTRA**: "Preserve the soul (business logic), beautify the skin (UI components)"
+
+## 📝 USAGE PATTERN
+
+When receiving migration requests, respond with:
+
+1. **Analyze**: Current Bootstrap components
+2. **Confirm**: Business logic to preserve
+3. **Optimize**: Vuetify implementation with Tailwind utilities
+4. **Verify**: Functional parity maintained

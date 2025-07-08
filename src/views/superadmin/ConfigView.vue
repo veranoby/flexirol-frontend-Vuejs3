@@ -1,36 +1,46 @@
 <template>
-  <div class="container mt-4 config-view">
+  <v-container class="mt-4 config-view">
     <div v-if="authStore.loading || companiesStore.loading" class="loading-spinner">
-      <div class="spinner-border text-warning" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
+      <v-progress-circular
+        indeterminate
+        color="warning"
+        size="40"
+      ></v-progress-circular>
+      <p class="mt-3">Loading...</p>
     </div>
 
-    <div v-if="!authStore.loading && viewError" class="alert alert-danger">
+    <v-alert v-if="!authStore.loading && viewError" type="error" class="mb-4">
       {{ viewError }}
-    </div>
+    </v-alert>
 
     <div v-if="!authStore.loading && !viewError && companyData">
       <!-- Global Alert -->
-      <div v-if="alertMessage" :class="['alert', alertVariant === 'success' ? 'alert-success' : 'alert-danger', 'position-fixed', 'top-0', 'start-50', 'translate-middle-x', 'mt-3']" style="z-index: 2000; min-width: 300px;" role="alert">
-        <h4><strong>{{ alertMessage }}</strong></h4>
-      </div>
+      <v-alert
+        v-if="alertMessage"
+        :type="alertVariant"
+        class="position-fixed top-0 start-50 translate-middle-x mt-3"
+        style="z-index: 2000; min-width: 300px;"
+        closable
+        @input="alertMessage = ''"
+      >
+        <strong>{{ alertMessage }}</strong>
+      </v-alert>
 
       <!-- Company Read-only View -->
-      <div v-if="authStore.isEmpresa && !authStore.isSuperadmin" class="card shadow-sm">
-        <div class="card-header bg-primary text-white">
+      <v-card v-if="authStore.isEmpresa && !authStore.isSuperadmin" class="shadow-sm">
+        <v-card-title class="bg-primary text-white">
           <h4>Configuración de la Empresa</h4>
-        </div>
-        <div class="card-body">
-          <p class="lead">Su configuración de Ciclo de Anticipos mensual ha sido configurada por FlexiRol. Si requiere hacer cambios a estos parámetros, comuníquese por favor con soporte@flexirol.com</p>
+        </v-card-title>
+        <v-card-text>
+          <p class="text-h6">Su configuración de Ciclo de Anticipos mensual ha sido configurada por FlexiRol. Si requiere hacer cambios a estos parámetros, comuníquese por favor con soporte@flexirol.com</p>
 
           <div class="mb-3">
-            <h5><i class="bi bi-building"></i> Nombre de la Empresa</h5>
+            <h5><v-icon class="me-2">mdi-office-building</v-icon> Nombre de la Empresa</h5>
             <p>{{ companyData.company_name || 'No especificado' }}</p>
           </div>
-          <hr>
+          <v-divider></v-divider>
           <div class="mb-3">
-            <h5><i class="bi bi-cash-coin"></i> Plan Seleccionado Actual</h5>
+            <h5><v-icon class="me-2">mdi-cash</v-icon> Plan Seleccionado Actual</h5>
             <p v-if="companyData.flexirol3 === '2'">
               PLAN 2: Valor fijo/pago mensual recurrente (${{ companyData.flexirol2 }} / mensual) <small>(más IVA)</small>
             </p>
@@ -38,30 +48,42 @@
               PLAN 1: Porcentaje sobre la transacción ({{ companyData.flexirol }}% del Anticipo) <small>(más IVA)</small>
             </p>
           </div>
-          <hr>
-          <h5><i class="bi bi-calendar-event"></i> Ciclo de Anticipos Mensual</h5>
-          <div class="row">
-            <div class="col-md-6 mb-2"><strong>Día de inicio de ciclo:</strong> {{ companyData.dia_inicio }} de cada mes</div>
-            <div class="col-md-6 mb-2"><strong>Día de cierre de ciclo:</strong> {{ companyData.dia_cierre }} de cada mes</div>
-            <div class="col-md-6 mb-2"><strong>Porcentaje del monto máximo:</strong> {{ companyData.porcentaje }}%</div>
-            <div class="col-md-6 mb-2"><strong>Bloqueo de petición:</strong> {{ companyData.dia_bloqueo }} días
-              <span class="ms-1" title="Las solicitudes de peticiones iniciarán y se bloquearán este número de días dentro de su ciclo de Anticipos mensual" data-bs-toggle="tooltip" data-bs-placement="top">
-                <i class="bi bi-question-circle-fill"></i>
-              </span>
-            </div>
-            <div class="col-md-6 mb-2"><strong>Frecuencia máxima de Anticipos por ciclo:</strong> {{ companyData.frecuencia }} solicitudes mensuales
-              <span class="ms-1" title="Cuántas solicitudes pueden realizarse al mes" data-bs-toggle="tooltip" data-bs-placement="top">
-                <i class="bi bi-question-circle-fill"></i>
-              </span>
-            </div>
-            <div class="col-md-6 mb-2"><strong>Reinicio de solicitud:</strong> después de {{ companyData.dia_reinicio }} días
-              <span class="ms-1" title="Al realizarse un depósito, cuántos días después se rehabilita poder solicitar Anticipos" data-bs-toggle="tooltip" data-bs-placement="top">
-                <i class="bi bi-question-circle-fill"></i>
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
+          <v-divider></v-divider>
+          <h5><v-icon class="me-2">mdi-calendar-month</v-icon> Ciclo de Anticipos Mensual</h5>
+          <v-row>
+            <v-col md="6" class="mb-2"><strong>Día de inicio de ciclo:</strong> {{ companyData.dia_inicio }} de cada mes</v-col>
+            <v-col md="6" class="mb-2"><strong>Día de cierre de ciclo:</strong> {{ companyData.dia_cierre }} de cada mes</v-col>
+            <v-col md="6" class="mb-2"><strong>Porcentaje del monto máximo:</strong> {{ companyData.porcentaje }}%</v-col>
+            <v-col md="6" class="mb-2">
+              <strong>Bloqueo de petición:</strong> {{ companyData.dia_bloqueo }} días
+              <v-tooltip top>
+                <template v-slot:activator="{ props }">
+                  <v-icon v-bind="props" class="ms-1">mdi-help-circle</v-icon>
+                </template>
+                <span>Las solicitudes de peticiones iniciarán y se bloquearán este número de días dentro de su ciclo de Anticipos mensual</span>
+              </v-tooltip>
+            </v-col>
+            <v-col md="6" class="mb-2">
+              <strong>Frecuencia máxima de Anticipos por ciclo:</strong> {{ companyData.frecuencia }} solicitudes mensuales
+              <v-tooltip top>
+                <template v-slot:activator="{ props }">
+                  <v-icon v-bind="props" class="ms-1">mdi-help-circle</v-icon>
+                </template>
+                <span>Cuántas solicitudes pueden realizarse al mes</span>
+              </v-tooltip>
+            </v-col>
+            <v-col md="6" class="mb-2">
+              <strong>Reinicio de solicitud:</strong> después de {{ companyData.dia_reinicio }} días
+              <v-tooltip top>
+                <template v-slot:activator="{ props }">
+                  <v-icon v-bind="props" class="ms-1">mdi-help-circle</v-icon>
+                </template>
+                <span>Al realizarse un depósito, cuántos días después se rehabilita poder solicitar Anticipos</span>
+              </v-tooltip>
+            </v-col>
+          </v-row>
+        </v-card-text>
+      </v-card>
 
       <!-- Superadmin Edit View -->
       <div v-if="authStore.isSuperadmin" class="card shadow-sm">

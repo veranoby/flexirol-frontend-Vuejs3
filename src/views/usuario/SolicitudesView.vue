@@ -1,406 +1,343 @@
 <template>
-  <div class="container mt-4">
+  <v-container class="mt-4">
     <!-- Loading State -->
-    <div v-if="loading" class="text-center my-4">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Cargando...</span>
-      </div>
-      <p class="mt-2">Verificando estado...</p>
-    </div>
+<v-row align="center" justify="center" v-if="loading" class="my-4">
+      <v-progress-circular indeterminate color="primary" />
+      <v-col class="mt-2">Verificando estado...</v-col>
+    </v-row>
 
     <div v-else>
       <!-- Dynamic Status Message -->
-      <div :class="['alert d-flex align-items-center', validation.class]" role="alert">
-        <i :class="[validation.icon, 'me-2']"></i>
-        <div>{{ validation.message }}</div>
-      </div>
+<v-alert :type="validation.type" dismissible>
+        <v-icon class="me-2">{{ validation.icon }}</v-icon>
+        {{ validation.message }}
+      </v-alert>
 
       <!-- Company Info -->
-      <div v-if="companyInfo" class="card mb-4">
-        <div class="card-header bg-light">
+<v-card v-if="companyInfo" class="mb-4">
+        <v-card-title class="bg-grey-lighten-4">
           <h6 class="mb-0">Información de la Empresa</h6>
-        </div>
-        <div class="card-body p-3">
-          <div class="row small">
-            <div class="col-md-4"><strong>Empresa:</strong> {{ companyInfo.nombre }}</div>
-            <div class="col-md-4"><strong>RUC:</strong> {{ companyInfo.ruc }}</div>
-            <div class="col-md-4"><strong>Límite de solicitudes:</strong> {{ companyInfo.frecuencia }} por mes</div>
-            <div class="col-md-4"><strong>Días hábiles:</strong> Del {{ companyInfo.dia_inicio }} al {{ companyInfo.dia_cierre }}</div>
-            <div class="col-md-4"><strong>Última actualización:</strong> {{ companyInfo.fecha_excel || 'No disponible' }}</div>
-            <div class="col-md-4"><strong>Porcentaje disponible:</strong> {{ companyInfo.porcentaje }}%</div>
-          </div>
-        </div>
-      </div>
+        </v-card-title>
+        <v-card-text class="p-3">
+          <v-row class="small">
+            <v-col cols="12" md="4"><strong>Empresa:</strong> {{ companyInfo.nombre }}</v-col>
+            <v-col cols="12" md="4"><strong>RUC:</strong> {{ companyInfo.ruc }}</v-col>
+            <v-col cols="12" md="4"><strong>Límite de solicitudes:</strong> {{ companyInfo.frecuencia }} por mes</v-col>
+            <v-col cols="12" md="4"><strong>Días hábiles:</strong> Del {{ companyInfo.dia_inicio }} al {{ companyInfo.dia_cierre }}</v-col>
+            <v-col cols="12" md="4"><strong>Última actualización:</strong> {{ companyInfo.fecha_excel || 'No disponible' }}</v-col>
+            <v-col cols="12" md="4"><strong>Porcentaje disponible:</strong> {{ companyInfo.porcentaje }}%</v-col>
+          </v-row>
+        </v-card-text>
+      </v-card>
 
       <!-- Request Form -->
-      <div v-if="isRequestFormVisible" class="card mb-4">
-        <div class="card-header bg-primary text-white">
-          <h5 class="mb-0"><i class="fas fa-hand-holding-usd me-2"></i>Solicitar Nuevo Anticipo</h5>
-        </div>
-        <div class="card-body">
-          <form @submit.prevent="handleSubmitRequest">
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label fw-bold">Monto Solicitado</label>
-                <div class="input-group">
-                  <span class="input-group-text">$</span>
-                  <input
-                    v-model.number="requestForm.monto_solicitado"
-                    type="number"
-                    class="form-control form-control-lg"
-                    :max="availableAmount"
-                    min="1"
-                    step="0.01"
-                    required
-                    :disabled="!isFormEnabled"
-                    @input="validateAmount"
-                  />
+<v-card v-if="isRequestFormVisible" class="mb-4">
+        <v-card-title class="bg-primary text-white">
+          <h5 class="mb-0"><v-icon>mdi-hand-heart</v-icon>Solicitar Nuevo Anticipo</h5>
+        </v-card-title>
+        <v-card-text>
+          <v-form @submit.prevent="handleSubmitRequest">
+            <v-row class="g-3">
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model.number="requestForm.monto_solicitado"
+                  label="Monto Solicitado"
+                  :append-inner-icon="'$'"
+                  type="number"
+                  :max="availableAmount"
+                  min="1"
+                  step="0.01"
+                  required
+                  :disabled="!isFormEnabled"
+                  @input="validateAmount"
+                />
+                <div v-if="availableAmount > 0" class="text-caption text-medium-emphasis">
+                  Monto disponible: <strong>${{ availableAmount.toFixed(2) }}</strong>
+                  ({{ companyInfo.porcentaje }}% de ${{ (availableAmount / (companyInfo.porcentaje / 100)).toFixed(2) }})
                 </div>
-                <div class="form-text">
-                  <span v-if="availableAmount > 0">
-                    Monto disponible: <strong>${{ availableAmount.toFixed(2) }}</strong>
-                    ({{ companyInfo.porcentaje }}% de ${{ (availableAmount / (companyInfo.porcentaje / 100)).toFixed(2) }})
-                  </span>
-                  <span v-else class="text-danger">
-                    No hay saldo disponible para anticipos
-                  </span>
+                <div v-else class="text-error">
+                  No hay saldo disponible para anticipos
                 </div>
-                <div v-if="amountError" class="text-danger small mt-1">
-                  <i class="fas fa-exclamation-circle"></i> {{ amountError }}
+                <div v-if="amountError" class="text-error text-caption mt-1">
+                  <v-icon>mdi-alert-circle</v-icon> {{ amountError }}
                 </div>
+              </v-col>
+              
+              <v-col cols="12" md="6">
+                <v-select
+                  v-model="requestForm.banco_destino"
+                  :items="bankAccounts"
+                  item-value="id"
+                  item-text="banco_nombre"
+                  label="Cuenta Bancaria"
+                  required
+                  :disabled="!isFormEnabled || !bankAccounts.length"
+                  :return-object="true"
+                  return-object
+                />
+                <div v-if="!bankAccounts.length" class="text-warning text-caption mt-1">
+                  <v-icon>mdi-alert</v-icon> No tiene cuentas bancarias registradas.
+                  <router-link to="/perfil/bancos">Agregar cuenta bancaria</router-link>
                 </div>
-                
-                <div class="col-md-6">
-                  <label class="form-label fw-bold">Cuenta Bancaria</label>
-                  <select 
-                    v-model="requestForm.banco_destino" 
-                    class="form-select form-select-lg" 
-                    required
-                    :disabled="!isFormEnabled || !bankAccounts.length"
-                  >
-                    <option value="">Seleccionar cuenta...</option>
-                    <option
-                      v-for="account in bankAccounts"
-                      :key="account.id"
-                      :value="account.id"
-                      :disabled="!isAccountVerified(account)"
-                    >
-                      {{ account.banco_nombre }} - {{ account.numero_cuenta }}
-                      <template v-if="!isAccountVerified(account)">
-                        (En verificación)
-                      </template>
-                    </option>
-                  </select>
-                  <div v-if="!bankAccounts.length" class="text-warning small mt-1">
-                    <i class="fas fa-exclamation-triangle"></i> No tiene cuentas bancarias registradas.
-                    <router-link to="/perfil/bancos">Agregar cuenta bancaria</router-link>
-                  </div>
-                  <div v-else class="form-text">
-                    Seleccione la cuenta donde desea recibir el anticipo
-                  </div>
+                <div v-else class="text-caption text-medium-emphasis">
+                  Seleccione la cuenta donde desea recibir el anticipo
                 </div>
-                
-                <div class="col-12">
-                  <label class="form-label fw-bold">Motivo (Opcional)</label>
-                  <textarea
-                    v-model="requestForm.observaciones"
-                    class="form-control"
-                    rows="2"
-                    placeholder="Especifique el motivo del anticipo (opcional)"
-                    :disabled="!isFormEnabled"
-                  ></textarea>
-                </div>
-                
-                <div class="col-12 mt-3">
-                  <button 
-                    type="submit" 
-                    class="btn btn-primary btn-lg w-100"
-                    :disabled="!isFormEnabled || submitting || !isFormValid"
-                  >
-                    <template v-if="submitting">
-                      <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                      Procesando...
-                    </template>
-                    <template v-else>
-                      <i class="fas fa-paper-plane me-2"></i> Solicitar Anticipo
-                    </template>
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
+              </v-col>
+              
+              <v-col cols="12">
+                <v-textarea
+                  v-model="requestForm.observaciones"
+                  label="Motivo (Opcional)"
+                  rows="2"
+                  placeholder="Especifique el motivo del anticipo (opcional)"
+                  :disabled="!isFormEnabled"
+                />
+              </v-col>
+              
+              <v-col cols="12" class="mt-3">
+                <v-btn 
+                  type="submit" 
+                  color="primary"
+                  :loading="submitting"
+                  :disabled="!isFormEnabled || submitting || !isFormValid"
+                >
+                  <v-icon left>mdi-send</v-icon> Solicitar Anticipo
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-form>
+        </v-card-text>
+      </v-card>
       </div>
 
     <!-- Request History -->
-    <div class="card">
-      <div class="card-header bg-light">
-        <div class="d-flex justify-content-between align-items-center">
-          <h5 class="mb-0"><i class="fas fa-history me-2"></i>Historial de Solicitudes</h5>
-          <div class="d-flex gap-2">
-            <div class="input-group input-group-sm" style="width: 200px;">
-              <span class="input-group-text"><i class="fas fa-search"></i></span>
-              <input 
-                v-model="searchQuery" 
-                type="text" 
-                class="form-control" 
-                placeholder="Buscar..."
-                @input="filterRequests"
-              >
-            </div>
-            <select v-model="statusFilter" class="form-select form-select-sm" style="width: 150px;" @change="filterRequests">
-              <option value="">Todos los estados</option>
-              <option value="pendiente">Pendientes</option>
-              <option value="aprobado">Aprobados</option>
-              <option value="rechazado">Rechazados</option>
-              <option value="pagado">Pagados</option>
-            </select>
-            <button 
-              class="btn btn-sm btn-outline-secondary"
-              @click="refreshRequests"
-              :disabled="refreshing"
-              title="Actualizar lista"
-            >
-              <i class="fas fa-sync-alt" :class="{'fa-spin': refreshing}"></i>
-            </button>
+    <v-card>
+      <v-card-title class="d-flex justify-space-between align-center">
+        <h5 class="mb-0"><v-icon left>mdi-history</v-icon>Historial de Solicitudes</h5>
+        <div class="d-flex ga-2">
+          <v-text-field
+            v-model="searchQuery"
+            dense
+            hide-details
+            placeholder="Buscar..."
+            @input="filterRequests"
+            append-inner-icon="mdi-magnify"
+          ></v-text-field>
+
+          <v-select
+            v-model="statusFilter"
+            :items="[{ text: 'Todos los estados', value: '' }, { text: 'Pendientes', value: 'pendiente' }, { text: 'Aprobados', value: 'aprobado' }, { text: 'Rechazados', value: 'rechazado' }, { text: 'Pagados', value: 'pagado' }]"
+            dense
+            hide-details
+            label="Estado"
+            @change="filterRequests"
+          ></v-select>
+
+          <v-btn
+            icon
+            size="small"
+            @click="refreshRequests"
+            :disabled="refreshing"
+            :loading="refreshing"
+            title="Actualizar lista"
+          >
+            <v-icon>mdi-refresh</v-icon>
+          </v-btn>
+        </div>
+      </v-card-title>
+      <v-card-subtitle v-if="filteredRequests.loading && !filteredRequests.data.length" class="text-center py-4">
+        <v-progress-circular indeterminate color="primary"></v-progress-circular>
+      </v-card-subtitle>
+      <v-card-subtitle v-else-if="!filteredRequests.data.length" class="text-medium-emphasis text-center py-4">
+        <v-icon size="large">mdi-inbox</v-icon>
+        <p class="mb-0">No se encontraron solicitudes</p>
+      </v-card-subtitle>
+      <v-card-text v-else>
+        <v-simple-table dense>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Fecha</th>
+              <th>Monto</th>
+              <th>Cuenta</th>
+              <th>Estado</th>
+              <th class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(request, index) in paginatedRequests" :key="request.id">
+              <td class="text-medium-emphasis">
+                {{ (currentPage - 1) * itemsPerPage + index + 1 }}
+              </td>
+              <td>
+                <div class="font-weight-medium">{{ formatDate(request.fecha_solicitud) }}</div>
+                <small class="text-medium-emphasis">{{ formatTime(request.fecha_solicitud) }}</small>
+              </td>
+              <td class="font-weight-bold">
+                ${{ Number(request.monto_solicitado).toFixed(2) }}
+              </td>
+              <td>
+                <div v-if="request.expand?.banco_id">
+                  {{ request.expand.banco_id.banco_nombre }}
+                  <small class="d-block text-medium-emphasis">•••• {{ request.expand.banco_id.numero_cuenta.slice(-4) }}</small>
+                </div>
+                <div v-else class="text-medium-emphasis">
+                  <small>No especificada</small>
+                </div>
+              </td>
+              <td>
+                <span :class="getStatusClass(request.estado)">
+                  <v-icon :class="getStatusIcon(request.estado)" left></v-icon>
+                  {{ formatStatus(request.estado) }}
+                </span>
+                <div v-if="request.estado === 'rechazado' && request.motivo_rechazo" 
+                     class="text-caption text-error mt-1">
+                  {{ request.motivo_rechazo }}
+                </div>
+              </td>
+              <td class="text-end">
+                <v-btn
+                  icon
+                  small
+                  @click="viewRequestDetails(request)"
+                  title="Ver detalles"
+                >
+                  <v-icon>mdi-eye</v-icon>
+                </v-btn>
+                <v-btn
+                  v-if="canCancelRequest(request)"
+                  icon
+                  small
+                  color="error"
+                  @click="confirmCancelRequest(request)"
+                  :disabled="cancellingRequestId === request.id"
+                  :loading="cancellingRequestId === request.id"
+                  title="Cancelar solicitud"
+                >
+                  <v-icon v-if="cancellingRequestId === request.id">mdi-close</v-icon>
+                  <v-icon v-else>mdi-close</v-icon>
+                </v-btn>
+              </td>
+            </tr>
+          </tbody>
+        </v-simple-table>
+      </v-card-text>
+
+      <!-- Pagination -->
+      <v-card-actions v-if="totalPages > 1">
+        <div class="d-flex justify-between align-center w-100">
+          <div class="text-medium-emphasis text-caption">
+            Mostrando {{ (currentPage - 1) * itemsPerPage + 1 }} a 
+            {{ Math.min(currentPage * itemsPerPage, filteredRequests.data.length) }} de 
+            {{ filteredRequests.data.length }} registros
           </div>
+          <v-pagination
+            v-model="currentPage"
+            :length="totalPages"
+            total-visible="7"
+            prev-icon="mdi-chevron-left"
+            next-icon="mdi-chevron-right"
+            density="compact"
+          ></v-pagination>
         </div>
-      </div>
-      <div class="card-body p-0">
-        <div v-if="filteredRequests.loading && !filteredRequests.data.length" class="text-center py-4">
-          <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Cargando...</span>
-          </div>
-        </div>
-        <div v-else-if="!filteredRequests.data.length" class="text-muted text-center py-4">
-          <i class="fas fa-inbox fa-3x mb-3 text-muted"></i>
-          <p class="mb-0">No se encontraron solicitudes</p>
-        </div>
-        <div v-else class="table-responsive">
-          <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
-              <tr>
-                <th class="ps-3">#</th>
-                <th>Fecha</th>
-                <th>Monto</th>
-                <th>Cuenta</th>
-                <th>Estado</th>
-                <th class="text-end pe-3">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(request, index) in paginatedRequests" :key="request.id">
-                <td class="ps-3 text-muted">
-                  {{ (currentPage - 1) * itemsPerPage + index + 1 }}
-                </td>
-                <td>
-                  <div class="fw-medium">{{ formatDate(request.fecha_solicitud) }}</div>
-                  <small class="text-muted">{{ formatTime(request.fecha_solicitud) }}</small>
-                </td>
-                <td class="fw-bold">
-                  ${{ Number(request.monto_solicitado).toFixed(2) }}
-                </td>
-                <td>
-                  <div v-if="request.expand?.banco_id">
-                    {{ request.expand.banco_id.banco_nombre }}
-                    <small class="d-block text-muted">•••• {{ request.expand.banco_id.numero_cuenta.slice(-4) }}</small>
-                  </div>
-                  <div v-else class="text-muted">
-                    <small>No especificada</small>
-                  </div>
-                </td>
-                <td>
-                  <span :class="getStatusClass(request.estado)">
-                    <i :class="getStatusIcon(request.estado)" class="me-1"></i>
-                    {{ formatStatus(request.estado) }}
-                  </span>
-                  <div v-if="request.estado === 'rechazado' && request.motivo_rechazo" 
-                       class="small text-danger mt-1">
-                    {{ request.motivo_rechazo }}
-                  </div>
-                </td>
-                <td class="text-end pe-3">
-                  <div class="btn-group btn-group-sm">
-                    <button 
-                      class="btn btn-outline-primary"
-                      @click="viewRequestDetails(request)"
-                      title="Ver detalles"
-                    >
-                      <i class="fas fa-eye"></i>
-                    </button>
-                    <button 
-                      v-if="canCancelRequest(request)"
-                      class="btn btn-outline-danger"
-                      @click="confirmCancelRequest(request)"
-                      title="Cancelar solicitud"
-                      :disabled="cancellingRequestId === request.id"
-                    >
-                      <i v-if="cancellingRequestId === request.id" 
-                         class="fas fa-spinner fa-spin"></i>
-                      <i v-else class="fas fa-times"></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        
-        <!-- Pagination -->
-        <div v-if="totalPages > 1" class="card-footer bg-white">
-          <div class="d-flex justify-content-between align-items-center">
-            <div class="text-muted small">
-              Mostrando {{ (currentPage - 1) * itemsPerPage + 1 }} a 
-              {{ Math.min(currentPage * itemsPerPage, filteredRequests.data.length) }} de 
-              {{ filteredRequests.data.length }} registros
-            </div>
-            <nav>
-              <ul class="pagination pagination-sm mb-0">
-                <li class="page-item" :class="{ disabled: currentPage === 1 }">
-                  <button 
-                    class="page-link" 
-                    @click="changePage(currentPage - 1)"
-                    :disabled="currentPage === 1"
-                  >
-                    &laquo;
-                  </button>
-                </li>
-                
-                <template v-for="page in visiblePages" :key="page">
-                  <li 
-                    v-if="page !== '...'"
-                    class="page-item"
-                    :class="{ active: page === currentPage }"
-                  >
-                    <button 
-                      class="page-link"
-                      @click="changePage(page)"
-                    >
-                      {{ page }}
-                    </button>
-                  </li>
-                  <li v-else class="page-item disabled">
-                    <span class="page-link">...</span>
-                  </li>
-                </template>
-                
-                <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-                  <button 
-                    class="page-link" 
-                    @click="changePage(currentPage + 1)"
-                    :disabled="currentPage === totalPages"
-                  >
-                    &raquo;
-                  </button>
-                </li>
-              </ul>
-            </nav>
-          </div>
-        </div>
-      </div>
-    </div>
+      </v-card-actions>
+    </v-card>
 
     <!-- Request Details Modal -->
-    <div class="modal fade" id="requestDetailsModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Detalles de la Solicitud</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <div v-if="selectedRequest" class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label text-muted small mb-1">Número</label>
-                <p class="mb-0">#{{ selectedRequest.id.slice(0, 8) }}</p>
+<v-dialog v-model="requestDetailsModal" max-width="600">
+      <v-card>
+        <v-card-title>
+          <span>Detalles de la Solicitud</span>
+          <v-spacer></v-spacer>
+          <v-btn icon @click="requestDetailsModal = false"><v-icon>mdi-close</v-icon></v-btn>
+        </v-card-title>
+        <v-card-text>
+          <v-row v-if="selectedRequest" class="g-3">
+            <v-col cols="12" md="6">
+              <v-subheader>Número</v-subheader>
+              <div>#{{ selectedRequest.id.slice(0, 8) }}</div>
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-subheader>Fecha</v-subheader>
+              <div>{{ formatDateTime(selectedRequest.fecha_solicitud) }}</div>
+            </v-col>
+            <v-col cols="12">
+              <v-subheader>Estado</v-subheader>
+              <v-chip :color="getStatusClass(selectedRequest.estado)">
+                <v-icon :left="getStatusIcon(selectedRequest.estado)"></v-icon>
+                {{ formatStatus(selectedRequest.estado) }}
+              </v-chip>
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-subheader>Monto</v-subheader>
+              <div class="text-h5 text-primary">${{ Number(selectedRequest.monto_solicitado).toFixed(2) }}</div>
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-subheader>Cuenta Bancaria</v-subheader>
+              <div>
+                {{ selectedRequest.expand?.banco_id?.banco_nombre || 'No especificada' }}
+                <span v-if="selectedRequest.expand?.banco_id?.numero_cuenta" class="d-block text-medium-emphasis">
+                  •••• {{ selectedRequest.expand.banco_id.numero_cuenta.slice(-4) }}
+                </span>
               </div>
-              <div class="col-md-6">
-                <label class="form-label text-muted small mb-1">Fecha</label>
-                <p class="mb-0">{{ formatDateTime(selectedRequest.fecha_solicitud) }}</p>
-              </div>
-              <div class="col-12">
-                <label class="form-label text-muted small mb-1">Estado</label>
-                <p class="mb-0">
-                  <span :class="getStatusClass(selectedRequest.estado)">
-                    <i :class="getStatusIcon(selectedRequest.estado)" class="me-1"></i>
-                    {{ formatStatus(selectedRequest.estado) }}
-                  </span>
-                </p>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label text-muted small mb-1">Monto</label>
-                <p class="h5 text-primary mb-0">${{ Number(selectedRequest.monto_solicitado).toFixed(2) }}</p>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label text-muted small mb-1">Cuenta Bancaria</label>
-                <p class="mb-0">
-                  {{ selectedRequest.expand?.banco_id?.banco_nombre || 'No especificada' }}
-                  <span v-if="selectedRequest.expand?.banco_id?.numero_cuenta" class="d-block text-muted">
-                    •••• {{ selectedRequest.expand.banco_id.numero_cuenta.slice(-4) }}
-                  </span>
-                </p>
-              </div>
-              <div v-if="selectedRequest.observaciones" class="col-12">
-                <label class="form-label text-muted small mb-1">Observaciones</label>
-                <p class="mb-0">{{ selectedRequest.observaciones }}</p>
-              </div>
-              <div v-if="selectedRequest.motivo_rechazo" class="col-12">
-                <label class="form-label text-muted small mb-1">Motivo de Rechazo</label>
-                <div class="alert alert-light border-danger text-danger mb-0">
-                  <i class="fas fa-info-circle me-1"></i>
-                  {{ selectedRequest.motivo_rechazo }}
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-            <button 
-              v-if="canCancelRequest(selectedRequest)"
-              type="button" 
-              class="btn btn-outline-danger"
-              @click="confirmCancelRequest(selectedRequest)"
-              :disabled="cancellingRequestId === selectedRequest.id"
-            >
-              <i v-if="cancellingRequestId === selectedRequest.id" 
-                 class="fas fa-spinner fa-spin me-1"></i>
-              <i v-else class="fas fa-times me-1"></i>
-              Cancelar Solicitud
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+            </v-col>
+            <v-col cols="12" v-if="selectedRequest.observaciones">
+              <v-subheader>Observaciones</v-subheader>
+              <div>{{ selectedRequest.observaciones }}</div>
+            </v-col>
+            <v-col cols="12" v-if="selectedRequest.motivo_rechazo">
+              <v-alert type="error">
+                <v-icon>mdi-information</v-icon> {{ selectedRequest.motivo_rechazo }}
+              </v-alert>
+            </v-col>
+          </v-row>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn color="secondary" text @click="requestDetailsModal = false">Cerrar</v-btn>
+          <v-btn 
+            v-if="canCancelRequest(selectedRequest)"
+            color="error"
+            @click="confirmCancelRequest(selectedRequest)"
+            :loading="cancellingRequestId === selectedRequest.id"
+          >
+            <v-icon left>mdi-close</v-icon> Cancelar Solicitud
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
     
-    <!-- Cancel Confirmation Modal -->
-    <div class="modal fade" id="confirmCancelModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Confirmar Cancelación</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <p>¿Está seguro que desea cancelar la solicitud de anticipo por <strong>${{ selectedRequest ? Number(selectedRequest.monto_solicitado).toFixed(2) : '0.00' }}</strong>?</p>
-            <p class="text-muted small mb-0">Esta acción no se puede deshacer.</p>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">No, volver</button>
-            <button 
-              type="button" 
-              class="btn btn-danger"
-              @click="cancelRequest"
-              :disabled="cancellingRequest"
-            >
-              <i v-if="cancellingRequest" class="fas fa-spinner fa-spin me-1"></i>
-              <i v-else class="fas fa-times me-1"></i>
-              Sí, cancelar solicitud
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </template>
+    <!-- Cancel Confirmation Dialog -->
+    <v-dialog v-model="confirmCancelDialog" max-width="500">
+      <v-card>
+        <v-card-title>
+          <span>Confirmar Cancelación</span>
+          <v-spacer></v-spacer>
+          <v-btn icon @click="confirmCancelDialog = false">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+        <v-card-text>
+          <p>
+            ¿Está seguro que desea cancelar la solicitud de anticipo por
+            <strong>${{ selectedRequest ? Number(selectedRequest.monto_solicitado).toFixed(2) : '0.00' }}</strong>?
+          </p>
+          <p class="text-medium-emphasis text-caption mb-0">Esta acción no se puede deshacer.</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn color="secondary" text @click="confirmCancelDialog = false">No, volver</v-btn>
+          <v-btn
+            color="error"
+            @click="cancelRequest"
+            :loading="cancellingRequest"
+          >
+            <v-icon left>mdi-close</v-icon>
+            Sí, cancelar solicitud
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </v-container>
+</template>
 
 <style scoped>
 /* Custom styles for the component */

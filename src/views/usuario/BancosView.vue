@@ -1,22 +1,23 @@
 <template>
-  <div class="container mt-4">
+  <v-container class="mt-4">
     <!-- Header con botón Agregar -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-space-between align-center mb-4">
       <h3>Mis Cuentas Bancarias</h3>
-      <button @click="openCreateModal" class="btn btn-primary" :disabled="!isFormValid">
-        <i class="fas fa-plus"></i> Agregar Cuenta
-      </button>
+      <v-btn @click="openCreateModal" color="primary" :disabled="!isFormValid">
+        <v-icon left>mdi-plus</v-icon>
+        Agregar Cuenta
+      </v-btn>
     </div>
     
     <!-- Mensaje de verificación de cuentas -->
-    <div v-if="hasPendingVerification" class="alert alert-warning">
-      <i class="fas fa-info-circle me-2"></i>
+    <v-alert v-if="hasPendingVerification" type="warning" class="mb-4">
+      <v-icon>mdi-information</v-icon>
       Las cuentas nuevas requieren 24 horas para verificación antes de poder ser utilizadas.
-    </div>
+    </v-alert>
 
     <!-- Tabla de cuentas -->
-    <div class="table-responsive">
-      <table class="table table-striped table-hover">
+    <v-card>
+      <v-table>
         <thead>
           <tr>
             <th>Banco</th>
@@ -34,141 +35,133 @@
             <td>{{ account.numero_cuenta }}</td>
             <td>{{ account.propietario }}</td>
             <td>
-              <span 
+              <v-chip
                 v-if="isAccountInVerification(account)"
-                class="badge bg-warning text-dark"
+                color="warning"
+                size="small"
                 :title="'Verificación en proceso. Disponible ' + formatVerificationTime(account.created_at)"
-                data-bs-toggle="tooltip"
-                data-bs-placement="top"
               >
-                <i class="fas fa-clock me-1"></i> Verificándose...
-              </span>
-              <span 
-                v-else 
-                :class="account.activa ? 'badge bg-success' : 'badge bg-secondary'"
+                <v-icon left size="small">mdi-clock</v-icon>
+                Verificándose...
+              </v-chip>
+              <v-chip
+                v-else
+                :color="account.activa ? 'success' : 'secondary'"
+                size="small"
               >
                 {{ account.activa ? 'Activa' : 'Inactiva' }}
-              </span>
+              </v-chip>
             </td>
             <td>
-              <button @click="editAccount(account)" class="btn btn-sm btn-outline-primary me-2">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button @click="deleteAccount(account.id)" class="btn btn-sm btn-outline-danger">
-                <i class="fas fa-trash"></i>
-              </button>
+              <v-btn @click="editAccount(account)" size="small" variant="outlined" color="primary" class="me-2">
+                <v-icon>mdi-pencil</v-icon>
+              </v-btn>
+              <v-btn @click="deleteAccount(account.id)" size="small" variant="outlined" color="error">
+                <v-icon>mdi-delete</v-icon>
+              </v-btn>
             </td>
           </tr>
         </tbody>
-      </table>
-    </div>
+      </v-table>
+    </v-card>
 
     <!-- Modal Create/Edit -->
-    <div class="modal fade" id="bankAccountModal" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">{{ formData.id ? 'Editar' : 'Nueva' }} Cuenta Bancaria</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <form @submit.prevent="handleSubmit">
-            <div class="modal-body">
-              <div class="mb-3">
-                <label class="form-label">Banco <span class="text-danger">*</span></label>
-                <select 
-                  v-model="formData.banco_nombre" 
-                  class="form-select"
+    <v-dialog v-model="showModal" max-width="600px" persistent>
+      <v-card>
+        <v-card-title>{{ formData.id ? 'Editar' : 'Nueva' }} Cuenta Bancaria</v-card-title>
+        <v-form @submit.prevent="handleSubmit">
+          <v-card-text>
+            <v-row>
+              <v-col cols="12">
+                <v-select
+                  v-model="formData.banco_nombre"
+                  :items="bancos"
+                  label="Banco *"
                   required
                   @blur="validateForm"
-                >
-                  <option value="">Seleccione un banco</option>
-                  <option v-for="banco in bancos" :key="banco" :value="banco">{{ banco }}</option>
-                </select>
-              </div>
+                ></v-select>
+              </v-col>
               
-              <div class="mb-3">
-                <label class="form-label">Tipo de Cuenta <span class="text-danger">*</span></label>
-                <select 
-                  v-model="formData.tipo_cuenta" 
-                  class="form-select"
+              <v-col cols="12">
+                <v-select
+                  v-model="formData.tipo_cuenta"
+                  :items="[
+                    { title: 'Ahorros', value: 'ahorros' },
+                    { title: 'Corriente', value: 'corriente' }
+                  ]"
+                  label="Tipo de Cuenta *"
                   required
-                >
-                  <option value="ahorros">Ahorros</option>
-                  <option value="corriente">Corriente</option>
-                </select>
-              </div>
+                ></v-select>
+              </v-col>
               
-              <div class="mb-3">
-                <label class="form-label">Número de Cuenta <span class="text-danger">*</span></label>
-                <input 
-                  type="text" 
-                  v-model="formData.numero_cuenta" 
-                  class="form-control" 
+              <v-col cols="12">
+                <v-text-field
+                  v-model="formData.numero_cuenta"
+                  label="Número de Cuenta *"
                   required
                   @input="validateAccountNumber"
-                >
-                <div v-if="errors.numero_cuenta" class="text-danger small">{{ errors.numero_cuenta }}</div>
-              </div>
+                  :error-messages="errors.numero_cuenta"
+                ></v-text-field>
+              </v-col>
               
-              <div class="mb-3">
-                <label class="form-label">Propietario <span class="text-danger">*</span></label>
-                <input 
-                  type="text" 
-                  v-model="formData.propietario" 
-                  class="form-control" 
+              <v-col cols="12">
+                <v-text-field
+                  v-model="formData.propietario"
+                  label="Propietario *"
                   required
                   @input="validateOwnerName"
-                >
-                <div v-if="errors.propietario" class="text-danger small">{{ errors.propietario }}</div>
-              </div>
+                  :error-messages="errors.propietario"
+                ></v-text-field>
+              </v-col>
               
-              <div class="mb-3">
-                <label class="form-label">Email <span class="text-danger">*</span></label>
-                <input 
-                  type="email" 
-                  v-model="formData.email" 
-                  class="form-control" 
+              <v-col cols="12">
+                <v-text-field
+                  v-model="formData.email"
+                  label="Email *"
+                  type="email"
                   required
                   @input="validateEmail"
-                >
-                <div v-if="errors.email" class="text-danger small">{{ errors.email }}</div>
-              </div>
+                  :error-messages="errors.email"
+                ></v-text-field>
+              </v-col>
               
-              <div class="alert alert-info">
-                <i class="fas fa-info-circle me-2"></i>
-                La cuenta debe estar a nombre del titular y coincidir con la cédula registrada.
-              </div>
+              <v-col cols="12">
+                <v-alert type="info" variant="tonal">
+                  <v-icon>mdi-information</v-icon>
+                  La cuenta debe estar a nombre del titular y coincidir con la cédula registrada.
+                </v-alert>
+              </v-col>
               
-              <div v-if="formErrors.length > 0" class="alert alert-danger">
-                <ul class="mb-0">
-                  <li v-for="(error, index) in formErrors" :key="index">{{ error }}</li>
-                </ul>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-              <button type="submit" class="btn btn-primary" :disabled="!isFormValid || isSubmitting">
-                <span v-if="isSubmitting" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                {{ formData.id ? 'Actualizar' : 'Guardar' }}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
+              <v-col v-if="formErrors.length > 0" cols="12">
+                <v-alert type="error" variant="tonal">
+                  <ul class="mb-0">
+                    <li v-for="(error, index) in formErrors" :key="index">{{ error }}</li>
+                  </ul>
+                </v-alert>
+              </v-col>
+            </v-row>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn variant="outlined" @click="showModal = false">Cancelar</v-btn>
+            <v-btn type="submit" color="primary" :loading="isSubmitting" :disabled="!isFormValid || isSubmitting">
+              {{ formData.id ? 'Actualizar' : 'Guardar' }}
+            </v-btn>
+          </v-card-actions>
+        </v-form>
+      </v-card>
+    </v-dialog>
+  </v-container>
 </template>
 
 <script setup>
 import { ref, onMounted, computed, nextTick } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useBankAccountsStore } from '@/stores/bankAccounts'
-import { Modal, Tooltip } from 'bootstrap'
-
 const authStore = useAuthStore()
 const bankAccountsStore = useBankAccountsStore()
 
-const modalRef = ref(null)
+const showModal = ref(false)
 const formData = ref({
   id: null,
   banco_nombre: '',
@@ -336,7 +329,7 @@ const resetForm = () => {
 
 const editAccount = (account) => {
   formData.value = { ...account }
-  modalRef.value.show()
+  showModal.value = true
 }
 
 const deleteAccount = async (id) => {

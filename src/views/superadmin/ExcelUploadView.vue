@@ -1,38 +1,36 @@
 <template>
-  <div class="container mt-4">
+  <v-container class="mt-4">
     <h2 class="mb-4">Carga Masiva de Usuarios</h2>
 
     <!-- Selección de Empresa -->
-    <div class="card mb-4">
-      <div class="card-header">
+    <v-card class="mb-4">
+      <v-card-title>
         <h5>1. Seleccionar Empresa</h5>
-      </div>
-      <div class="card-body">
-        <div class="mb-3">
-          <label for="companySelect" class="form-label">Empresa Destino</label>
-          <select
-            id="companySelect"
-            class="form-select"
-            v-model="selectedCompany"
-            :disabled="companyStore.loading || isProcessing || isUploading"
-          >
-            <option value="" disabled>Seleccione una empresa</option>
-            <option v-if="companyStore.loading" disabled>Cargando empresas...</option>
-            <template v-else>
-              <option
-                v-for="company in companies"
-                :key="company.id"
-                :value="company"
-                :disabled="!company.is_active"
-              >
-                {{ company.name }}
-                {{ !company.is_active ? ' (Inactiva)' : '' }}
-              </option>
-            </template>
-          </select>
-        </div>
-      </div>
-    </div>
+      </v-card-title>
+      <v-card-text>
+        <v-select
+          v-model="selectedCompany"
+          :items="companies"
+          item-title="name"
+          item-value="id"
+          label="Empresa Destino"
+          :loading="companyStore.loading"
+          :disabled="companyStore.loading || isProcessing || isUploading"
+        >
+          <template v-slot:item="{ props, item }">
+            <v-list-item v-bind="props" :disabled="!item.raw.is_active">
+              <v-list-item-title>{{ item.raw.name }}</v-list-item-title>
+              <v-list-item-subtitle v-if="!item.raw.is_active">Inactiva</v-list-item-subtitle>
+            </v-list-item>
+          </template>
+          <template v-slot:no-data>
+            <v-list-item>
+              <v-list-item-title>{{ companyStore.loading ? 'Cargando empresas...' : 'No hay empresas disponibles' }}</v-list-item-title>
+            </v-list-item>
+          </template>
+        </v-select>
+      </v-card-text>
+    </v-card>
 
     <!-- Área de Carga -->
     <div class="card mb-4">

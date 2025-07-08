@@ -1,12 +1,12 @@
 <template>
   <div class="login-view">
-    <div class="container-fluid px-0">
-      <div class="row g-0">
-        <div class="col-12 col-lg-6 mx-auto">
+    <v-container fluid class="px-0">
+      <v-row no-gutters>
+        <v-col cols="12" lg="6" class="mx-auto">
           <div class="login-card">
             <!-- User Icon -->
             <div class="login-icon">
-              <i class="fas fa-user"></i>
+              <v-icon size="32" color="white">mdi-account</v-icon>
             </div>
 
             <!-- Title -->
@@ -14,85 +14,63 @@
             <h2 class="login-title">Sign In</h2>
 
             <!-- Form -->
-            <form @submit.prevent="handleLogin" class="login-form">
+            <v-form @submit.prevent="handleLogin" class="login-form">
               <!-- Email -->
-              <div class="form-group">
-                <div class="input-group">
-                  <span class="input-icon">
-                    <i class="fas fa-user"></i>
-                  </span>
-                  <input
-                    id="email"
-                    v-model="form.email"
-                    type="email"
-                    class="form-control"
-                    :class="{ 'is-invalid': errors.email }"
-                    placeholder="Username"
-                    required
-                    autocomplete="email"
-                  />
-                </div>
-                <div v-if="errors.email" class="invalid-feedback">{{ errors.email }}</div>
-              </div>
+              <v-text-field
+                v-model="form.email"
+                label="Username"
+                type="email"
+                :error-messages="errors.email"
+                prepend-inner-icon="mdi-account"
+                required
+                autocomplete="email"
+                class="mb-3"
+              />
 
               <!-- Password -->
-              <div class="form-group">
-                <div class="input-group">
-                  <span class="input-icon">
-                    <i class="fas fa-lock"></i>
-                  </span>
-                  <input
-                    id="password"
-                    v-model="form.password"
-                    :type="showPassword ? 'text' : 'password'"
-                    class="form-control"
-                    :class="{ 'is-invalid': errors.password }"
-                    placeholder="Password"
-                    required
-                    autocomplete="current-password"
-                  />
-                  <button
-                    type="button"
-                    class="password-toggle"
-                    @click="showPassword = !showPassword"
-                  >
-                    <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
-                  </button>
-                </div>
-                <div v-if="errors.password" class="invalid-feedback">{{ errors.password }}</div>
-              </div>
+              <v-text-field
+                v-model="form.password"
+                :type="showPassword ? 'text' : 'password'"
+                label="Password"
+                :error-messages="errors.password"
+                prepend-inner-icon="mdi-lock"
+                :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
+                @click:append-inner="showPassword = !showPassword"
+                required
+                autocomplete="current-password"
+                class="mb-3"
+              />
 
               <!-- Remember Me -->
-              <div class="form-check">
-                <input
-                  id="remember"
-                  v-model="form.remember"
-                  type="checkbox"
-                  class="form-check-input"
-                />
-                <label class="form-check-label" for="remember"> Remember me </label>
-              </div>
+              <v-checkbox
+                v-model="form.remember"
+                label="Remember me"
+                class="mb-3"
+              />
 
               <!-- Error Message -->
-              <div v-if="authStore.error" class="alert alert-danger">
-                <i class="fas fa-exclamation-triangle me-2"></i>
+              <v-alert
+                v-if="authStore.error"
+                type="error"
+                class="mb-3"
+                prepend-icon="mdi-alert-circle"
+              >
                 {{ authStore.error }}
-              </div>
+              </v-alert>
 
               <!-- Submit Button -->
-              <button
+              <v-btn
                 type="submit"
-                class="btn btn-login"
+                color="primary"
+                size="large"
+                :loading="authStore.isLoading"
                 :disabled="!isFormValid || authStore.isLoading"
+                class="btn-login mb-3"
               >
-                <span
-                  v-if="authStore.isLoading"
-                  class="spinner-border spinner-border-sm me-2"
-                ></span>
-                <i v-else class="fas fa-sign-in-alt me-2"></i>
+                <v-icon left>mdi-login</v-icon>
                 {{ authStore.isLoading ? 'Iniciando sesión...' : 'Login' }}
-              </button>
-            </form>
+              </v-btn>
+            </v-form>
 
             <!-- Test Users -->
             <div class="test-users">
@@ -100,22 +78,24 @@
                 <span>Test Users</span>
               </div>
               <div class="test-buttons">
-                <button
+                <v-btn
                   v-for="testUser in testUsers"
                   :key="testUser.email"
-                  type="button"
-                  class="btn btn-test"
+                  variant="outlined"
+                  size="small"
+                  color="secondary"
                   @click="fillTestUser(testUser)"
+                  class="mb-2"
                 >
-                  <i :class="testUser.icon" class="me-2"></i>
+                  <v-icon left>{{ testUser.icon }}</v-icon>
                   {{ testUser.label }}
-                </button>
+                </v-btn>
               </div>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
+        </v-col>
+      </v-row>
+    </v-container>
   </div>
 </template>
 

@@ -1,125 +1,157 @@
 <template>
-  <div class="container mt-4">
-    <h3 class="mb-3"><i class="far fa-file-archive me-2"></i>Histórico de Solicitudes</h3>
+  <v-container class="mt-4">
+    <h3 class="mb-3"><v-icon class="me-2">mdi-archive</v-icon>Histórico de Solicitudes</h3>
 
     <!-- Filtros Nivel 1 -->
-    <div class="row g-3 mb-3">
-      <div class="col-md-2">
-        <label class="form-label">Cédula</label>
-        <input
+    <v-row class="mb-3">
+      <v-col md="2">
+        <v-text-field
           v-model="filters.cedula"
-          type="text"
-          class="form-control"
-          placeholder="Cédula"
+          label="Cédula"
           maxlength="10"
-        />
-      </div>
-      <div class="col-md-2">
-        <label class="form-label">Empresa</label>
-        <select v-model="filters.empresaId" class="form-select">
-          <option value="">Todas</option>
-          <option v-for="empresa in empresas" :key="empresa.id" :value="empresa.id">
-            {{ empresa.company_name || empresa.nombre }}
-          </option>
-        </select>
-      </div>
-      <div class="col-md-2">
-        <label class="form-label">Estado</label>
-        <select v-model="filters.estado" class="form-select">
-          <option value="">Todos</option>
-          <option value="pendiente">Pendiente</option>
-          <option value="procesando">Procesando</option>
-          <option value="pagado">Pagado</option>
-          <option value="rechazado">Rechazado</option>
-        </select>
-      </div>
-      <div class="col-md-2">
-        <label class="form-label">Banco</label>
-        <input v-model="filters.banco" type="text" class="form-control" placeholder="Banco" />
-      </div>
-      <div class="col-md-2">
-        <label class="form-label">Monto (mín)</label>
-        <input v-model.number="filters.montoMin" type="number" class="form-control" min="0" />
-      </div>
-      <div class="col-md-2">
-        <label class="form-label">Monto (máx)</label>
-        <input v-model.number="filters.montoMax" type="number" class="form-control" min="0" />
-      </div>
-      <div class="col-md-3">
-        <label class="form-label">Fecha inicio</label>
-        <input v-model="filters.fechaInicio" type="date" class="form-control" />
-      </div>
-      <div class="col-md-3">
-        <label class="form-label">Fecha fin</label>
-        <input v-model="filters.fechaFin" type="date" class="form-control" />
-      </div>
-      <div class="col-md-3">
-        <label class="form-label">Texto libre</label>
-        <input
+        ></v-text-field>
+      </v-col>
+      <v-col md="2">
+        <v-select
+          v-model="filters.empresaId"
+          :items="empresas"
+          item-title="company_name"
+          item-value="id"
+          label="Empresa"
+          clearable
+        >
+          <template #prepend-item>
+            <v-list-item title="Todas" value=""></v-list-item>
+          </template>
+        </v-select>
+      </v-col>
+      <v-col md="2">
+        <v-select
+          v-model="filters.estado"
+          :items="[
+            { title: 'Todos', value: '' },
+            { title: 'Pendiente', value: 'pendiente' },
+            { title: 'Procesando', value: 'procesando' },
+            { title: 'Pagado', value: 'pagado' },
+            { title: 'Rechazado', value: 'rechazado' }
+          ]"
+          label="Estado"
+          clearable
+        ></v-select>
+      </v-col>
+      <v-col md="2">
+        <v-text-field
+          v-model="filters.banco"
+          label="Banco"
+        ></v-text-field>
+      </v-col>
+      <v-col md="2">
+        <v-text-field
+          v-model.number="filters.montoMin"
+          label="Monto (mín)"
+          type="number"
+          min="0"
+        ></v-text-field>
+      </v-col>
+      <v-col md="2">
+        <v-text-field
+          v-model.number="filters.montoMax"
+          label="Monto (máx)"
+          type="number"
+          min="0"
+        ></v-text-field>
+      </v-col>
+      <v-col md="3">
+        <v-text-field
+          v-model="filters.fechaInicio"
+          label="Fecha inicio"
+          type="date"
+        ></v-text-field>
+      </v-col>
+      <v-col md="3">
+        <v-text-field
+          v-model="filters.fechaFin"
+          label="Fecha fin"
+          type="date"
+        ></v-text-field>
+      </v-col>
+      <v-col md="3">
+        <v-text-field
           v-model="filters.texto"
-          type="text"
-          class="form-control"
+          label="Texto libre"
           placeholder="Nombre, empresa, email..."
-        />
-      </div>
-      <div class="col-md-3 d-flex align-items-end">
-        <button class="btn btn-primary w-100" @click="buscar" :disabled="historicoLoading">
-          <span v-if="historicoLoading" class="spinner-border spinner-border-sm me-1"></span>
+        ></v-text-field>
+      </v-col>
+      <v-col md="3" class="d-flex align-end">
+        <v-btn
+          color="primary"
+          block
+          @click="buscar"
+          :loading="historicoLoading"
+          :disabled="historicoLoading"
+        >
           Buscar
-        </button>
-      </div>
-    </div>
+        </v-btn>
+      </v-col>
+    </v-row>
 
     <!-- Panel de totales y agregados -->
-    <div class="row mb-3">
-      <div class="col-md-3">
-        <div class="card card-body bg-light">
-          <strong>Total solicitudes:</strong> {{ historicoFilteredRows.length }}<br />
-          <strong>Promedio monto:</strong> ${{ promedioMontos.toFixed(2) }}
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card card-body bg-light">
-          <strong>Por estado:</strong>
-          <ul class="mb-0 ps-3">
-            <li v-for="(count, estado) in conteoPorEstado" :key="estado">
-              <span :class="getStatusClass(estado)">{{ estado }}</span
-              >: {{ count }}
-            </li>
-          </ul>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card card-body bg-light">
-          <strong>Totales por empresa:</strong>
-          <ul class="mb-0 ps-3">
-            <li v-for="(empresa, id) in totalesPorEmpresa" :key="id">
+    <v-row class="mb-3">
+      <v-col md="3">
+        <v-card class="pa-4" color="grey-lighten-5">
+          <v-card-text class="pa-0">
+            <div class="text-subtitle-2 mb-1">Total solicitudes:</div>
+            <div class="text-h6">{{ historicoFilteredRows.length }}</div>
+            <div class="text-subtitle-2 mb-1 mt-3">Promedio monto:</div>
+            <div class="text-h6">${{ promedioMontos.toFixed(2) }}</div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col md="3">
+        <v-card class="pa-4" color="grey-lighten-5">
+          <v-card-text class="pa-0">
+            <div class="text-subtitle-2 mb-2">Por estado:</div>
+            <div v-for="(count, estado) in conteoPorEstado" :key="estado" class="mb-1">
+              <v-chip :color="getStatusColor(estado)" size="small" class="me-2">
+                {{ estado }}
+              </v-chip>
+              {{ count }}
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col md="3">
+        <v-card class="pa-4" color="grey-lighten-5">
+          <v-card-text class="pa-0">
+            <div class="text-subtitle-2 mb-2">Totales por empresa:</div>
+            <div v-for="(empresa, id) in totalesPorEmpresa" :key="id" class="mb-1 text-body-2">
               {{ empresa.empresa }}: ${{ empresa.total.toFixed(2) }} ({{ empresa.count }})
-            </li>
-          </ul>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card card-body bg-light">
-          <strong>Totales por usuario:</strong>
-          <ul class="mb-0 ps-3">
-            <li v-for="(usuario, id) in totalesPorUsuario" :key="id">
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col md="3">
+        <v-card class="pa-4" color="grey-lighten-5">
+          <v-card-text class="pa-0">
+            <div class="text-subtitle-2 mb-2">Totales por usuario:</div>
+            <div v-for="(usuario, id) in totalesPorUsuario" :key="id" class="mb-1 text-body-2">
               {{ usuario.nombre }}: ${{ usuario.total.toFixed(2) }} ({{ usuario.count }})
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
 
     <!-- Exportar -->
     <div class="mb-3 text-end">
-      <button
-        class="btn btn-success"
+      <v-btn
+        color="success"
         @click="exportHistoricoExcel"
         :disabled="historicoFilteredRows.length === 0"
+        prepend-icon="mdi-microsoft-excel"
       >
-        <i class="far fa-file-excel me-1"></i> Exportar Excel
-      </button>
+        Exportar Excel
+      </v-btn>
     </div>
 
     <!-- Tabla de resultados -->
