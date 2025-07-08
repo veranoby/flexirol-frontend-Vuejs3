@@ -1,19 +1,11 @@
 <template>
   <v-app>
     <!-- Navigation Bar -->
-    <v-app-bar
-      v-if="authStore.isAuthenticated"
-      color="primary"
-      dark
-      elevation="2"
-      app
-    >
+    <v-app-bar v-if="authStore.isAuthenticated" color="primary" dark elevation="2" app>
       <!-- Brand FlexiRol -->
       <router-link to="/dashboard" class="text-decoration-none d-flex align-items-center">
         <v-icon color="warning" class="me-2">mdi-chart-line</v-icon>
-        <v-toolbar-title class="text-h6 font-weight-bold text-white">
-          FlexiRol
-        </v-toolbar-title>
+        <v-toolbar-title class="text-h6 font-weight-bold text-white"> FlexiRol </v-toolbar-title>
       </router-link>
 
       <v-spacer></v-spacer>
@@ -30,36 +22,16 @@
           >
             Solicitudes
           </v-btn>
-          <v-btn
-            :to="'/superadmin/empresas'"
-            text
-            class="mx-1"
-            prepend-icon="mdi-domain"
-          >
+          <v-btn :to="'/superadmin/empresas'" text class="mx-1" prepend-icon="mdi-domain">
             Empresas
           </v-btn>
-          <v-btn
-            :to="'/superadmin/reportes'"
-            text
-            class="mx-1"
-            prepend-icon="mdi-chart-bar"
-          >
+          <v-btn :to="'/superadmin/reportes'" text class="mx-1" prepend-icon="mdi-chart-bar">
             Reportes
           </v-btn>
-          <v-btn
-            :to="'/superadmin/config'"
-            text
-            class="mx-1"
-            prepend-icon="mdi-cog"
-          >
+          <v-btn :to="'/superadmin/config'" text class="mx-1" prepend-icon="mdi-cog">
             Configuración
           </v-btn>
-          <v-btn
-            :to="'/superadmin/excel-upload'"
-            text
-            class="mx-1"
-            prepend-icon="mdi-file-excel"
-          >
+          <v-btn :to="'/superadmin/excel-upload'" text class="mx-1" prepend-icon="mdi-file-excel">
             Carga Usuarios
           </v-btn>
         </template>
@@ -74,40 +46,20 @@
           >
             Solicitudes
           </v-btn>
-          <v-btn
-            :to="'/admin/empleados'"
-            text
-            class="mx-1"
-            prepend-icon="mdi-account-group"
-          >
+          <v-btn :to="'/admin/empleados'" text class="mx-1" prepend-icon="mdi-account-group">
             Empleados
           </v-btn>
-          <v-btn
-            :to="'/admin/reportes'"
-            text
-            class="mx-1"
-            prepend-icon="mdi-chart-line"
-          >
+          <v-btn :to="'/admin/reportes'" text class="mx-1" prepend-icon="mdi-chart-line">
             Reportes
           </v-btn>
         </template>
 
         <!-- USUARIO NAVIGATION -->
         <template v-if="authStore.isUsuario">
-          <v-btn
-            :to="'/usuario/solicitudes'"
-            text
-            class="mx-1"
-            prepend-icon="mdi-hand-coin"
-          >
+          <v-btn :to="'/usuario/solicitudes'" text class="mx-1" prepend-icon="mdi-hand-coin">
             Mis Solicitudes
           </v-btn>
-          <v-btn
-            :to="'/usuario/bancos'"
-            text
-            class="mx-1"
-            prepend-icon="mdi-bank"
-          >
+          <v-btn :to="'/usuario/bancos'" text class="mx-1" prepend-icon="mdi-bank">
             Mis Bancos
           </v-btn>
         </template>
@@ -116,11 +68,7 @@
       <!-- User Menu -->
       <v-menu>
         <template v-slot:activator="{ props }">
-          <v-btn
-            v-bind="props"
-            icon
-            class="mx-2"
-          >
+          <v-btn v-bind="props" icon class="mx-2">
             <v-avatar color="white" size="32">
               <span class="text-primary font-weight-bold">{{ userInitials }}</span>
             </v-avatar>
@@ -135,19 +83,19 @@
             </v-list-item-title>
             <v-list-item-subtitle>{{ roleLabel }}</v-list-item-subtitle>
           </v-list-item>
-          
+
           <v-divider></v-divider>
-          
+
           <v-list-item @click="goToProfile" prepend-icon="mdi-account">
             <v-list-item-title>Mi Perfil</v-list-item-title>
           </v-list-item>
-          
+
           <v-list-item @click="goToSettings" prepend-icon="mdi-cog">
             <v-list-item-title>Configuración</v-list-item-title>
           </v-list-item>
-          
+
           <v-divider></v-divider>
-          
+
           <v-list-item @click="logout" prepend-icon="mdi-logout" class="text-error">
             <v-list-item-title>Cerrar Sesión</v-list-item-title>
           </v-list-item>
@@ -155,18 +103,11 @@
       </v-menu>
 
       <!-- Mobile Menu -->
-      <v-app-bar-nav-icon
-        class="hidden-lg-and-up"
-        @click="drawer = !drawer"
-      ></v-app-bar-nav-icon>
+      <v-app-bar-nav-icon class="hidden-lg-and-up" @click="drawer = !drawer"></v-app-bar-nav-icon>
     </v-app-bar>
 
     <!-- Mobile Navigation Drawer -->
-    <v-navigation-drawer
-      v-model="drawer"
-      temporary
-      app
-    >
+    <v-navigation-drawer v-model="drawer" temporary app>
       <v-list>
         <!-- SUPERADMIN NAVIGATION -->
         <template v-if="authStore.isSuperadmin">
@@ -216,18 +157,11 @@
     <v-container
       v-if="authStore.isAuthenticated && showBreadcrumb"
       fluid
-      class="py-2 bg-grey-lighten-5"
+      class="py-2 bg-grey-lighten-5 glass-morphism"
     >
-      <v-breadcrumbs
-        :items="breadcrumbNavigation"
-        divider=">"
-      >
+      <v-breadcrumbs :items="breadcrumbItems" divider=">">
         <template v-slot:item="{ item }">
-          <v-breadcrumbs-item
-            :to="item.to"
-            :disabled="item.disabled"
-            class="text-body-2"
-          >
+          <v-breadcrumbs-item :to="item.to" :disabled="item.disabled" class="text-body-2">
             <v-icon v-if="item.icon" :icon="item.icon" size="small" class="me-1"></v-icon>
             {{ item.title }}
           </v-breadcrumbs-item>
@@ -243,11 +177,7 @@
         :model-value="authStore.isLoading"
         class="align-center justify-center"
       >
-        <v-progress-circular
-          color="primary"
-          indeterminate
-          size="64"
-        ></v-progress-circular>
+        <v-progress-circular color="primary" indeterminate size="64"></v-progress-circular>
       </v-overlay>
 
       <!-- Router View -->
@@ -263,16 +193,11 @@
       v-model="snackbar.show"
       :color="snackbar.color"
       :timeout="snackbar.timeout"
-      location="bottom right"
+      location="top"
     >
       {{ snackbar.message }}
       <template v-slot:actions>
-        <v-btn
-          variant="text"
-          @click="snackbar.show = false"
-        >
-          Cerrar
-        </v-btn>
+        <v-btn variant="text" @click="snackbar.show = false"> Cerrar </v-btn>
       </template>
     </v-snackbar>
 
@@ -294,7 +219,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted, watch, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { getBreadcrumb } from '@/router'
@@ -303,6 +228,30 @@ import { getBreadcrumb } from '@/router'
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+
+// Add drawer state
+const drawer = ref(false)
+
+// Snackbar state
+const snackbar = ref({
+  show: false,
+  message: '',
+  color: 'info',
+  timeout: 3000,
+})
+
+// Listen for global snackbar events
+onMounted(() => {
+  window.addEventListener('show-snackbar', (event) => {
+    const { color, text, timeout, location } = event.detail
+    snackbar.value = {
+      show: true,
+      message: text,
+      color,
+      timeout,
+    }
+  })
+})
 
 // Computed properties
 
@@ -368,7 +317,6 @@ const goToSettings = () => {
 onMounted(() => {
   // Inicializar auth
   authStore.initAuth()
-  console.log('Bootstrap disponible:', !!window.bootstrap) // Verificación
 })
 
 // Watch for authentication changes

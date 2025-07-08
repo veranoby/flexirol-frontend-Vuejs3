@@ -619,7 +619,6 @@
 import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { api } from '@/services/pocketbase'
-import { Modal } from 'bootstrap'
 
 const authStore = useAuthStore()
 

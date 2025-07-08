@@ -1,7 +1,7 @@
 <template>
   <div class="usuarios-view">
     <!-- Loading Spinner -->
-    <div v-if="loading" class="d-flex justify-content-center my-5">
+<div v-if="loading" class="flex justify-center my-5">
       <v-progress-circular
         indeterminate
         color="primary"
@@ -16,10 +16,10 @@
       <v-row class="mb-4">
         <v-col cols="12">
           <h2 class="mb-1">
-            <v-icon :class="roleIcon" class="me-2"></v-icon>
+<v-icon :class="roleIcon" class="mr-2"></v-icon>
             {{ pageTitle }}
           </h2>
-          <p class="text-muted">{{ pageDescription }}</p>
+<p class="text-gray-500">{{ pageDescription }}</p>
         </v-col>
       </v-row>
 
@@ -147,12 +147,12 @@
       <v-row>
         <v-col cols="12">
           <v-card>
-            <v-card-title class="d-flex justify-space-between align-center">
+<v-card-title class="flex justify-between items-center">
               <div>
                 <v-icon class="me-2">mdi-account-multiple</v-icon>
                 {{ tableTitle }} ({{ filteredUsers.length }})
               </div>
-              <div class="d-flex gap-2">
+<div class="flex gap-2">
                 <v-btn
                   size="small"
                   variant="outlined"
@@ -176,8 +176,8 @@
 
             <v-card-text class="pa-0">
               <div v-if="filteredUsers.length === 0" class="text-center py-5">
-                <v-icon size="48" class="text-muted mb-3">mdi-account-multiple</v-icon>
-                <p class="text-muted">{{ emptyMessage }}</p>
+<v-icon size="48" class="text-gray-500 mb-3">mdi-account-multiple</v-icon>
+<p class="text-gray-500">{{ emptyMessage }}</p>
               </div>
 
               <div v-else>
@@ -198,21 +198,21 @@
                   <tbody>
                     <tr v-for="user in paginatedUsers" :key="user.id">
                       <td>
-                        <div class="d-flex align-center">
-                          <v-avatar size="32" color="primary" class="me-2">
+<div class="flex items-center">
+<v-avatar size="32" color="primary" class="mr-2">
                             <span class="text-white">{{ user.first_name?.[0] }}{{ user.last_name?.[0] }}</span>
                           </v-avatar>
                           <div>
                             <div class="font-weight-medium">
                               {{ user.first_name }} {{ user.last_name }}
                             </div>
-                            <small class="text-muted">@{{ user.username || user.cedula }}</small>
+<small class="text-gray-500">@{{ user.username || user.cedula }}</small>
                           </div>
                         </div>
                       </td>
                       <td>{{ user.email }}</td>
                       <td>
-                        <code class="text-dark">{{ user.cedula }}</code>
+<code class="text-gray-900">{{ user.cedula }}</code>
                       </td>
                       <td v-if="showRoleColumn">
                         <v-chip :color="getRoleBadgeColor(user.role)" size="small">
@@ -223,7 +223,7 @@
                         <span v-if="user.company">
                           {{ user.company.first_name }} {{ user.company.last_name }}
                         </span>
-                        <span v-else class="text-muted">Sin empresa</span>
+<span v-else class="text-gray-500">Sin empresa</span>
                       </td>
                       <td>
                         <v-chip :color="user.gearbox ? 'success' : 'error'" size="small">
@@ -275,7 +275,7 @@
                 v-if="totalPages > 1"
                 class="d-flex justify-space-between align-center pa-3"
               >
-                <div class="text-muted">
+<div class="text-gray-500">
                   Mostrando {{ (currentPage - 1) * itemsPerPage + 1 }} a
                   {{ Math.min(currentPage * itemsPerPage, filteredUsers.length) }}
                   de {{ filteredUsers.length }} resultados

@@ -1,6 +1,6 @@
 <template>
-  <v-container class="mt-4 config-view">
-    <div v-if="authStore.loading || companiesStore.loading" class="loading-spinner">
+  <v-container class="max-w-5xl mx-auto mt-6">
+    <div v-if="authStore.loading || companiesStore.loading" class="flex flex-col items-center justify-center min-h-[200px]">
       <v-progress-circular
         indeterminate
         color="warning"
@@ -9,7 +9,7 @@
       <p class="mt-3">Loading...</p>
     </div>
 
-    <v-alert v-if="!authStore.loading && viewError" type="error" class="mb-4">
+    <v-alert v-if="!authStore.loading && viewError" type="error" class="mb-6">
       {{ viewError }}
     </v-alert>
 
@@ -18,8 +18,7 @@
       <v-alert
         v-if="alertMessage"
         :type="alertVariant"
-        class="position-fixed top-0 start-50 translate-middle-x mt-3"
-        style="z-index: 2000; min-width: 300px;"
+        class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 min-w-[300px]"
         closable
         @input="alertMessage = ''"
       >
@@ -27,20 +26,20 @@
       </v-alert>
 
       <!-- Company Read-only View -->
-      <v-card v-if="authStore.isEmpresa && !authStore.isSuperadmin" class="shadow-sm">
+      <v-card v-if="authStore.isEmpresa && !authStore.isSuperadmin" class="shadow-md">
         <v-card-title class="bg-primary text-white">
           <h4>Configuración de la Empresa</h4>
         </v-card-title>
         <v-card-text>
           <p class="text-h6">Su configuración de Ciclo de Anticipos mensual ha sido configurada por FlexiRol. Si requiere hacer cambios a estos parámetros, comuníquese por favor con soporte@flexirol.com</p>
 
-          <div class="mb-3">
-            <h5><v-icon class="me-2">mdi-office-building</v-icon> Nombre de la Empresa</h5>
+          <div class="mb-4">
+            <h5 class="flex items-center"><v-icon class="mr-2">mdi-office-building</v-icon> Nombre de la Empresa</h5>
             <p>{{ companyData.company_name || 'No especificado' }}</p>
           </div>
           <v-divider></v-divider>
-          <div class="mb-3">
-            <h5><v-icon class="me-2">mdi-cash</v-icon> Plan Seleccionado Actual</h5>
+          <div class="mb-4">
+            <h5 class="flex items-center"><v-icon class="mr-2">mdi-cash</v-icon> Plan Seleccionado Actual</h5>
             <p v-if="companyData.flexirol3 === '2'">
               PLAN 2: Valor fijo/pago mensual recurrente (${{ companyData.flexirol2 }} / mensual) <small>(más IVA)</small>
             </p>
@@ -49,7 +48,7 @@
             </p>
           </div>
           <v-divider></v-divider>
-          <h5><v-icon class="me-2">mdi-calendar-month</v-icon> Ciclo de Anticipos Mensual</h5>
+          <h5 class="flex items-center"><v-icon class="mr-2">mdi-calendar-month</v-icon> Ciclo de Anticipos Mensual</h5>
           <v-row>
             <v-col md="6" class="mb-2"><strong>Día de inicio de ciclo:</strong> {{ companyData.dia_inicio }} de cada mes</v-col>
             <v-col md="6" class="mb-2"><strong>Día de cierre de ciclo:</strong> {{ companyData.dia_cierre }} de cada mes</v-col>
@@ -58,7 +57,7 @@
               <strong>Bloqueo de petición:</strong> {{ companyData.dia_bloqueo }} días
               <v-tooltip top>
                 <template v-slot:activator="{ props }">
-                  <v-icon v-bind="props" class="ms-1">mdi-help-circle</v-icon>
+                  <v-icon v-bind="props" class="ml-1">mdi-help-circle</v-icon>
                 </template>
                 <span>Las solicitudes de peticiones iniciarán y se bloquearán este número de días dentro de su ciclo de Anticipos mensual</span>
               </v-tooltip>
@@ -67,7 +66,7 @@
               <strong>Frecuencia máxima de Anticipos por ciclo:</strong> {{ companyData.frecuencia }} solicitudes mensuales
               <v-tooltip top>
                 <template v-slot:activator="{ props }">
-                  <v-icon v-bind="props" class="ms-1">mdi-help-circle</v-icon>
+                  <v-icon v-bind="props" class="ml-1">mdi-help-circle</v-icon>
                 </template>
                 <span>Cuántas solicitudes pueden realizarse al mes</span>
               </v-tooltip>
@@ -76,7 +75,7 @@
               <strong>Reinicio de solicitud:</strong> después de {{ companyData.dia_reinicio }} días
               <v-tooltip top>
                 <template v-slot:activator="{ props }">
-                  <v-icon v-bind="props" class="ms-1">mdi-help-circle</v-icon>
+                  <v-icon v-bind="props" class="ml-1">mdi-help-circle</v-icon>
                 </template>
                 <span>Al realizarse un depósito, cuántos días después se rehabilita poder solicitar Anticipos</span>
               </v-tooltip>
@@ -86,169 +85,361 @@
       </v-card>
 
       <!-- Superadmin Edit View -->
-      <div v-if="authStore.isSuperadmin" class="card shadow-sm">
-        <div class="card-header bg-success text-white">
-          <h4><i class="bi bi-pencil-square"></i> Editar Configuración Empresarial</h4>
-        </div>
-        <div class="card-body">
-          <form @submit.prevent="handleSaveConfiguration">
-            <div class="row">
+      <v-card v-if="authStore.isSuperadmin" class="shadow-md">
+        <v-card-title class="bg-success text-white">
+          <h4 class="flex items-center"><v-icon class="mr-2">mdi-pencil-box</v-icon> Editar Configuración Empresarial</h4>
+        </v-card-title>
+        <v-card-text>
+          <v-form @submit.prevent="handleSaveConfiguration">
+            <v-row>
               <!-- Company Name (Read-only for this form) -->
-              <div class="col-md-12 mb-3">
-                <h5><i class="bi bi-building"></i> Empresa: {{ companyData.company_name || 'Cargando...' }}</h5>
-                <small class="text-muted">ID: {{ companyData.id }}</small>
-              </div>
+              <v-col cols="12" class="mb-4">
+                <h5 class="flex items-center"><v-icon class="mr-2">mdi-office-building</v-icon> Empresa: {{ companyData.company_name || 'Cargando...' }}</h5>
+                <small class="text-gray-600">ID: {{ companyData.id }}</small>
+              </v-col>
 
               <!-- Plan Configuration -->
-              <div class="col-md-12">
-                <h5><i class="bi bi-percent"></i> Configuración General de Costo del Servicio</h5>
-              </div>
+              <v-col cols="12">
+                <h5 class="flex items-center"><v-icon class="mr-2">mdi-percent</v-icon> Configuración General de Costo del Servicio</h5>
+              </v-col>
 
-              <div class="col-md-6 mb-4 card-flexirol p-3 border rounded">
-                <h6>Plan 1: Porcentaje sobre la transacción</h6>
-                <div class="input-group mb-2">
-                  <button class="btn btn-outline-danger btn-flexirol-primary" type="button" @click="decrementField('flexirol', 0, 100)" :disabled="formState.flexirol <= 0">-</button>
-                  <input type="number" class="form-control text-center" v-model.number="formState.flexirol" @blur="validateField('flexirol', 0, 100)">
-                  <button class="btn btn-outline-primary btn-flexirol-primary" type="button" @click="incrementField('flexirol', 0, 100)" :disabled="formState.flexirol >= 100">+</button>
-                  <span class="input-group-text">% del Anticipo</span>
-                </div>
-                <small v-if="validationErrors.flexirol" class="text-danger">{{ validationErrors.flexirol }}</small>
-              </div>
+              <v-col md="6" class="mb-6">
+                <v-card variant="outlined" class="p-4">
+                  <h6 class="mb-3">Plan 1: Porcentaje sobre la transacción</h6>
+                  <div class="flex items-center space-x-2 mb-2">
+                    <v-btn
+                      variant="outlined"
+                      color="error"
+                      size="small"
+                      icon="mdi-minus"
+                      @click="decrementField('flexirol', 0, 100)"
+                      :disabled="formState.flexirol <= 0"
+                    ></v-btn>
+                    <v-text-field
+                      v-model.number="formState.flexirol"
+                      type="number"
+                      class="text-center flex-1"
+                      hide-details
+                      density="compact"
+                      @blur="validateField('flexirol', 0, 100)"
+                    ></v-text-field>
+                    <v-btn
+                      variant="outlined"
+                      color="primary"
+                      size="small"
+                      icon="mdi-plus"
+                      @click="incrementField('flexirol', 0, 100)"
+                      :disabled="formState.flexirol >= 100"
+                    ></v-btn>
+                    <span class="text-sm bg-gray-100 px-2 py-1 rounded">% del Anticipo</span>
+                  </div>
+                  <small v-if="validationErrors.flexirol" class="text-red-600">{{ validationErrors.flexirol }}</small>
+                </v-card>
+              </v-col>
 
-              <div class="col-md-6 mb-4 card-flexirol p-3 border rounded">
-                <h6>Plan 2: Valor fijo/pago mensual recurrente</h6>
-                <div class="input-group mb-2">
-                  <button class="btn btn-outline-danger btn-flexirol-primary" type="button" @click="decrementField('flexirol2', 0, 9999)" :disabled="formState.flexirol2 <= 0">-</button>
-                  <input type="number" class="form-control text-center" v-model.number="formState.flexirol2" @blur="validateField('flexirol2', 0, 9999)">
-                  <button class="btn btn-outline-primary btn-flexirol-primary" type="button" @click="incrementField('flexirol2', 0, 9999)" :disabled="formState.flexirol2 >= 9999">+</button>
-                  <span class="input-group-text">/ mensual</span>
-                </div>
-                <small v-if="validationErrors.flexirol2" class="text-danger">{{ validationErrors.flexirol2 }}</small>
-              </div>
+              <v-col md="6" class="mb-6">
+                <v-card variant="outlined" class="p-4">
+                  <h6 class="mb-3">Plan 2: Valor fijo/pago mensual recurrente</h6>
+                  <div class="flex items-center space-x-2 mb-2">
+                    <v-btn
+                      variant="outlined"
+                      color="error"
+                      size="small"
+                      icon="mdi-minus"
+                      @click="decrementField('flexirol2', 0, 9999)"
+                      :disabled="formState.flexirol2 <= 0"
+                    ></v-btn>
+                    <v-text-field
+                      v-model.number="formState.flexirol2"
+                      type="number"
+                      class="text-center flex-1"
+                      hide-details
+                      density="compact"
+                      @blur="validateField('flexirol2', 0, 9999)"
+                    ></v-text-field>
+                    <v-btn
+                      variant="outlined"
+                      color="primary"
+                      size="small"
+                      icon="mdi-plus"
+                      @click="incrementField('flexirol2', 0, 9999)"
+                      :disabled="formState.flexirol2 >= 9999"
+                    ></v-btn>
+                    <span class="text-sm bg-gray-100 px-2 py-1 rounded">/ mensual</span>
+                  </div>
+                  <small v-if="validationErrors.flexirol2" class="text-red-600">{{ validationErrors.flexirol2 }}</small>
+                </v-card>
+              </v-col>
 
-              <div class="col-md-12 mb-4 p-3 border rounded">
-                <h6>Plan predeterminado para nuevos Usuarios</h6>
-                <div class="form-check form-check-inline">
-                  <input class="form-check-input" type="radio" name="flexirol3Options" id="flexirol3Plan1" value="1" v-model="formState.flexirol3">
-                  <label class="form-check-label" for="flexirol3Plan1">Plan 1</label>
-                </div>
-                <div class="form-check form-check-inline">
-                  <input class="form-check-input" type="radio" name="flexirol3Options" id="flexirol3Plan2" value="2" v-model="formState.flexirol3">
-                  <label class="form-check-label" for="flexirol3Plan2">Plan 2</label>
-                </div>
-              </div>
+              <v-col cols="12" class="mb-6">
+                <v-card variant="outlined" class="p-4">
+                  <h6 class="mb-3">Plan predeterminado para nuevos Usuarios</h6>
+                  <v-radio-group v-model="formState.flexirol3" inline>
+                    <v-radio label="Plan 1" value="1"></v-radio>
+                    <v-radio label="Plan 2" value="2"></v-radio>
+                  </v-radio-group>
+                </v-card>
+              </v-col>
 
-              <hr class="my-4">
+              <v-col cols="12">
+                <v-divider class="my-6"></v-divider>
+              </v-col>
 
               <!-- Monthly Cycle Configuration -->
-              <div class="col-md-12">
-                <h5><i class="bi bi-calendar-week"></i> Configuración del Ciclo de Anticipos Mensual</h5>
-              </div>
+              <v-col cols="12">
+                <h5 class="flex items-center"><v-icon class="mr-2">mdi-calendar-month</v-icon> Configuración del Ciclo de Anticipos Mensual</h5>
+              </v-col>
 
               <!-- dia_inicio -->
-              <div class="col-md-6 mb-3">
-                <label for="dia_inicio" class="form-label">Día de inicio de ciclo:</label>
-                <div class="input-group">
-                  <button class="btn btn-outline-danger" type="button" @click="decrementField('dia_inicio', 1, 31)" :disabled="formState.dia_inicio <= 1">-</button>
-                  <input type="number" class="form-control text-center" id="dia_inicio" v-model.number="formState.dia_inicio" @blur="validateField('dia_inicio', 1, 31)">
-                  <button class="btn btn-outline-primary" type="button" @click="incrementField('dia_inicio', 1, 31)" :disabled="formState.dia_inicio >= 31">+</button>
-                  <span class="input-group-text">de cada mes</span>
+              <v-col md="6" class="mb-4">
+                <v-label class="text-sm font-medium mb-2">Día de inicio de ciclo:</v-label>
+                <div class="flex items-center space-x-2">
+                  <v-btn
+                    variant="outlined"
+                    color="error"
+                    size="small"
+                    icon="mdi-minus"
+                    @click="decrementField('dia_inicio', 1, 31)"
+                    :disabled="formState.dia_inicio <= 1"
+                  ></v-btn>
+                  <v-text-field
+                    v-model.number="formState.dia_inicio"
+                    type="number"
+                    class="text-center flex-1"
+                    hide-details
+                    density="compact"
+                    @blur="validateField('dia_inicio', 1, 31)"
+                  ></v-text-field>
+                  <v-btn
+                    variant="outlined"
+                    color="primary"
+                    size="small"
+                    icon="mdi-plus"
+                    @click="incrementField('dia_inicio', 1, 31)"
+                    :disabled="formState.dia_inicio >= 31"
+                  ></v-btn>
+                  <span class="text-sm bg-gray-100 px-2 py-1 rounded">de cada mes</span>
                 </div>
-                <small v-if="validationErrors.dia_inicio" class="text-danger">{{ validationErrors.dia_inicio }}</small>
-              </div>
+                <small v-if="validationErrors.dia_inicio" class="text-red-600">{{ validationErrors.dia_inicio }}</small>
+              </v-col>
 
               <!-- dia_cierre -->
-              <div class="col-md-6 mb-3">
-                <label for="dia_cierre" class="form-label">Día de cierre de ciclo:</label>
-                <div class="input-group">
-                  <button class="btn btn-outline-danger" type="button" @click="decrementField('dia_cierre', 1, 31)" :disabled="formState.dia_cierre <= 1">-</button>
-                  <input type="number" class="form-control text-center" id="dia_cierre" v-model.number="formState.dia_cierre" @blur="validateField('dia_cierre', 1, 31)">
-                  <button class="btn btn-outline-primary" type="button" @click="incrementField('dia_cierre', 1, 31)" :disabled="formState.dia_cierre >= 31">+</button>
-                  <span class="input-group-text">de cada mes</span>
+              <v-col md="6" class="mb-4">
+                <v-label class="text-sm font-medium mb-2">Día de cierre de ciclo:</v-label>
+                <div class="flex items-center space-x-2">
+                  <v-btn
+                    variant="outlined"
+                    color="error"
+                    size="small"
+                    icon="mdi-minus"
+                    @click="decrementField('dia_cierre', 1, 31)"
+                    :disabled="formState.dia_cierre <= 1"
+                  ></v-btn>
+                  <v-text-field
+                    v-model.number="formState.dia_cierre"
+                    type="number"
+                    class="text-center flex-1"
+                    hide-details
+                    density="compact"
+                    @blur="validateField('dia_cierre', 1, 31)"
+                  ></v-text-field>
+                  <v-btn
+                    variant="outlined"
+                    color="primary"
+                    size="small"
+                    icon="mdi-plus"
+                    @click="incrementField('dia_cierre', 1, 31)"
+                    :disabled="formState.dia_cierre >= 31"
+                  ></v-btn>
+                  <span class="text-sm bg-gray-100 px-2 py-1 rounded">de cada mes</span>
                 </div>
-                <small v-if="validationErrors.dia_cierre" class="text-danger">{{ validationErrors.dia_cierre }}</small>
-              </div>
+                <small v-if="validationErrors.dia_cierre" class="text-red-600">{{ validationErrors.dia_cierre }}</small>
+              </v-col>
 
               <!-- porcentaje -->
-              <div class="col-md-6 mb-3">
-                <label for="porcentaje" class="form-label">Porcentaje del monto máximo:</label>
-                <div class="input-group">
-                  <button class="btn btn-outline-danger" type="button" @click="decrementField('porcentaje', 0, 100)" :disabled="formState.porcentaje <= 0">-</button>
-                  <input type="number" class="form-control text-center" id="porcentaje" v-model.number="formState.porcentaje" @blur="validateField('porcentaje', 0, 100)">
-                  <button class="btn btn-outline-primary" type="button" @click="incrementField('porcentaje', 0, 100)" :disabled="formState.porcentaje >= 100">+</button>
-                  <span class="input-group-text">%</span>
+              <v-col md="6" class="mb-4">
+                <v-label class="text-sm font-medium mb-2">Porcentaje del monto máximo:</v-label>
+                <div class="flex items-center space-x-2">
+                  <v-btn
+                    variant="outlined"
+                    color="error"
+                    size="small"
+                    icon="mdi-minus"
+                    @click="decrementField('porcentaje', 0, 100)"
+                    :disabled="formState.porcentaje <= 0"
+                  ></v-btn>
+                  <v-text-field
+                    v-model.number="formState.porcentaje"
+                    type="number"
+                    class="text-center flex-1"
+                    hide-details
+                    density="compact"
+                    @blur="validateField('porcentaje', 0, 100)"
+                  ></v-text-field>
+                  <v-btn
+                    variant="outlined"
+                    color="primary"
+                    size="small"
+                    icon="mdi-plus"
+                    @click="incrementField('porcentaje', 0, 100)"
+                    :disabled="formState.porcentaje >= 100"
+                  ></v-btn>
+                  <span class="text-sm bg-gray-100 px-2 py-1 rounded">%</span>
                 </div>
-                <small v-if="validationErrors.porcentaje" class="text-danger">{{ validationErrors.porcentaje }}</small>
-              </div>
+                <small v-if="validationErrors.porcentaje" class="text-red-600">{{ validationErrors.porcentaje }}</small>
+              </v-col>
 
               <!-- dia_bloqueo -->
-              <div class="col-md-6 mb-3">
-                <label for="dia_bloqueo" class="form-label">
+              <v-col md="6" class="mb-4">
+                <v-label class="text-sm font-medium mb-2 flex items-center">
                   Bloqueo de petición (días):
-                  <span class="ms-1" title="Las solicitudes de peticiones iniciarán y se bloquearán este número de días dentro de su ciclo de Anticipos mensual" data-bs-toggle="tooltip" data-bs-placement="top">
-                    <i class="bi bi-question-circle-fill"></i>
-                  </span>
-                </label>
-                <div class="input-group">
-                  <button class="btn btn-outline-danger" type="button" @click="decrementField('dia_bloqueo', 0, 31)" :disabled="formState.dia_bloqueo <= 0">-</button>
-                  <input type="number" class="form-control text-center" id="dia_bloqueo" v-model.number="formState.dia_bloqueo" @blur="validateField('dia_bloqueo', 0, 31)">
-                  <button class="btn btn-outline-primary" type="button" @click="incrementField('dia_bloqueo', 0, 31)" :disabled="formState.dia_bloqueo >= 31">+</button>
+                  <v-tooltip top>
+                    <template v-slot:activator="{ props }">
+                      <v-icon v-bind="props" class="ml-1" size="small">mdi-help-circle</v-icon>
+                    </template>
+                    <span>Las solicitudes de peticiones iniciarán y se bloquearán este número de días dentro de su ciclo de Anticipos mensual</span>
+                  </v-tooltip>
+                </v-label>
+                <div class="flex items-center space-x-2">
+                  <v-btn
+                    variant="outlined"
+                    color="error"
+                    size="small"
+                    icon="mdi-minus"
+                    @click="decrementField('dia_bloqueo', 0, 31)"
+                    :disabled="formState.dia_bloqueo <= 0"
+                  ></v-btn>
+                  <v-text-field
+                    v-model.number="formState.dia_bloqueo"
+                    type="number"
+                    class="text-center flex-1"
+                    hide-details
+                    density="compact"
+                    @blur="validateField('dia_bloqueo', 0, 31)"
+                  ></v-text-field>
+                  <v-btn
+                    variant="outlined"
+                    color="primary"
+                    size="small"
+                    icon="mdi-plus"
+                    @click="incrementField('dia_bloqueo', 0, 31)"
+                    :disabled="formState.dia_bloqueo >= 31"
+                  ></v-btn>
                 </div>
-                <small v-if="validationErrors.dia_bloqueo" class="text-danger">{{ validationErrors.dia_bloqueo }}</small>
-              </div>
+                <small v-if="validationErrors.dia_bloqueo" class="text-red-600">{{ validationErrors.dia_bloqueo }}</small>
+              </v-col>
 
               <!-- frecuencia -->
-              <div class="col-md-6 mb-3">
-                <label for="frecuencia" class="form-label">
+              <v-col md="6" class="mb-4">
+                <v-label class="text-sm font-medium mb-2 flex items-center">
                   Frecuencia máxima de Anticipos por ciclo:
-                  <span class="ms-1" title="Cuántas solicitudes pueden realizarse al mes" data-bs-toggle="tooltip" data-bs-placement="top">
-                    <i class="bi bi-question-circle-fill"></i>
-                  </span>
-                </label>
-                <div class="input-group">
-                  <button class="btn btn-outline-danger" type="button" @click="decrementField('frecuencia', 1, 10)" :disabled="formState.frecuencia <= 1">-</button>
-                  <input type="number" class="form-control text-center" id="frecuencia" v-model.number="formState.frecuencia" @blur="validateField('frecuencia', 1, 10)">
-                  <button class="btn btn-outline-primary" type="button" @click="incrementField('frecuencia', 1, 10)" :disabled="formState.frecuencia >= 10">+</button>
-                  <span class="input-group-text">solicitudes</span>
+                  <v-tooltip top>
+                    <template v-slot:activator="{ props }">
+                      <v-icon v-bind="props" class="ml-1" size="small">mdi-help-circle</v-icon>
+                    </template>
+                    <span>Cuántas solicitudes pueden realizarse al mes</span>
+                  </v-tooltip>
+                </v-label>
+                <div class="flex items-center space-x-2">
+                  <v-btn
+                    variant="outlined"
+                    color="error"
+                    size="small"
+                    icon="mdi-minus"
+                    @click="decrementField('frecuencia', 1, 10)"
+                    :disabled="formState.frecuencia <= 1"
+                  ></v-btn>
+                  <v-text-field
+                    v-model.number="formState.frecuencia"
+                    type="number"
+                    class="text-center flex-1"
+                    hide-details
+                    density="compact"
+                    @blur="validateField('frecuencia', 1, 10)"
+                  ></v-text-field>
+                  <v-btn
+                    variant="outlined"
+                    color="primary"
+                    size="small"
+                    icon="mdi-plus"
+                    @click="incrementField('frecuencia', 1, 10)"
+                    :disabled="formState.frecuencia >= 10"
+                  ></v-btn>
+                  <span class="text-sm bg-gray-100 px-2 py-1 rounded">solicitudes</span>
                 </div>
-                <small v-if="validationErrors.frecuencia" class="text-danger">{{ validationErrors.frecuencia }}</small>
-              </div>
+                <small v-if="validationErrors.frecuencia" class="text-red-600">{{ validationErrors.frecuencia }}</small>
+              </v-col>
 
               <!-- dia_reinicio -->
-              <div class="col-md-6 mb-3">
-                <label for="dia_reinicio" class="form-label">
+              <v-col md="6" class="mb-4">
+                <v-label class="text-sm font-medium mb-2 flex items-center">
                   Reinicio de solicitud (después de días):
-                  <span class="ms-1" title="Al realizarse un depósito, cuántos días después se rehabilita poder solicitar Anticipos" data-bs-toggle="tooltip" data-bs-placement="top">
-                    <i class="bi bi-question-circle-fill"></i>
-                  </span>
-                </label>
-                <div class="input-group">
-                  <button class="btn btn-outline-danger" type="button" @click="decrementField('dia_reinicio', 1, 31)" :disabled="formState.dia_reinicio <= 1">-</button>
-                  <input type="number" class="form-control text-center" id="dia_reinicio" v-model.number="formState.dia_reinicio" @blur="validateField('dia_reinicio', 1, 31)">
-                  <button class="btn btn-outline-primary" type="button" @click="incrementField('dia_reinicio', 1, 31)" :disabled="formState.dia_reinicio >= 31">+</button>
+                  <v-tooltip top>
+                    <template v-slot:activator="{ props }">
+                      <v-icon v-bind="props" class="ml-1" size="small">mdi-help-circle</v-icon>
+                    </template>
+                    <span>Al realizarse un depósito, cuántos días después se rehabilita poder solicitar Anticipos</span>
+                  </v-tooltip>
+                </v-label>
+                <div class="flex items-center space-x-2">
+                  <v-btn
+                    variant="outlined"
+                    color="error"
+                    size="small"
+                    icon="mdi-minus"
+                    @click="decrementField('dia_reinicio', 1, 31)"
+                    :disabled="formState.dia_reinicio <= 1"
+                  ></v-btn>
+                  <v-text-field
+                    v-model.number="formState.dia_reinicio"
+                    type="number"
+                    class="text-center flex-1"
+                    hide-details
+                    density="compact"
+                    @blur="validateField('dia_reinicio', 1, 31)"
+                  ></v-text-field>
+                  <v-btn
+                    variant="outlined"
+                    color="primary"
+                    size="small"
+                    icon="mdi-plus"
+                    @click="incrementField('dia_reinicio', 1, 31)"
+                    :disabled="formState.dia_reinicio >= 31"
+                  ></v-btn>
                 </div>
-                <small v-if="validationErrors.dia_reinicio" class="text-danger">{{ validationErrors.dia_reinicio }}</small>
-              </div>
-            </div>
+                <small v-if="validationErrors.dia_reinicio" class="text-red-600">{{ validationErrors.dia_reinicio }}</small>
+              </v-col>
+            </v-row>
 
-            <hr class="my-4">
-            <div class="d-grid gap-2">
-              <button type="submit" class="btn btn-success btn-lg" :disabled="companiesStore.loading || Object.keys(validationErrors).length > 0">
-                <span v-if="companiesStore.loading" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                <i v-else class="bi bi-save-fill"></i>
+            <v-divider class="my-6"></v-divider>
+            <div class="w-full">
+              <v-btn
+                type="submit"
+                color="success"
+                size="large"
+                block
+                :disabled="companiesStore.loading || Object.keys(validationErrors).length > 0"
+              >
+                <v-progress-circular
+                  v-if="companiesStore.loading"
+                  indeterminate
+                  size="20"
+                  class="mr-2"
+                ></v-progress-circular>
+                <v-icon v-else class="mr-2">mdi-content-save</v-icon>
                 Guardar Todos los Cambios
-              </button>
+              </v-btn>
             </div>
-             <small v-if="Object.keys(validationErrors).length > 0" class="text-danger d-block mt-2">Corrija los errores antes de guardar.</small>
-          </form>
-        </div>
-      </div>
+            <small v-if="Object.keys(validationErrors).length > 0" class="text-red-600 block mt-2">Corrija los errores antes de guardar.</small>
+          </v-form>
+        </v-card-text>
+      </v-card>
     </div>
 
-    <div v-if="!authStore.loading && !authStore.isAuthenticated" class="alert alert-warning">
+    <v-alert v-if="!authStore.loading && !authStore.isAuthenticated" type="warning">
       Debe iniciar sesión para ver esta página.
-    </div>
-  </div>
+    </v-alert>
+  </v-container>
 </template>
 
 <script setup>

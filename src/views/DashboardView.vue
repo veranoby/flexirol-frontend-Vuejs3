@@ -14,7 +14,7 @@
     <template v-if="authStore.isSuperadmin">
       <v-row>
         <v-col md="3" sm="6" class="mb-4">
-          <v-card class="text-center">
+          <v-card class="glass-morphism text-center">
             <v-card-text>
               <v-icon class="mb-2" size="36" color="flexirol-primary">mdi-office-building</v-icon>
               <h4 class="text-flexirol-primary">{{ stats.totalCompanies }}</h4>
@@ -23,7 +23,7 @@
           </v-card>
         </v-col>
         <v-col md="3" sm="6" class="mb-4">
-          <v-card class="text-center">
+          <v-card class="glass-morphism text-center">
             <v-card-text>
               <v-icon class="mb-2" size="36" color="flexirol-secondary">mdi-account</v-icon>
               <h4 class="text-flexirol-secondary">{{ stats.totalUsers }}</h4>
@@ -32,7 +32,7 @@
           </v-card>
         </v-col>
         <v-col md="3" sm="6" class="mb-4">
-          <v-card class="text-center">
+          <v-card class="glass-morphism text-center">
             <v-card-text>
               <v-icon class="mb-2" size="36" color="flexirol-tertiary">mdi-cash</v-icon>
               <h4 class="text-flexirol-tertiary">{{ stats.totalRequests }}</h4>
@@ -41,7 +41,7 @@
           </v-card>
         </v-col>
         <v-col md="3" sm="6" class="mb-4">
-          <v-card class="text-center">
+          <v-card class="glass-morphism text-center">
             <v-card-text>
               <v-icon class="mb-2" size="36" color="flexirol-quaternary">mdi-currency-usd</v-icon>
               <h4 class="text-flexirol-quaternary">${{ stats.totalAmount }}</h4>
@@ -53,8 +53,10 @@
 
       <v-row>
         <v-col md="6" class="mb-4">
-          <v-card>
-            <v-card-title><v-icon class="mr-2">mdi-chart-line</v-icon>Acciones Rápidas</v-card-title>
+          <v-card class="glass-morphism">
+            <v-card-title
+              ><v-icon class="mr-2">mdi-chart-line</v-icon>Acciones Rápidas</v-card-title
+            >
             <v-card-text>
               <div class="d-flex flex-column ga-2">
                 <v-btn to="/superadmin/usuarios" color="primary" variant="outlined">
@@ -71,15 +73,13 @@
           </v-card>
         </v-col>
         <v-col md="6" class="mb-4">
-          <v-card>
-            <v-card-title><v-icon class="mr-2">mdi-clock-outline</v-icon>Actividad Reciente</v-card-title>
+          <v-card class="glass-morphism">
+            <v-card-title
+              ><v-icon class="mr-2">mdi-clock-outline</v-icon>Actividad Reciente</v-card-title
+            >
             <v-card-text>
               <v-list v-if="recentActivity.length">
-                <v-list-item
-                  v-for="activity in recentActivity"
-                  :key="activity.id"
-                  class="px-0"
-                >
+                <v-list-item v-for="activity in recentActivity" :key="activity.id" class="px-0">
                   <small class="text-muted">{{ formatDate(activity.created) }}</small>
                   <p class="mb-0">{{ activity.description }}</p>
                 </v-list-item>
@@ -95,7 +95,7 @@
     <template v-if="authStore.isEmpresa || authStore.isOperador">
       <v-row>
         <v-col md="4" sm="6" class="mb-4">
-          <v-card class="text-center">
+          <v-card class="glass-morphism text-center">
             <v-card-text>
               <v-icon class="mb-2" size="36" color="flexirol-primary">mdi-account</v-icon>
               <h4 class="text-flexirol-primary">{{ stats.myUsers }}</h4>
@@ -104,7 +104,7 @@
           </v-card>
         </v-col>
         <v-col md="4" sm="6" class="mb-4">
-          <v-card class="text-center">
+          <v-card class="glass-morphism text-center">
             <v-card-text>
               <v-icon class="mb-2" size="36" color="flexirol-quaternary">mdi-timer</v-icon>
               <h4 class="text-flexirol-quaternary">{{ stats.pendingRequests }}</h4>
@@ -113,7 +113,7 @@
           </v-card>
         </v-col>
         <v-col md="4" sm="6" class="mb-4">
-          <v-card class="text-center">
+          <v-card class="glass-morphism text-center">
             <v-card-text>
               <v-icon class="mb-2" size="36" color="flexirol-tertiary">mdi-check-circle</v-icon>
               <h4 class="text-flexirol-tertiary">{{ stats.approvedThisMonth }}</h4>
@@ -125,11 +125,14 @@
 
       <v-row>
         <v-col md="8" class="mb-4">
-          <v-card>
-            <v-card-title><v-icon class="mr-2">mdi-format-list-bulleted</v-icon>Solicitudes Recientes</v-card-title>
+          <v-card class="glass-morphism">
+            <v-card-title
+              ><v-icon class="mr-2">mdi-format-list-bulleted</v-icon>Solicitudes
+              Recientes</v-card-title
+            >
             <v-card-text>
               <v-responsive v-if="recentRequests.length">
-                <v-simple-table>
+                <v-table>
                   <thead>
                     <tr>
                       <th>Usuario</th>
@@ -150,14 +153,14 @@
                       <td>{{ formatDate(request.fecha_solicitud) }}</td>
                     </tr>
                   </tbody>
-                </v-simple-table>
+                </v-table>
               </v-responsive>
               <p v-else class="text-muted mb-0">No hay solicitudes recientes</p>
             </v-card-text>
           </v-card>
         </v-col>
         <v-col md="4" class="mb-4">
-          <v-card>
+          <v-card class="glass-morphism">
             <v-card-title><v-icon class="mr-2">mdi-tools</v-icon>Acciones Rápidas</v-card-title>
             <v-card-text>
               <div class="d-flex flex-column ga-2">
@@ -178,7 +181,7 @@
     <template v-if="authStore.isUsuario">
       <v-row>
         <v-col md="6" class="mb-4">
-          <v-card class="text-center">
+          <v-card class="glass-morphism text-center">
             <v-card-text>
               <v-icon class="mb-3" size="48" color="flexirol-primary">mdi-currency-usd</v-icon>
               <h3 class="text-flexirol-primary mb-1">${{ userStats.availableAmount }}</h3>
@@ -190,7 +193,7 @@
           </v-card>
         </v-col>
         <v-col md="6" class="mb-4">
-          <v-card>
+          <v-card class="glass-morphism">
             <v-card-title>
               <v-icon class="mr-2">mdi-credit-card</v-icon>Mis Cuentas Bancarias
             </v-card-title>
@@ -202,7 +205,8 @@
                   class="justify-space-between align-center mb-2"
                 >
                   <div>
-                    <strong>{{ account.banco_nombre }}</strong><br />
+                    <strong>{{ account.banco_nombre }}</strong
+                    ><br />
                     <small class="text-muted">{{ account.numero_cuenta }}</small>
                   </div>
                   <v-chip :color="account.activa ? 'success' : 'secondary'" size="small">
@@ -221,13 +225,13 @@
 
       <v-row>
         <v-col cols="12">
-          <v-card>
+          <v-card class="glass-morphism">
             <v-card-title>
               <v-icon class="mr-2">mdi-history</v-icon>Mis Últimas Solicitudes
             </v-card-title>
             <v-card-text>
               <v-responsive v-if="userRequests.length">
-                <v-simple-table>
+                <v-table>
                   <thead>
                     <tr>
                       <th>Monto</th>
@@ -248,7 +252,7 @@
                       <td>{{ request.expand?.banco_destino?.banco_nombre || '-' }}</td>
                     </tr>
                   </tbody>
-                </v-simple-table>
+                </v-table>
               </v-responsive>
               <p v-else class="text-muted mb-0">No tienes solicitudes aún</p>
             </v-card-text>
@@ -398,5 +402,4 @@ onMounted(() => {
 .card-flexirol:hover {
   transform: translateY(-2px);
 }
-
 </style>

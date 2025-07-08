@@ -29,7 +29,6 @@ export default defineConfig({
         manualChunks: {
           vendor: ['vue', 'vue-router', 'pinia'],
           pocketbase: ['pocketbase'],
-          bootstrap: ['bootstrap'],
         },
       },
     },

@@ -252,44 +252,37 @@ export const useSystemStore = defineStore('system', () => {
   }
 })
 
-// ========== TOAST SYSTEM (Bootstrap 5) ==========
+// ========== TOAST SYSTEM (Vuetify) ==========
 export const useToastSystem = () => {
   const showToast = (message, type = 'info', duration = 3000) => {
-    const toastContainer = document.querySelector('.toast-container')
-    if (!toastContainer) {
-      console.warn('Toast container not found')
+    // Fallback to console if Vuetify is not available (unlikely in this project)
+    if (!window.Vuetify) {
+      console.warn('Vuetify not available, fallback to console:', message)
       return
     }
-    if (!window.bootstrap || !window.bootstrap.Toast) {
-      console.warn('Bootstrap Toast not available, fallback to alert:', message)
-      // Fallback: simple alert or console
-      // alert(message)
-      return
-    }
-    const toastId = `toast-${Date.now()}`
-    const typeClass =
+
+    // Map Bootstrap types to Vuetify types
+    const vuetifyType =
       type === 'danger'
-        ? 'danger'
+        ? 'error'
         : type === 'success'
           ? 'success'
           : type === 'warning'
             ? 'warning'
             : 'info'
-    const toastHTML = `
-      <div id="${toastId}" class="toast align-items-center text-bg-${typeClass}" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="d-flex">
-          <div class="toast-body">${message}</div>
-          <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-      </div>
-    `
-    toastContainer.insertAdjacentHTML('beforeend', toastHTML)
-    const toastElement = document.getElementById(toastId)
-    const toast = new window.bootstrap.Toast(toastElement, { delay: duration })
-    toast.show()
-    toastElement.addEventListener('hidden.bs.toast', () => {
-      toastElement.remove()
-    })
+
+    // Create a snackbar dynamically (assuming Vuetify is globally available)
+    const snackbar = {
+      color: vuetifyType,
+      text: message,
+      timeout: duration,
+      location: 'top',
+    }
+
+    // Dispatch a global event or use a store to show the snackbar
+    // Example: Using a global event bus or a dedicated store for UI notifications
+    window.dispatchEvent(new CustomEvent('show-snackbar', { detail: snackbar }))
   }
+
   return { showToast }
 }

@@ -11,14 +11,17 @@ import * as directives from 'vuetify/directives'
 
 // Tailwind CSS
 import 'tailwindcss'
-import '@fortawesome/fontawesome-free/css/all.css'
-// Global styles
+import '@mdi/font/css/materialdesignicons.css' // Ensure you are using css-loader
+// // Global styles
 import './assets/flexirol.css'
 
 const app = createApp(App)
 const vuetify = createVuetify({
   components,
   directives,
+  icons: {
+    defaultSet: 'mdi', // This is already the default value - only for display purposes
+  },
 })
 
 app.use(vuetify) // ✅ Añadir Vuetify
