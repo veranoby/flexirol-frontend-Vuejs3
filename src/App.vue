@@ -267,6 +267,7 @@ import { computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { getBreadcrumb } from '@/router'
+import 'bootstrap/dist/js/bootstrap.bundle.min.js' // ✅ Añadir import global
 
 // Router and stores
 const router = useRouter()
@@ -335,24 +336,9 @@ const goToSettings = () => {
 
 // Lifecycle
 onMounted(() => {
-  // Initialize Bootstrap
-  if (!window.bootstrap) {
-    import('bootstrap/dist/js/bootstrap.bundle.min.js').then(() => {
-      console.log('Bootstrap initialized for dropdowns')
-    })
-  }
-
   // Inicializar auth
   authStore.initAuth()
-
-  // Verificar Bootstrap
-  if (!window.bootstrap) {
-    console.error('Bootstrap no está disponible')
-    // Forzar recarga de Bootstrap
-    import('bootstrap/dist/js/bootstrap.bundle.min.js').then(() => {
-      console.log('Bootstrap recargado correctamente')
-    })
-  }
+  console.log('Bootstrap disponible:', !!window.bootstrap) // Verificación
 })
 
 // Watch for authentication changes

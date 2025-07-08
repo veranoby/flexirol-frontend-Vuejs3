@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, reactive } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { pb } from '@/services/pocketbase' // Añadir esta línea
+import { pb, api } from '@/services/pocketbase' // Añadir esta línea
 
 // Helper function to create a default company state
 const defaultCompanyState = () => ({
@@ -191,7 +191,7 @@ export const useCompaniesStore = defineStore('companies', () => {
   async function fetchCompanies(params = {}) {
     try {
       loading.value = true
-      const result = await pb.getCompanies(params) // Cambiado a pb.getCompanies
+      const result = await api.getCompanies(params) // Cambiado a pb.getCompanies
       return result // Devuelve { items: [], totalItems: 0 }
     } catch (error) {
       console.error('Error al cargar empresas:', error)

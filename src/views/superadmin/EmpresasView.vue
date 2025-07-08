@@ -465,6 +465,52 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal Ver Usuarios de Empresa -->
+    <div class="modal fade" id="viewUsersModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="fas fa-users me-2"></i>
+              Usuarios de {{ selectedCompany?.nombre }}
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div v-if="companyUsers.length === 0" class="text-center py-3">
+              <p class="text-muted">No hay usuarios en esta empresa</p>
+            </div>
+            <div v-else class="table-responsive">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Rol</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="user in companyUsers" :key="user.id">
+                    <td>{{ user.first_name }} {{ user.last_name }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>
+                      <span class="badge bg-info">{{ user.role }}</span>
+                    </td>
+                    <td>
+                      <span :class="user.gearbox ? 'badge bg-success' : 'badge bg-danger'">
+                        {{ user.gearbox ? 'Activo' : 'Bloqueado' }}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -489,7 +535,13 @@ const itemsPerPage = 20
 // Modal states
 const isEditMode = ref(false)
 const selectedCompany = ref(null)
-const companyUsers = ref(null)
+const companyUsers = ref({
+  hierarchy: {
+    owner: null,
+    admins: [],
+    employees: [],
+  },
+})
 
 // Form data
 const companyForm = ref({
@@ -567,12 +619,14 @@ const visiblePages = computed(() => {
 const loadCompanies = async () => {
   loading.value = true
   try {
-    const result = await api.getCompanies()
-    companies.value = result.items || []
-    console.log('Companies loaded:', companies.value.length)
+    const result = await api.getCompanies({}, 1, 1000)
+    companies.value = (result?.items || []).map((company) => ({
+      ...company,
+      expand: company.expand || { owner_id: null },
+    }))
   } catch (error) {
     console.error('Error loading companies:', error)
-    showToast('Error al cargar las empresas', 'danger')
+    showToast('Error al cargar empresas', 'danger')
   } finally {
     loading.value = false
   }
@@ -626,17 +680,14 @@ const handleSubmit = async () => {
 }
 
 const viewCompanyUsers = async (company) => {
-  selectedCompany.value = company
-  loadingUsers.value = true
-
-  const modal = new Modal(document.getElementById('usersModal'))
-  modal.show()
-
   try {
+    selectedCompany.value = company
+    loadingUsers.value = true
     companyUsers.value = await api.getCompanyUsersHierarchy(company.id)
   } catch (error) {
     console.error('Error loading company users:', error)
-    showToast('Error al cargar los usuarios de la empresa', 'danger')
+    showToast('Error al cargar usuarios', 'danger')
+    companyUsers.value = { hierarchy: { owner: null, admins: [], employees: [] } }
   } finally {
     loadingUsers.value = false
   }
