@@ -17,6 +17,7 @@ WordPress users (empresas) → PocketBase companies
 **Campos personalizados agregados:**
 - first_name: Plain text (requerido) 
 - last_name: Plain text (requerido)
+- username: Plain text (requerido)
 - role: Select ["superadmin", "empresa", "operador", "usuario"] (requerido)
 - cedula: Plain text (10 dígitos, único) 
 - company_id: Relation → companies single (nueva relación)
