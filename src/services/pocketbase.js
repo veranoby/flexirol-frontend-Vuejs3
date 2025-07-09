@@ -442,6 +442,30 @@ export const api = {
     const config = await this.getSystemConfig()
     return await pb.collection('system_config').update(config.id, configData)
   },
+
+  // Global user stats optimized
+  async getGlobalUserStats() {
+    const result = await pb.collection('users').getList(1, 1, { fields: 'id' })
+    return { totalItems: result.totalItems }
+  },
+
+  // Company-owner gearbox sync
+  async updateCompanyWithOwnerSync(companyId, companyData) {
+    const updatedCompany = await pb.collection('companies').update(companyId, {
+      company_name: companyData.company_name,
+      ruc: companyData.ruc,
+      gearbox: companyData.gearbox,
+    })
+
+    // Sync owner gearbox
+    if (updatedCompany.owner_id) {
+      await pb.collection('users').update(updatedCompany.owner_id, {
+        gearbox: companyData.gearbox,
+      })
+    }
+
+    return { success: true, company: updatedCompany }
+  },
 }
 
 // Real-time subscriptions

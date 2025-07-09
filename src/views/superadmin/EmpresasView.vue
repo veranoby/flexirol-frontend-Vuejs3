@@ -30,16 +30,16 @@
         </v-card>
       </v-col>
       <v-col cols="12" md="3">
-        <v-card class="pa-4 text-center" color="info" variant="tonal">
-          <v-icon size="40" class="mb-2">mdi-account-tie</v-icon>
-          <div class="text-h4 font-weight-bold text-info">{{ totalPropietarios }}</div>
-          <div class="text-body-2">Propietarios</div>
+        <v-card class="pa-4 text-center" color="warning" variant="tonal">
+          <v-icon size="40" class="mb-2">mdi-file-excel-outline</v-icon>
+          <div class="text-h4 font-weight-bold text-warning">{{ empresasSinExcel }}</div>
+          <div class="text-body-2">Sin Excel Actualizado</div>
         </v-card>
       </v-col>
       <v-col cols="12" md="3">
-        <v-card class="pa-4 text-center" color="warning" variant="tonal">
+        <v-card class="pa-4 text-center" color="info" variant="tonal">
           <v-icon size="40" class="mb-2">mdi-account-multiple</v-icon>
-          <div class="text-h4 font-weight-bold text-warning">{{ totalUsuarios }}</div>
+          <div class="text-h4 font-weight-bold text-info">{{ globalStats.totalUsers }}</div>
           <div class="text-body-2">Total Usuarios</div>
         </v-card>
       </v-col>
@@ -54,6 +54,7 @@
               v-model="filter"
               label="Filtrar por empresa, RUC o propietario"
               prepend-inner-icon="mdi-magnify"
+              variant="outlined"
               density="compact"
               clearable
             />
@@ -67,6 +68,7 @@
                 { title: 'Solo Bloqueadas', value: 'false' },
               ]"
               label="Estado"
+              variant="outlined"
               density="compact"
             />
           </v-col>
@@ -79,6 +81,7 @@
                 { title: 'Sin Excel', value: 'sin_excel' },
               ]"
               label="Estado Excel"
+              variant="outlined"
               density="compact"
             />
           </v-col>
@@ -122,7 +125,7 @@
             >
               <v-card
                 class="h-100"
-                :color="element.gearbox ? 'glass-morphism' : 'error'"
+                :color="element.gearbox ? 'transparent' : 'error'"
                 :variant="element.gearbox ? 'outlined' : 'tonal'"
               >
                 <v-card-text>
@@ -187,16 +190,27 @@
 
                   <!-- Acciones -->
                   <div class="d-flex gap-1">
-                    <v-btn size="small" color="primary" @click="viewUsers(element)">
+                    <v-btn
+                      size="small"
+                      variant="outlined"
+                      color="primary"
+                      @click="viewUsers(element)"
+                    >
                       <v-icon start size="16">mdi-account-multiple</v-icon>
                       Usuarios
                     </v-btn>
-                    <v-btn size="small" color="secondary" @click="startEdit(element)">
+                    <v-btn
+                      size="small"
+                      variant="outlined"
+                      color="secondary"
+                      @click="startEdit(element)"
+                    >
                       <v-icon start size="16">mdi-pencil</v-icon>
                       Editar
                     </v-btn>
                     <v-btn
                       size="small"
+                      variant="outlined"
                       :color="element.gearbox ? 'warning' : 'success'"
                       @click="toggleStatus(element)"
                     >
@@ -205,7 +219,12 @@
                       </v-icon>
                       {{ element.gearbox ? 'Bloquear' : 'Activar' }}
                     </v-btn>
-                    <v-btn size="small" color="error" @click="startDelete(element)">
+                    <v-btn
+                      size="small"
+                      variant="outlined"
+                      color="error"
+                      @click="startDelete(element)"
+                    >
                       <v-icon start size="16">mdi-delete</v-icon>
                       Eliminar
                     </v-btn>
@@ -251,6 +270,7 @@
                 <v-text-field
                   v-model="newItem.first_name"
                   label="Nombre Empresa *"
+                  variant="outlined"
                   :rules="[rules.required]"
                   @input="computedUsername"
                 />
@@ -260,6 +280,7 @@
                 <v-text-field
                   v-model="newItem.last_name"
                   label="Sucursal/Sede"
+                  variant="outlined"
                   @input="computedUsername"
                 />
               </v-col>
@@ -268,12 +289,13 @@
                 <v-text-field
                   v-model="newItem.user_email"
                   label="Email *"
+                  variant="outlined"
                   :rules="[rules.required, rules.email]"
                 />
               </v-col>
 
               <v-col cols="12" md="6">
-                <v-text-field v-model="newItem.ruc" label="RUC (Opcional)" />
+                <v-text-field v-model="newItem.ruc" label="RUC (Opcional)" variant="outlined" />
               </v-col>
 
               <!-- Datos de acceso -->
@@ -288,6 +310,7 @@
                 <v-text-field
                   v-model="newItem.user_login"
                   label="Usuario"
+                  variant="outlined"
                   readonly
                   hint="Se genera automáticamente"
                   persistent-hint
@@ -298,6 +321,7 @@
                 <v-text-field
                   v-model="newItem.user_pass"
                   label="Contraseña"
+                  variant="outlined"
                   readonly
                   hint="Se genera automáticamente"
                   persistent-hint
@@ -312,6 +336,93 @@
                   color="success"
                   true-value="true"
                   false-value="false"
+                />
+              </v-col>
+
+              <!-- Configuración de Anticipos -->
+              <v-col cols="12">
+                <v-divider class="mb-4" />
+                <h6 class="text-h6 mb-4">
+                  <v-icon class="me-2">mdi-cog</v-icon>
+                  Configuración de Anticipos
+                </h6>
+              </v-col>
+
+              <v-col cols="12" md="4">
+                <v-text-field
+                  v-model.number="empresaConfig.porcentaje"
+                  label="Porcentaje máximo (%)"
+                  variant="outlined"
+                  type="number"
+                  min="0"
+                  max="100"
+                  hint="Porcentaje máximo del sueldo disponible"
+                  persistent-hint
+                />
+              </v-col>
+
+              <v-col cols="12" md="4">
+                <v-text-field
+                  v-model.number="empresaConfig.dia_inicio"
+                  label="Día inicio de ciclo"
+                  variant="outlined"
+                  type="number"
+                  min="1"
+                  max="31"
+                  hint="Día del mes que inicia el ciclo"
+                  persistent-hint
+                />
+              </v-col>
+
+              <v-col cols="12" md="4">
+                <v-text-field
+                  v-model.number="empresaConfig.dia_cierre"
+                  label="Día cierre de ciclo"
+                  variant="outlined"
+                  type="number"
+                  min="1"
+                  max="31"
+                  hint="Día del mes que cierra el ciclo"
+                  persistent-hint
+                />
+              </v-col>
+
+              <v-col cols="12" md="4">
+                <v-text-field
+                  v-model.number="empresaConfig.frecuencia"
+                  label="Frecuencia máxima mensual"
+                  variant="outlined"
+                  type="number"
+                  min="1"
+                  max="10"
+                  hint="Máximo anticipos por mes"
+                  persistent-hint
+                />
+              </v-col>
+
+              <v-col cols="12" md="4">
+                <v-text-field
+                  v-model.number="empresaConfig.dia_bloqueo"
+                  label="Días bloqueo antes cierre"
+                  variant="outlined"
+                  type="number"
+                  min="0"
+                  max="31"
+                  hint="Días antes del cierre para bloquear solicitudes"
+                  persistent-hint
+                />
+              </v-col>
+
+              <v-col cols="12" md="4">
+                <v-text-field
+                  v-model.number="empresaConfig.dia_reinicio"
+                  label="Días para reiniciar"
+                  variant="outlined"
+                  type="number"
+                  min="1"
+                  max="31"
+                  hint="Días después del pago para reiniciar"
+                  persistent-hint
                 />
               </v-col>
             </v-row>
@@ -347,6 +458,7 @@
                 <v-text-field
                   v-model="editedUsuario.first_name"
                   label="Nombre *"
+                  variant="outlined"
                   :rules="[rules.required]"
                 />
               </v-col>
@@ -355,6 +467,7 @@
                 <v-text-field
                   v-model="editedUsuario.last_name"
                   label="Apellido *"
+                  variant="outlined"
                   :rules="[rules.required]"
                 />
               </v-col>
@@ -363,6 +476,7 @@
                 <v-text-field
                   v-model="editedUsuario.user_email"
                   label="Email *"
+                  variant="outlined"
                   :rules="[rules.required, rules.email]"
                 />
               </v-col>
@@ -371,6 +485,7 @@
                 <v-text-field
                   v-model="editedUsuario.cedula"
                   label="Cédula *"
+                  variant="outlined"
                   :rules="[rules.required, rules.cedula]"
                 />
               </v-col>
@@ -379,23 +494,29 @@
                 <v-text-field
                   v-model.number="editedUsuario.disponible"
                   label="Monto Disponible"
+                  variant="outlined"
                   type="number"
                   min="0"
                 />
               </v-col>
 
               <v-col cols="12" md="6">
-                <v-text-field v-model="editedUsuario.ciudad" label="Ciudad" />
+                <v-text-field v-model="editedUsuario.ciudad" label="Ciudad" variant="outlined" />
               </v-col>
 
               <v-col cols="12" md="6">
-                <v-text-field v-model="editedUsuario.direccion" label="Dirección" />
+                <v-text-field
+                  v-model="editedUsuario.direccion"
+                  label="Dirección"
+                  variant="outlined"
+                />
               </v-col>
 
               <v-col cols="12" md="6">
                 <v-text-field
                   v-model="editedUsuario.nacimiento"
                   label="Fecha de Nacimiento"
+                  variant="outlined"
                   type="date"
                 />
               </v-col>
@@ -409,6 +530,7 @@
                     { title: 'Otro', value: 'O' },
                   ]"
                   label="Género"
+                  variant="outlined"
                 />
               </v-col>
 
@@ -438,7 +560,6 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-
     <!-- Modal Usuarios Empresa (estructura del legacy) -->
     <v-dialog v-model="showUsersModal" max-width="1200px">
       <v-card v-if="selectedEmpresa">
@@ -455,6 +576,7 @@
                 v-model="filter_usuarios"
                 label="Filtrar usuarios"
                 prepend-inner-icon="mdi-magnify"
+                variant="outlined"
                 density="compact"
                 clearable
               />
@@ -468,6 +590,7 @@
                   { title: 'Bloqueados', value: 'false' },
                 ]"
                 label="Estado Usuario"
+                variant="outlined"
                 density="compact"
               />
             </v-col>
@@ -496,7 +619,7 @@
               >
                 <v-card
                   class="pa-3"
-                  :color="elementUsuario.gearbox ? 'glass-morphism' : 'error'"
+                  :color="elementUsuario.gearbox ? 'transparent' : 'error'"
                   :variant="elementUsuario.gearbox ? 'outlined' : 'tonal'"
                 >
                   <!-- Header usuario -->
@@ -533,11 +656,21 @@
                   </div>
 
                   <div class="d-flex gap-1">
-                    <v-btn size="small" color="secondary" @click="startEditUsuario(elementUsuario)">
+                    <v-btn
+                      size="small"
+                      variant="outlined"
+                      color="secondary"
+                      @click="startEditUsuario(elementUsuario)"
+                    >
                       <v-icon start size="16">mdi-pencil</v-icon>
                       Editar
                     </v-btn>
-                    <v-btn size="small" color="error" @click="startDeleteUsuario(elementUsuario)">
+                    <v-btn
+                      size="small"
+                      variant="outlined"
+                      color="error"
+                      @click="startDeleteUsuario(elementUsuario)"
+                    >
                       <v-icon start size="16">mdi-delete</v-icon>
                       Eliminar
                     </v-btn>
@@ -586,6 +719,7 @@
                 <v-text-field
                   v-model="newUsuario.first_name"
                   label="Nombre *"
+                  variant="outlined"
                   :rules="[rules.required]"
                   @input="computedUsernameUsuario"
                 />
@@ -595,6 +729,7 @@
                 <v-text-field
                   v-model="newUsuario.last_name"
                   label="Apellido *"
+                  variant="outlined"
                   :rules="[rules.required]"
                   @input="computedUsernameUsuario"
                 />
@@ -604,6 +739,7 @@
                 <v-text-field
                   v-model="newUsuario.user_email"
                   label="Email *"
+                  variant="outlined"
                   :rules="[rules.required, rules.email]"
                 />
               </v-col>
@@ -612,6 +748,7 @@
                 <v-text-field
                   v-model="newUsuario.cedula"
                   label="Cédula *"
+                  variant="outlined"
                   :rules="[rules.required, rules.cedula]"
                   @input="computedUsernameUsuario"
                 />
@@ -621,23 +758,25 @@
                 <v-text-field
                   v-model.number="newUsuario.disponible"
                   label="Monto Disponible"
+                  variant="outlined"
                   type="number"
                   min="0"
                 />
               </v-col>
 
               <v-col cols="12" md="6">
-                <v-text-field v-model="newUsuario.ciudad" label="Ciudad" />
+                <v-text-field v-model="newUsuario.ciudad" label="Ciudad" variant="outlined" />
               </v-col>
 
               <v-col cols="12" md="6">
-                <v-text-field v-model="newUsuario.direccion" label="Dirección" />
+                <v-text-field v-model="newUsuario.direccion" label="Dirección" variant="outlined" />
               </v-col>
 
               <v-col cols="12" md="6">
                 <v-text-field
                   v-model="newUsuario.nacimiento"
                   label="Fecha de Nacimiento"
+                  variant="outlined"
                   type="date"
                 />
               </v-col>
@@ -651,6 +790,7 @@
                     { title: 'Otro', value: 'O' },
                   ]"
                   label="Género"
+                  variant="outlined"
                 />
               </v-col>
 
@@ -658,6 +798,7 @@
                 <v-text-field
                   v-model="newUsuario.user_login"
                   label="Usuario"
+                  variant="outlined"
                   readonly
                   hint="Se genera automáticamente"
                   persistent-hint
@@ -668,6 +809,7 @@
                 <v-text-field
                   v-model="newUsuario.user_pass"
                   label="Contraseña"
+                  variant="outlined"
                   readonly
                   hint="Se genera automáticamente"
                   persistent-hint
@@ -772,6 +914,7 @@ const status_habilitacion_usuarios = ref('')
 
 const empresa_info_set = ref([])
 const usuarios_empresa_info_set = ref([])
+const globalStats = ref({ totalUsers: 0 })
 
 const loading = ref(false)
 const loadingUsers = ref(false)
@@ -846,6 +989,15 @@ const editedUsuario = reactive({
   gender: '',
 })
 
+const empresaConfig = reactive({
+  porcentaje: 50,
+  dia_inicio: 1,
+  dia_cierre: 28,
+  frecuencia: 3,
+  dia_bloqueo: 2,
+  dia_reinicio: 1,
+})
+
 const deleteItem = ref({
   first_name: '',
   last_name: '',
@@ -879,13 +1031,11 @@ const empresasActivas = computed(
   () => empresa_info_set.value.filter((e) => e.gearbox === 'true' || e.gearbox === true).length,
 )
 
-const totalPropietarios = computed(() => empresa_info_set.value.length)
+const empresasSinExcel = computed(
+  () => empresa_info_set.value.filter((e) => isExcelVencido(e.fecha_excel)).length,
+)
 
-const totalUsuarios = computed(() => {
-  return empresa_info_set.value.reduce((sum, empresa) => {
-    return sum + (empresa.user_count || 0)
-  }, 0)
-})
+const totalPropietarios = computed(() => empresa_info_set.value.length)
 
 // Filtros (del legacy)
 const filteredRows = computed(() => {
@@ -1012,18 +1162,24 @@ const formatDate = (dateString) => {
 const loadEmpresas = async () => {
   loading.value = true
   try {
-    await companiesStore.fetchCompanies()
+    // Load companies and global user stats like DashboardView
+    const [companiesResult, usersResult] = await Promise.all([
+      companiesStore.fetchCompanies(),
+      api.getGlobalUserStats(), // New optimized method
+    ])
 
-    // Mapear a estructura legacy
+    globalStats.value.totalUsers = usersResult.totalItems
+
+    // Mapear usando EMPRESA gearbox (no owner gearbox)
     empresa_info_set.value = companiesStore.companies.map((company) => ({
       ...company,
-      // Mapear campos del owner a nivel de empresa (legacy style)
+      // Legacy mapping for display
       first_name: company.expand?.owner_id?.first_name || company.company_name || '',
       last_name: company.expand?.owner_id?.last_name || '',
       user_email: company.expand?.owner_id?.email || '',
       user_login: company.expand?.owner_id?.username || '',
       user_registered: company.expand?.owner_id?.created || company.created,
-      gearbox: String(company.gearbox),
+      gearbox: String(company.gearbox), // EMPRESA gearbox, not owner
       user_count: company.users_count || 0,
     }))
   } catch (error) {
@@ -1078,17 +1234,28 @@ const saveEmpresa = async () => {
   try {
     let result
     if (isEditMode.value) {
-      result = await companiesStore.updateCompany(newItem.id, {
-        nombre: newItem.first_name,
-        ruc: newItem.ruc,
-        gearbox: newItem.gearbox === 'true',
-      })
+      result = await companiesStore.updateCompany(
+        newItem.id,
+        {
+          company_name: `${newItem.first_name} ${newItem.last_name}`.trim(),
+          ruc: newItem.ruc,
+          gearbox: newItem.gearbox === 'true',
+          ...empresaConfig,
+        },
+        {
+          first_name: newItem.first_name,
+          last_name: newItem.last_name,
+          email: newItem.user_email,
+          gearbox: newItem.gearbox === 'true',
+        },
+      )
     } else {
       result = await companiesStore.createCompanyWithOwner(
         {
-          nombre: newItem.first_name,
+          company_name: `${newItem.first_name} ${newItem.last_name}`.trim(),
           ruc: newItem.ruc,
           gearbox: newItem.gearbox === 'true',
+          ...empresaConfig,
         },
         {
           first_name: newItem.first_name,
@@ -1120,7 +1287,7 @@ const saveEmpresa = async () => {
 
 const toggleStatus = async (element) => {
   try {
-    const newStatus = !element.gearbox
+    const newStatus = element.gearbox !== 'true'
     await companiesStore.updateCompany(element.id, {
       gearbox: newStatus,
     })
