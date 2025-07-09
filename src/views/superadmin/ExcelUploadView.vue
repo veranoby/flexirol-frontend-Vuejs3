@@ -25,7 +25,9 @@
           </template>
           <template v-slot:no-data>
             <v-list-item>
-              <v-list-item-title>{{ companyStore.loading ? 'Cargando empresas...' : 'No hay empresas disponibles' }}</v-list-item-title>
+              <v-list-item-title>{{
+                companyStore.loading ? 'Cargando empresas...' : 'No hay empresas disponibles'
+              }}</v-list-item-title>
             </v-list-item>
           </template>
         </v-select>
@@ -221,7 +223,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </v-container>
 </template>
 
 <script>

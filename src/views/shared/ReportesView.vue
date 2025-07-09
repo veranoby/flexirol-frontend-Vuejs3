@@ -61,7 +61,7 @@
                       { title: 'Pendientes', value: 'pendiente' },
                       { title: 'Aprobados', value: 'aprobado' },
                       { title: 'Pagados', value: 'pagado' },
-                      { title: 'Rechazados', value: 'rechazado' }
+                      { title: 'Rechazados', value: 'rechazado' },
                     ]"
                     label="Estado"
                     clearable
@@ -77,11 +77,7 @@
                     <v-icon left>mdi-eraser</v-icon>
                     Limpiar
                   </v-btn>
-                  <v-btn
-                    v-if="reportData.length > 0"
-                    color="success"
-                    @click="exportToExcel"
-                  >
+                  <v-btn v-if="reportData.length > 0" color="success" @click="exportToExcel">
                     <v-icon left>mdi-file-excel</v-icon>
                     Exportar Excel
                   </v-btn>
@@ -261,7 +257,7 @@
           </div>
         </div>
       </div>
-    </div>
+    </v-container>
   </div>
 </template>
 
@@ -520,41 +516,3 @@ onMounted(async () => {
   filters.value.fechaHasta = today.toISOString().split('T')[0]
 })
 </script>
-
-<style scoped>
-.reportes-view {
-  padding: 1rem;
-}
-
-.avatar-sm {
-  width: 40px;
-  height: 40px;
-}
-
-.avatar-initial {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  color: white;
-  font-size: 14px;
-}
-
-.table th {
-  border-top: none;
-  font-weight: 600;
-  color: #495057;
-  background-color: #f8f9fa;
-}
-
-.card {
-  border: none;
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-}
-
-.badge {
-  font-size: 0.75em;
-}
-</style>

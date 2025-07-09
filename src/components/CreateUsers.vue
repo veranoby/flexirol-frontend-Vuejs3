@@ -151,467 +151,437 @@
       </div>
     </div>
 
-    <!-- Create Modal -->
-    <div class="modal fade" id="createModal" tabindex="-1" ref="createModal">
-      <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">
-              <i class="fas fa-user-plus me-2"></i>
-              Crear Nuevo {{ tipoUsuario === 'empresa' ? 'Empresa' : 'Usuario' }}
-            </h5>
-            <button type="button" class="btn-close" @click="closeCreateModal"></button>
-          </div>
-          <div class="modal-body">
-            <form @submit.prevent="createUser">
-              <div class="row">
-                <div class="col-md-3">
-                  <label class="form-label"> <i class="fas fa-user-tie me-1"></i>Nombre* </label>
-                  <input
-                    v-model="newItem.name"
-                    type="text"
-                    class="form-control"
-                    :class="{ 'is-invalid': errors.name }"
-                    placeholder="Ingrese nombre"
-                    @input="generateUsername"
-                    required
-                  />
-                  <div v-if="errors.name" class="invalid-feedback">{{ errors.name }}</div>
-                </div>
-
-                <div class="col-md-3">
-                  <label class="form-label">
-                    <i
-                      :class="tipoUsuario === 'empresa' ? 'fas fa-street-view' : 'fas fa-user-tag'"
-                      class="me-1"
-                    ></i>
-                    {{ tipoUsuario === 'empresa' ? 'Sucursal' : 'Apellido*' }}
-                  </label>
-                  <input
-                    v-model="newItem.last_name"
-                    type="text"
-                    class="form-control"
-                    :class="{ 'is-invalid': errors.last_name }"
-                    :placeholder="
-                      tipoUsuario === 'empresa' ? 'Ingrese sucursal' : 'Ingrese apellido'
-                    "
-                    @input="generateUsername"
-                    :required="tipoUsuario !== 'empresa'"
-                  />
-                  <div v-if="errors.last_name" class="invalid-feedback">{{ errors.last_name }}</div>
-                </div>
-
-                <div class="col-md-3">
-                  <label class="form-label"> <i class="far fa-envelope me-1"></i>Email* </label>
-                  <input
-                    v-model="newItem.email"
-                    type="email"
-                    class="form-control"
-                    :class="{ 'is-invalid': errors.email }"
-                    placeholder="usuario@email.com"
-                    required
-                  />
-                  <div v-if="errors.email" class="invalid-feedback">{{ errors.email }}</div>
-                </div>
-
-                <div class="col-md-3">
-                  <label class="form-label">Estado</label>
-                  <div class="form-check-inline">
-                    <input
-                      v-model="newItem.gearbox"
-                      type="radio"
-                      :value="true"
-                      class="form-check-input"
-                      id="enabledNew"
-                    />
-                    <label for="enabledNew" class="form-check-label me-3">Habilitado</label>
-
-                    <input
-                      v-model="newItem.gearbox"
-                      type="radio"
-                      :value="false"
-                      class="form-check-input"
-                      id="blockedNew"
-                    />
-                    <label for="blockedNew" class="form-check-label">Bloqueado</label>
-                  </div>
-                </div>
+    <!-- MODAL: Crear Usuario -->
+    <v-dialog v-model="showCreateModal" max-width="900px" persistent>
+      <v-card class="glass-morphism">
+        <v-card-title>
+          <v-icon class="me-2">mdi-account-plus</v-icon>
+          Crear Nuevo {{ tipoUsuario === 'empresa' ? 'Empresa' : 'Usuario' }}
+          <v-spacer></v-spacer>
+          <v-btn icon @click="showCreateModal = false"><v-icon>mdi-close</v-icon></v-btn>
+        </v-card-title>
+        <v-form @submit.prevent="createUser">
+          <v-card-text>
+            <div class="row">
+              <div class="col-md-3">
+                <label class="form-label"> <i class="fas fa-user-tie me-1"></i>Nombre* </label>
+                <input
+                  v-model="newItem.name"
+                  type="text"
+                  class="form-control"
+                  :class="{ 'is-invalid': errors.name }"
+                  placeholder="Ingrese nombre"
+                  @input="generateUsername"
+                  required
+                />
+                <div v-if="errors.name" class="invalid-feedback">{{ errors.name }}</div>
               </div>
 
-              <!-- Campos específicos para usuarios no-empresa -->
-              <div v-if="tipoUsuario !== 'empresa'" class="row mt-3">
-                <div class="col-md-3">
-                  <label class="form-label"> <i class="far fa-id-card me-1"></i>Cédula* </label>
-                  <input
-                    v-model="newItem.cedula"
-                    type="text"
-                    class="form-control"
-                    :class="{ 'is-invalid': errors.cedula }"
-                    placeholder="1234567890"
-                    required
-                  />
-                  <div v-if="errors.cedula" class="invalid-feedback">{{ errors.cedula }}</div>
-                </div>
-
-                <div class="col-md-3">
-                  <label class="form-label">
-                    <i class="fas fa-birthday-cake me-1"></i>Fecha Nacimiento
-                  </label>
-                  <input v-model="newItem.birth_date" type="date" class="form-control" />
-                </div>
-
-                <div class="col-md-3">
-                  <label class="form-label">
-                    <i class="fas fa-dollar-sign me-1"></i>Monto Disponible
-                  </label>
-                  <input
-                    v-model.number="newItem.disponible"
-                    type="number"
-                    class="form-control"
-                    placeholder="0"
-                    min="0"
-                  />
-                </div>
-
-                <div class="col-md-3">
-                  <label class="form-label">Género</label>
-                  <div>
-                    <input
-                      v-model="newItem.gender"
-                      type="radio"
-                      :value="true"
-                      class="form-check-input"
-                      id="masculinoNew"
-                    />
-                    <label for="masculinoNew" class="form-check-label me-3">Masculino</label>
-
-                    <input
-                      v-model="newItem.gender"
-                      type="radio"
-                      :value="false"
-                      class="form-check-input"
-                      id="femeninoNew"
-                    />
-                    <label for="femeninoNew" class="form-check-label">Femenino</label>
-                  </div>
-                </div>
+              <div class="col-md-3">
+                <label class="form-label">
+                  <i
+                    :class="tipoUsuario === 'empresa' ? 'fas fa-street-view' : 'fas fa-user-tag'"
+                    class="me-1"
+                  ></i>
+                  {{ tipoUsuario === 'empresa' ? 'Sucursal' : 'Apellido*' }}
+                </label>
+                <input
+                  v-model="newItem.last_name"
+                  type="text"
+                  class="form-control"
+                  :class="{ 'is-invalid': errors.last_name }"
+                  :placeholder="tipoUsuario === 'empresa' ? 'Ingrese sucursal' : 'Ingrese apellido'"
+                  @input="generateUsername"
+                  :required="tipoUsuario !== 'empresa'"
+                />
+                <div v-if="errors.last_name" class="invalid-feedback">{{ errors.last_name }}</div>
               </div>
 
-              <!-- Campos de ubicación -->
-              <div class="row mt-3">
-                <div class="col-md-4">
-                  <label class="form-label"> <i class="fas fa-phone me-1"></i>Teléfono </label>
-                  <input
-                    v-model="newItem.phone_number"
-                    type="text"
-                    class="form-control"
-                    placeholder="0999999999"
-                  />
-                </div>
-
-                <div class="col-md-4">
-                  <label class="form-label">
-                    <i class="fas fa-map-marker-alt me-1"></i>Ciudad
-                  </label>
-                  <input
-                    v-model="newItem.city"
-                    type="text"
-                    class="form-control"
-                    placeholder="Guayaquil"
-                  />
-                </div>
-
-                <div class="col-md-4">
-                  <label class="form-label">
-                    <i class="fas fa-location-arrow me-1"></i>Dirección
-                  </label>
-                  <input
-                    v-model="newItem.address"
-                    type="text"
-                    class="form-control"
-                    placeholder="Av. Principal 123"
-                  />
-                </div>
+              <div class="col-md-3">
+                <label class="form-label"> <i class="far fa-envelope me-1"></i>Email* </label>
+                <input
+                  v-model="newItem.email"
+                  type="email"
+                  class="form-control"
+                  :class="{ 'is-invalid': errors.email }"
+                  placeholder="usuario@email.com"
+                  required
+                />
+                <div v-if="errors.email" class="invalid-feedback">{{ errors.email }}</div>
               </div>
 
-              <!-- Empresa assignment for non-superadmin -->
-              <div v-if="!authStore.isSuperadmin && tipoUsuario !== 'empresa'" class="row mt-3">
-                <div class="col-md-6">
-                  <label class="form-label">Empresa</label>
-                  <input :value="currentCompanyName" type="text" class="form-control" readonly />
+              <div class="col-md-3">
+                <label class="form-label">Estado</label>
+                <div class="form-check-inline">
+                  <input
+                    v-model="newItem.gearbox"
+                    type="radio"
+                    :value="true"
+                    class="form-check-input"
+                    id="enabledNew"
+                  />
+                  <label for="enabledNew" class="form-check-label me-3">Habilitado</label>
+
+                  <input
+                    v-model="newItem.gearbox"
+                    type="radio"
+                    :value="false"
+                    class="form-check-input"
+                    id="blockedNew"
+                  />
+                  <label for="blockedNew" class="form-check-label">Bloqueado</label>
                 </div>
+              </div>
+            </div>
+
+            <!-- Campos específicos para usuarios no-empresa -->
+            <div v-if="tipoUsuario !== 'empresa'" class="row mt-3">
+              <div class="col-md-3">
+                <label class="form-label"> <i class="far fa-id-card me-1"></i>Cédula* </label>
+                <input
+                  v-model="newItem.cedula"
+                  type="text"
+                  class="form-control"
+                  :class="{ 'is-invalid': errors.cedula }"
+                  placeholder="1234567890"
+                  required
+                />
+                <div v-if="errors.cedula" class="invalid-feedback">{{ errors.cedula }}</div>
               </div>
 
-              <!-- Empresa selection for superadmin -->
-              <div v-if="authStore.isSuperadmin && tipoUsuario !== 'empresa'" class="row mt-3">
-                <div class="col-md-6">
-                  <label class="form-label">Asignar a Empresa</label>
-                  <select v-model="newItem.empresa_id" class="form-select" required>
-                    <option value="">Seleccione empresa</option>
-                    <option v-for="empresa in empresas" :key="empresa.id" :value="empresa.id">
-                      {{ empresa.name }}
-                    </option>
-                  </select>
+              <div class="col-md-3">
+                <label class="form-label">
+                  <i class="fas fa-birthday-cake me-1"></i>Fecha Nacimiento
+                </label>
+                <input v-model="newItem.birth_date" type="date" class="form-control" />
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label">
+                  <i class="fas fa-dollar-sign me-1"></i>Monto Disponible
+                </label>
+                <input
+                  v-model.number="newItem.disponible"
+                  type="number"
+                  class="form-control"
+                  placeholder="0"
+                  min="0"
+                />
+              </div>
+
+              <div class="col-md-3">
+                <label class="form-label">Género</label>
+                <div>
+                  <input
+                    v-model="newItem.gender"
+                    type="radio"
+                    :value="true"
+                    class="form-check-input"
+                    id="masculinoNew"
+                  />
+                  <label for="masculinoNew" class="form-check-label me-3">Masculino</label>
+
+                  <input
+                    v-model="newItem.gender"
+                    type="radio"
+                    :value="false"
+                    class="form-check-input"
+                    id="femeninoNew"
+                  />
+                  <label for="femeninoNew" class="form-check-label">Femenino</label>
                 </div>
               </div>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" @click="closeCreateModal">
-              Cancelar
-            </button>
-            <button
-              type="button"
-              class="btn btn-flexirol-primary"
-              @click="createUser"
-              :disabled="!canSave || loading"
-            >
-              <i class="fas fa-save me-1"></i>
+            </div>
+
+            <!-- Campos de ubicación -->
+            <div class="row mt-3">
+              <div class="col-md-4">
+                <label class="form-label"> <i class="fas fa-phone me-1"></i>Teléfono </label>
+                <input
+                  v-model="newItem.phone_number"
+                  type="text"
+                  class="form-control"
+                  placeholder="0999999999"
+                />
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label"> <i class="fas fa-map-marker-alt me-1"></i>Ciudad </label>
+                <input
+                  v-model="newItem.city"
+                  type="text"
+                  class="form-control"
+                  placeholder="Guayaquil"
+                />
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">
+                  <i class="fas fa-location-arrow me-1"></i>Dirección
+                </label>
+                <input
+                  v-model="newItem.address"
+                  type="text"
+                  class="form-control"
+                  placeholder="Av. Principal 123"
+                />
+              </div>
+            </div>
+
+            <!-- Empresa assignment for non-superadmin -->
+            <div v-if="!authStore.isSuperadmin && tipoUsuario !== 'empresa'" class="row mt-3">
+              <div class="col-md-6">
+                <label class="form-label">Empresa</label>
+                <input :value="currentCompanyName" type="text" class="form-control" readonly />
+              </div>
+            </div>
+
+            <!-- Empresa selection for superadmin -->
+            <div v-if="authStore.isSuperadmin && tipoUsuario !== 'empresa'" class="row mt-3">
+              <div class="col-md-6">
+                <label class="form-label">Asignar a Empresa</label>
+                <select v-model="newItem.empresa_id" class="form-select" required>
+                  <option value="">Seleccione empresa</option>
+                  <option v-for="empresa in empresas" :key="empresa.id" :value="empresa.id">
+                    {{ empresa.name }}
+                  </option>
+                </select>
+              </div>
+            </div>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn variant="outlined" @click="showCreateModal = false">Cancelar</v-btn>
+            <v-btn type="submit" color="primary" :loading="loading" :disabled="!canSave || loading">
+              <v-icon left>mdi-content-save</v-icon>
               {{ loading ? 'Guardando...' : 'Crear Usuario' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+            </v-btn>
+          </v-card-actions>
+        </v-form>
+      </v-card>
+    </v-dialog>
 
-    <!-- Edit Modal -->
-    <div class="modal fade" id="editModal" tabindex="-1" ref="editModal">
-      <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">
-              <i class="fas fa-user-edit me-2"></i>
-              Editar Usuario
-            </h5>
-            <button type="button" class="btn-close" @click="closeEditModal"></button>
-          </div>
-          <div class="modal-body">
-            <form @submit.prevent="updateUser" v-if="editedItem">
-              <div class="row">
-                <div class="col-md-4">
-                  <label class="form-label"> <i class="fas fa-user-tie me-1"></i>Nombre* </label>
+    <!-- MODAL: Editar Usuario -->
+    <v-dialog v-model="showEditModal" max-width="900px" persistent>
+      <v-card class="glass-morphism">
+        <v-card-title>
+          <v-icon class="me-2">mdi-account-edit</v-icon>
+          Editar Usuario
+          <v-spacer></v-spacer>
+          <v-btn icon @click="showEditModal = false"><v-icon>mdi-close</v-icon></v-btn>
+        </v-card-title>
+        <v-form @submit.prevent="updateUser">
+          <v-card-text>
+            <div class="row">
+              <div class="col-md-4">
+                <label class="form-label"> <i class="fas fa-user-tie me-1"></i>Nombre* </label>
+                <input
+                  v-model="editedItem.name"
+                  type="text"
+                  class="form-control"
+                  placeholder="Nombre de empresa"
+                  required
+                />
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">
+                  <i
+                    :class="
+                      editedItem.role === 'empresa' ? 'fas fa-street-view' : 'fas fa-user-tag'
+                    "
+                    class="me-1"
+                  ></i>
+                  {{ editedItem.role === 'empresa' ? 'Sucursal' : 'Apellido*' }}
+                </label>
+                <input
+                  v-model="editedItem.last_name"
+                  type="text"
+                  class="form-control"
+                  placeholder="Ingrese aquí"
+                />
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">
+                  <i class="fas fa-id-badge me-1"></i>Username: {{ editedItem.username }}
+                </label>
+                <div class="mt-2">
                   <input
-                    v-model="editedItem.name"
-                    type="text"
-                    class="form-control"
-                    placeholder="Nombre de empresa"
-                    required
+                    v-model="editedItem.gearbox"
+                    type="radio"
+                    :value="true"
+                    class="form-check-input"
+                    id="enabledEdit"
                   />
-                </div>
+                  <label for="enabledEdit" class="form-check-label me-3">Usuario Habilitado</label>
 
-                <div class="col-md-4">
-                  <label class="form-label">
-                    <i
-                      :class="
-                        editedItem.role === 'empresa' ? 'fas fa-street-view' : 'fas fa-user-tag'
-                      "
-                      class="me-1"
-                    ></i>
-                    {{ editedItem.role === 'empresa' ? 'Sucursal' : 'Apellido*' }}
-                  </label>
                   <input
-                    v-model="editedItem.last_name"
-                    type="text"
-                    class="form-control"
-                    placeholder="Ingrese aquí"
+                    v-model="editedItem.gearbox"
+                    type="radio"
+                    :value="false"
+                    class="form-check-input"
+                    id="blockedEdit"
                   />
+                  <label for="blockedEdit" class="form-check-label">Bloqueado</label>
                 </div>
+              </div>
+            </div>
 
-                <div class="col-md-4">
-                  <label class="form-label">
-                    <i class="fas fa-id-badge me-1"></i>Username: {{ editedItem.username }}
-                  </label>
-                  <div class="mt-2">
-                    <input
-                      v-model="editedItem.gearbox"
-                      type="radio"
-                      :value="true"
-                      class="form-check-input"
-                      id="enabledEdit"
-                    />
-                    <label for="enabledEdit" class="form-check-label me-3"
-                      >Usuario Habilitado</label
-                    >
+            <div class="row mt-3">
+              <div class="col-md-4">
+                <label class="form-label"> <i class="fas fa-envelope me-1"></i>Email* </label>
+                <input
+                  v-model="editedItem.email"
+                  type="email"
+                  class="form-control"
+                  placeholder="Ingrese email"
+                  required
+                />
+              </div>
 
+              <div class="col-md-4">
+                <label class="form-label"> <i class="fas fa-phone me-1"></i>Teléfono </label>
+                <input
+                  v-model="editedItem.phone_number"
+                  type="text"
+                  class="form-control"
+                  placeholder="Ingrese teléfono"
+                />
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label"> <i class="fas fa-map-marker-alt me-1"></i>Ciudad </label>
+                <input
+                  v-model="editedItem.city"
+                  type="text"
+                  class="form-control"
+                  placeholder="Ingrese ciudad"
+                />
+              </div>
+            </div>
+
+            <div class="row mt-3">
+              <div class="col-md-8">
+                <label class="form-label">
+                  <i class="fas fa-location-arrow me-1"></i>Dirección
+                </label>
+                <input
+                  v-model="editedItem.address"
+                  type="text"
+                  class="form-control"
+                  placeholder="Ingrese dirección"
+                />
+              </div>
+            </div>
+
+            <!-- Usuario specific fields -->
+            <div v-if="editedItem.role === 'usuario'" class="row mt-3">
+              <div class="col-md-4">
+                <label class="form-label"> <i class="far fa-id-card me-1"></i>Cédula* </label>
+                <input
+                  v-model="editedItem.cedula"
+                  type="text"
+                  class="form-control"
+                  placeholder="Ingrese cédula"
+                />
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">
+                  <i class="fas fa-birthday-cake me-1"></i>Fecha de nacimiento
+                </label>
+                <input v-model="editedItem.birth_date" type="date" class="form-control" />
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Género</label>
+                <div>
+                  <input
+                    v-model="editedItem.gender"
+                    type="radio"
+                    :value="true"
+                    class="form-check-input"
+                    id="masculinoEdit"
+                  />
+                  <label for="masculinoEdit" class="form-check-label me-3">Masculino</label>
+
+                  <input
+                    v-model="editedItem.gender"
+                    type="radio"
+                    :value="false"
+                    class="form-check-input"
+                    id="femeninoEdit"
+                  />
+                  <label for="femeninoEdit" class="form-check-label">Femenino</label>
+                </div>
+              </div>
+
+              <div class="col-md-12 mt-3">
+                <hr />
+                <div class="row">
+                  <div class="col-md-4">
+                    <label class="form-label">
+                      <i class="fas fa-dollar-sign me-1"></i>Monto Disponible*
+                    </label>
                     <input
-                      v-model="editedItem.gearbox"
-                      type="radio"
-                      :value="false"
-                      class="form-check-input"
-                      id="blockedEdit"
+                      v-model.number="editedItem.disponible"
+                      type="number"
+                      class="form-control"
+                      placeholder="Ingrese monto disponible"
+                      min="0"
                     />
-                    <label for="blockedEdit" class="form-check-label">Bloqueado</label>
                   </div>
                 </div>
               </div>
-
-              <div class="row mt-3">
-                <div class="col-md-4">
-                  <label class="form-label"> <i class="fas fa-envelope me-1"></i>Email* </label>
-                  <input
-                    v-model="editedItem.email"
-                    type="email"
-                    class="form-control"
-                    placeholder="Ingrese email"
-                    required
-                  />
-                </div>
-
-                <div class="col-md-4">
-                  <label class="form-label"> <i class="fas fa-phone me-1"></i>Teléfono </label>
-                  <input
-                    v-model="editedItem.phone_number"
-                    type="text"
-                    class="form-control"
-                    placeholder="Ingrese teléfono"
-                  />
-                </div>
-
-                <div class="col-md-4">
-                  <label class="form-label">
-                    <i class="fas fa-map-marker-alt me-1"></i>Ciudad
-                  </label>
-                  <input
-                    v-model="editedItem.city"
-                    type="text"
-                    class="form-control"
-                    placeholder="Ingrese ciudad"
-                  />
-                </div>
-              </div>
-
-              <div class="row mt-3">
-                <div class="col-md-8">
-                  <label class="form-label">
-                    <i class="fas fa-location-arrow me-1"></i>Dirección
-                  </label>
-                  <input
-                    v-model="editedItem.address"
-                    type="text"
-                    class="form-control"
-                    placeholder="Ingrese dirección"
-                  />
-                </div>
-              </div>
-
-              <!-- Usuario specific fields -->
-              <div v-if="editedItem.role === 'usuario'" class="row mt-3">
-                <div class="col-md-4">
-                  <label class="form-label"> <i class="far fa-id-card me-1"></i>Cédula* </label>
-                  <input
-                    v-model="editedItem.cedula"
-                    type="text"
-                    class="form-control"
-                    placeholder="Ingrese cédula"
-                  />
-                </div>
-
-                <div class="col-md-4">
-                  <label class="form-label">
-                    <i class="fas fa-birthday-cake me-1"></i>Fecha de nacimiento
-                  </label>
-                  <input v-model="editedItem.birth_date" type="date" class="form-control" />
-                </div>
-
-                <div class="col-md-4">
-                  <label class="form-label">Género</label>
-                  <div>
-                    <input
-                      v-model="editedItem.gender"
-                      type="radio"
-                      :value="true"
-                      class="form-check-input"
-                      id="masculinoEdit"
-                    />
-                    <label for="masculinoEdit" class="form-check-label me-3">Masculino</label>
-
-                    <input
-                      v-model="editedItem.gender"
-                      type="radio"
-                      :value="false"
-                      class="form-check-input"
-                      id="femeninoEdit"
-                    />
-                    <label for="femeninoEdit" class="form-check-label">Femenino</label>
-                  </div>
-                </div>
-
-                <div class="col-md-12 mt-3">
-                  <hr />
-                  <div class="row">
-                    <div class="col-md-4">
-                      <label class="form-label">
-                        <i class="fas fa-dollar-sign me-1"></i>Monto Disponible*
-                      </label>
-                      <input
-                        v-model.number="editedItem.disponible"
-                        type="number"
-                        class="form-control"
-                        placeholder="Ingrese monto disponible"
-                        min="0"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" @click="closeEditModal">
-              Cancelar
-            </button>
-            <button
-              type="button"
-              class="btn btn-flexirol-primary"
-              @click="updateUser"
+            </div>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn variant="outlined" @click="showEditModal = false">Cancelar</v-btn>
+            <v-btn
+              type="submit"
+              color="primary"
+              :loading="loading"
               :disabled="!canSaveEdit || loading"
             >
-              <i class="fas fa-save me-1"></i>
+              <v-icon left>mdi-content-save</v-icon>
               {{ loading ? 'Guardando...' : 'Guardar Cambios' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+            </v-btn>
+          </v-card-actions>
+        </v-form>
+      </v-card>
+    </v-dialog>
 
-    <!-- Delete Modal -->
-    <div class="modal fade" id="deleteModal" tabindex="-1" ref="deleteModal">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title text-danger">
-              <i class="fas fa-exclamation-triangle me-2"></i>
-              Confirmar Eliminación
-            </h5>
-            <button type="button" class="btn-close" @click="closeDeleteModal"></button>
-          </div>
-          <div class="modal-body" v-if="deleteItem">
-            <p class="mb-3">
-              <strong>¿Está seguro de eliminar este usuario?</strong>
-            </p>
-            <div class="alert alert-warning">
-              <i class="fas fa-exclamation-triangle me-2"></i>
-              <strong>{{ deleteItem.name }} {{ deleteItem.last_name }}</strong
-              ><br />
-              Email: {{ deleteItem.email }}
-            </div>
-            <p v-if="deleteItem.role === 'empresa'" class="text-danger">
-              <strong>Esto eliminará la empresa y todos sus usuarios asociados.</strong>
-            </p>
-            <p class="text-muted mb-0">Esta acción no se puede deshacer.</p>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" @click="closeDeleteModal">
-              Cancelar
-            </button>
-            <button type="button" class="btn btn-danger" @click="deleteUser" :disabled="loading">
-              <i class="fas fa-trash me-1"></i>
-              {{ loading ? 'Eliminando...' : 'ELIMINAR' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- MODAL: Eliminar Usuario -->
+    <v-dialog v-model="showDeleteModal" max-width="400px" persistent>
+      <v-card class="glass-morphism">
+        <v-card-title>
+          <v-icon color="error" class="me-2">mdi-alert-circle</v-icon>
+          Confirmar Eliminación
+        </v-card-title>
+        <v-card-text>
+          <p>¿Está seguro de eliminar este usuario?</p>
+          <v-alert v-if="deleteItem" type="warning" variant="tonal">
+            <strong>{{ deleteItem.name }} {{ deleteItem.last_name }}</strong
+            ><br />
+            <small>{{ deleteItem.email }}</small>
+          </v-alert>
+          <p class="text-error text-caption">
+            <v-icon size="small" class="me-1">mdi-alert-circle</v-icon>
+            Esta acción no se puede deshacer.
+          </p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn variant="outlined" @click="showDeleteModal = false">Cancelar</v-btn>
+          <v-btn color="error" :loading="loading" @click="deleteUser" :disabled="loading">
+            <v-icon left>mdi-delete</v-icon>
+            Eliminar
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -673,9 +643,9 @@ const errors = reactive({
 const errMsg = ref('No hay usuarios en los registros.')
 
 // Modal refs
-const createModal = ref(null)
-const editModal = ref(null)
-const deleteModal = ref(null)
+const showCreateModal = ref(false)
+const showEditModal = ref(false)
+const showDeleteModal = ref(false)
 
 // Computed
 const filteredUsers = computed(() => {
@@ -890,43 +860,24 @@ const deleteUser = async () => {
 // Modal methods
 const openCreateModal = () => {
   resetNewItem()
-  nextTick(() => {
-    const modal = new Modal(createModal.value)
-    modal.show()
-  })
+  showCreateModal.value = true
 }
-
 const closeCreateModal = () => {
-  const modal = Modal.getInstance(createModal.value)
-  if (modal) modal.hide()
+  showCreateModal.value = false
 }
-
 const openEditModal = (user) => {
   editedItem.value = { ...user }
-  nextTick(() => {
-    const modal = new Modal(editModal.value)
-    modal.show()
-  })
+  showEditModal.value = true
 }
-
 const closeEditModal = () => {
-  const modal = Modal.getInstance(editModal.value)
-  if (modal) modal.hide()
-  editedItem.value = null
+  showEditModal.value = false
 }
-
 const openDeleteModal = (user) => {
   deleteItem.value = user
-  nextTick(() => {
-    const modal = new Modal(deleteModal.value)
-    modal.show()
-  })
+  showDeleteModal.value = true
 }
-
 const closeDeleteModal = () => {
-  const modal = Modal.getInstance(deleteModal.value)
-  if (modal) modal.hide()
-  deleteItem.value = null
+  showDeleteModal.value = false
 }
 
 const resetNewItem = () => {

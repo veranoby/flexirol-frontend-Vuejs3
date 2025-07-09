@@ -279,6 +279,35 @@ export const api = {
     // Generate Excel file
     XLSX.writeFile(wb, `pagos_${new Date().toISOString().split('T')[0]}.xlsx`)
   },
+
+  // ===== SYSTEM CONFIG METHODS =====
+  async getSystemConfig() {
+    try {
+      // Buscar configuración por nombre único
+      const result = await pb.collection('system_config').getFirstListItem('name="default_config"')
+      return result
+    } catch (error) {
+      // Si no existe, crear configuración por defecto
+      console.log('Creating default system config...')
+      return await pb.collection('system_config').create({
+        name: 'default_config',
+        porcentaje_servicio: 10,
+        valor_fijo_mensual: 50,
+        dia_inicio: 2,
+        dia_cierre: 28,
+        porcentaje_maximo: 70,
+        frecuencia_maxima: 3,
+        dias_bloqueo: 2,
+        dias_reinicio: 3,
+        activo: true,
+      })
+    }
+  },
+
+  async updateSystemConfig(configData) {
+    const config = await this.getSystemConfig()
+    return await pb.collection('system_config').update(config.id, configData)
+  },
 }
 
 // Real-time subscriptions

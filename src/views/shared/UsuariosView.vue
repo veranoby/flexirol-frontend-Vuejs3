@@ -295,9 +295,9 @@
       </div>
     </div>
 
-    <!-- Create/Edit User Modal -->
+    <!-- MODAL: Crear/Editar Usuario -->
     <v-dialog v-model="showUserModal" max-width="800px" persistent>
-      <v-card>
+      <v-card class="glass-morphism">
         <v-card-title>
           <v-icon :class="isEditMode ? 'mdi-pencil' : 'mdi-account-plus'" class="me-2"></v-icon>
           {{ isEditMode ? 'Editar Usuario' : 'Crear Usuario' }}
@@ -425,9 +425,9 @@
       </v-card>
     </v-dialog>
 
-    <!-- Delete Confirmation Modal -->
+    <!-- MODAL: Confirmar Eliminación -->
     <v-dialog v-model="showDeleteModal" max-width="400px" persistent>
-      <v-card>
+      <v-card class="glass-morphism">
         <v-card-title>
           <v-icon color="error" class="me-2">mdi-alert-circle</v-icon>
           Confirmar Eliminación

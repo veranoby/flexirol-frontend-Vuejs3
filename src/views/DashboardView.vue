@@ -3,10 +3,10 @@
     <!-- Header -->
     <v-row class="mb-4">
       <v-col cols="12">
-        <h2 class="text-flexirol-primary">
+        <h2 class="text-primary">
           Bienvenido, {{ authStore.user?.name || authStore.user?.email }}
         </h2>
-        <p class="text-muted">{{ roleDescription }}</p>
+        <p class="text-grey-darken-1">{{ roleDescription }}</p>
       </v-col>
     </v-row>
 
@@ -16,36 +16,36 @@
         <v-col md="3" sm="6" class="mb-4">
           <v-card class="glass-morphism text-center">
             <v-card-text>
-              <v-icon class="mb-2" size="36" color="flexirol-primary">mdi-office-building</v-icon>
-              <h4 class="text-flexirol-primary">{{ stats.totalCompanies }}</h4>
-              <p class="mb-0">Empresas Activas</p>
+              <v-icon class="mb-2" size="36" color="primary">mdi-office-building</v-icon>
+              <h4 class="text-primary">{{ stats.totalCompanies }}</h4>
+              <p class="text-grey-darken-1 mb-0">Empresas Activas</p>
             </v-card-text>
           </v-card>
         </v-col>
         <v-col md="3" sm="6" class="mb-4">
           <v-card class="glass-morphism text-center">
             <v-card-text>
-              <v-icon class="mb-2" size="36" color="flexirol-secondary">mdi-account</v-icon>
-              <h4 class="text-flexirol-secondary">{{ stats.totalUsers }}</h4>
-              <p class="mb-0">Usuarios Total</p>
+              <v-icon class="mb-2" size="36" color="secondary">mdi-account</v-icon>
+              <h4 class="text-secondary">{{ stats.totalUsers }}</h4>
+              <p class="text-grey-darken-1 mb-0">Usuarios Total</p>
             </v-card-text>
           </v-card>
         </v-col>
         <v-col md="3" sm="6" class="mb-4">
           <v-card class="glass-morphism text-center">
             <v-card-text>
-              <v-icon class="mb-2" size="36" color="flexirol-tertiary">mdi-cash</v-icon>
-              <h4 class="text-flexirol-tertiary">{{ stats.totalRequests }}</h4>
-              <p class="mb-0">Solicitudes Mes</p>
+              <v-icon class="mb-2" size="36" color="tertiary">mdi-cash</v-icon>
+              <h4 class="text-tertiary">{{ stats.totalRequests }}</h4>
+              <p class="text-grey-darken-1 mb-0">Solicitudes Mes</p>
             </v-card-text>
           </v-card>
         </v-col>
         <v-col md="3" sm="6" class="mb-4">
           <v-card class="glass-morphism text-center">
             <v-card-text>
-              <v-icon class="mb-2" size="36" color="flexirol-quaternary">mdi-currency-usd</v-icon>
-              <h4 class="text-flexirol-quaternary">${{ stats.totalAmount }}</h4>
-              <p class="mb-0">Monto Total</p>
+              <v-icon class="mb-2" size="36" color="quaternary">mdi-currency-usd</v-icon>
+              <h4 class="text-quaternary">${{ stats.totalAmount }}</h4>
+              <p class="text-grey-darken-1 mb-0">Monto Total</p>
             </v-card-text>
           </v-card>
         </v-col>
@@ -80,11 +80,11 @@
             <v-card-text>
               <v-list v-if="recentActivity.length">
                 <v-list-item v-for="activity in recentActivity" :key="activity.id" class="px-0">
-                  <small class="text-muted">{{ formatDate(activity.created) }}</small>
+                  <small class="text-grey-darken-1">{{ formatDate(activity.created) }}</small>
                   <p class="mb-0">{{ activity.description }}</p>
                 </v-list-item>
               </v-list>
-              <p v-else class="text-muted mb-0">No hay actividad reciente</p>
+              <p v-else class="text-grey-darken-1 mb-0">No hay actividad reciente</p>
             </v-card-text>
           </v-card>
         </v-col>
@@ -97,27 +97,27 @@
         <v-col md="4" sm="6" class="mb-4">
           <v-card class="glass-morphism text-center">
             <v-card-text>
-              <v-icon class="mb-2" size="36" color="flexirol-primary">mdi-account</v-icon>
-              <h4 class="text-flexirol-primary">{{ stats.myUsers }}</h4>
-              <p class="mb-0">Mis Empleados</p>
+              <v-icon class="mb-2" size="36" color="primary">mdi-account</v-icon>
+              <h4 class="text-primary">{{ stats.myUsers }}</h4>
+              <p class="text-grey-darken-1 mb-0">Mis Empleados</p>
             </v-card-text>
           </v-card>
         </v-col>
         <v-col md="4" sm="6" class="mb-4">
           <v-card class="glass-morphism text-center">
             <v-card-text>
-              <v-icon class="mb-2" size="36" color="flexirol-quaternary">mdi-timer</v-icon>
-              <h4 class="text-flexirol-quaternary">{{ stats.pendingRequests }}</h4>
-              <p class="mb-0">Solicitudes Pendientes</p>
+              <v-icon class="mb-2" size="36" color="quaternary">mdi-timer</v-icon>
+              <h4 class="text-quaternary">{{ stats.pendingRequests }}</h4>
+              <p class="text-grey-darken-1 mb-0">Solicitudes Pendientes</p>
             </v-card-text>
           </v-card>
         </v-col>
         <v-col md="4" sm="6" class="mb-4">
           <v-card class="glass-morphism text-center">
             <v-card-text>
-              <v-icon class="mb-2" size="36" color="flexirol-tertiary">mdi-check-circle</v-icon>
-              <h4 class="text-flexirol-tertiary">{{ stats.approvedThisMonth }}</h4>
-              <p class="mb-0">Aprobadas Este Mes</p>
+              <v-icon class="mb-2" size="36" color="tertiary">mdi-check-circle</v-icon>
+              <h4 class="text-tertiary">{{ stats.approvedThisMonth }}</h4>
+              <p class="text-grey-darken-1 mb-0">Aprobadas Este Mes</p>
             </v-card-text>
           </v-card>
         </v-col>
@@ -155,7 +155,7 @@
                   </tbody>
                 </v-table>
               </v-responsive>
-              <p v-else class="text-muted mb-0">No hay solicitudes recientes</p>
+              <p v-else class="text-grey-darken-1 mb-0">No hay solicitudes recientes</p>
             </v-card-text>
           </v-card>
         </v-col>
@@ -183,9 +183,9 @@
         <v-col md="6" class="mb-4">
           <v-card class="glass-morphism text-center">
             <v-card-text>
-              <v-icon class="mb-3" size="48" color="flexirol-primary">mdi-currency-usd</v-icon>
-              <h3 class="text-flexirol-primary mb-1">${{ userStats.availableAmount }}</h3>
-              <p class="text-muted">Monto Disponible</p>
+              <v-icon class="mb-3" size="48" color="primary">mdi-currency-usd</v-icon>
+              <h3 class="text-primary mb-1">${{ userStats.availableAmount }}</h3>
+              <p class="text-grey-darken-1">Monto Disponible</p>
               <v-btn to="/usuario/solicitudes" color="primary" variant="outlined">
                 <v-icon class="mr-2">mdi-cash-multiple</v-icon>Solicitar Anticipo
               </v-btn>
@@ -207,7 +207,7 @@
                   <div>
                     <strong>{{ account.banco_nombre }}</strong
                     ><br />
-                    <small class="text-muted">{{ account.numero_cuenta }}</small>
+                    <small class="text-grey-darken-1">{{ account.numero_cuenta }}</small>
                   </div>
                   <v-chip :color="account.activa ? 'success' : 'secondary'" size="small">
                     {{ account.activa ? 'Activa' : 'Inactiva' }}
@@ -254,7 +254,7 @@
                   </tbody>
                 </v-table>
               </v-responsive>
-              <p v-else class="text-muted mb-0">No tienes solicitudes aún</p>
+              <p v-else class="text-grey-darken-1 mb-0">No tienes solicitudes aún</p>
             </v-card-text>
           </v-card>
         </v-col>

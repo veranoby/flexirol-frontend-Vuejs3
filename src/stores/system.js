@@ -255,33 +255,26 @@ export const useSystemStore = defineStore('system', () => {
 // ========== TOAST SYSTEM (Vuetify) ==========
 export const useToastSystem = () => {
   const showToast = (message, type = 'info', duration = 3000) => {
-    // Fallback to console if Vuetify is not available (unlikely in this project)
-    if (!window.Vuetify) {
-      console.warn('Vuetify not available, fallback to console:', message)
-      return
-    }
-
     // Map Bootstrap types to Vuetify types
-    const vuetifyType =
-      type === 'danger'
-        ? 'error'
-        : type === 'success'
-          ? 'success'
-          : type === 'warning'
-            ? 'warning'
-            : 'info'
+    const vuetifyColor =
+      {
+        success: 'success',
+        danger: 'error',
+        error: 'error',
+        warning: 'warning',
+        info: 'info',
+      }[type] || 'info'
 
-    // Create a snackbar dynamically (assuming Vuetify is globally available)
-    const snackbar = {
-      color: vuetifyType,
-      text: message,
-      timeout: duration,
-      location: 'top',
-    }
-
-    // Dispatch a global event or use a store to show the snackbar
-    // Example: Using a global event bus or a dedicated store for UI notifications
-    window.dispatchEvent(new CustomEvent('show-snackbar', { detail: snackbar }))
+    // Dispatch global event que App.vue puede escuchar
+    window.dispatchEvent(
+      new CustomEvent('show-toast', {
+        detail: {
+          message,
+          color: vuetifyColor,
+          timeout: duration,
+        },
+      }),
+    )
   }
 
   return { showToast }

@@ -65,10 +65,7 @@
           ></v-text-field>
         </v-col>
         <v-col md="4" class="text-end">
-          <v-btn
-            color="primary"
-            @click="openCreateModal"
-          >
+          <v-btn color="primary" @click="openCreateModal">
             <v-icon left>mdi-plus</v-icon>
             Nueva Empresa
           </v-btn>
@@ -77,11 +74,7 @@
 
       <!-- Loading State -->
       <div v-if="loading" class="text-center py-5">
-        <v-progress-circular
-          indeterminate
-          color="primary"
-          size="40"
-        ></v-progress-circular>
+        <v-progress-circular indeterminate color="primary" size="40"></v-progress-circular>
         <p class="mt-3">Cargando empresas...</p>
       </div>
 
@@ -131,7 +124,9 @@
                     <span v-else class="text-muted">Sin propietario asignado</span>
                   </td>
                   <td>
-                    <v-chip color="info" size="small">{{ company.user_count || 0 }} usuarios</v-chip>
+                    <v-chip color="info" size="small"
+                      >{{ company.user_count || 0 }} usuarios</v-chip
+                    >
                   </td>
                   <td>
                     <v-chip :color="company.gearbox ? 'success' : 'error'" size="small">
@@ -188,313 +183,256 @@
     </v-container>
 
     <!-- Modal: Create Company -->
-    <div class="modal fade" id="createCompanyModal" tabindex="-1">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">
-              <i class="fas fa-plus-circle me-2"></i>
-              {{ isEditMode ? 'Editar Empresa' : 'Crear Nueva Empresa' }}
-            </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <form @submit.prevent="handleSubmit">
-              <!-- Company Info -->
+    <v-dialog v-model="showCreateModal" max-width="600px" persistent>
+      <v-card>
+        <v-card-title>
+          <i class="fas fa-plus-circle me-2"></i>
+          {{ isEditMode ? 'Editar Empresa' : 'Crear Nueva Empresa' }}
+        </v-card-title>
+        <v-card-text>
+          <form @submit.prevent="handleSubmit">
+            <!-- Company Info -->
+            <div class="row mb-3">
+              <h6 class="text-primary">
+                <i class="fas fa-building me-2"></i>Información de la Empresa
+              </h6>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-8">
+                <label class="form-label">Nombre de la Empresa *</label>
+                <input
+                  v-model="companyForm.nombre"
+                  type="text"
+                  class="form-control"
+                  required
+                  placeholder="Ej: Acme Corporation"
+                />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">RUC (Opcional)</label>
+                <input
+                  v-model="companyForm.ruc"
+                  type="text"
+                  class="form-control"
+                  placeholder="Ej: 1234567890001"
+                />
+              </div>
+            </div>
+
+            <!-- Owner Info (solo para crear) -->
+            <div v-if="!isEditMode">
               <div class="row mb-3">
-                <h6 class="text-primary">
-                  <i class="fas fa-building me-2"></i>Información de la Empresa
+                <h6 class="text-success">
+                  <i class="fas fa-user-tie me-2"></i>Propietario Principal
                 </h6>
               </div>
 
               <div class="row mb-3">
-                <div class="col-md-8">
-                  <label class="form-label">Nombre de la Empresa *</label>
+                <div class="col-md-6">
+                  <label class="form-label">Nombre *</label>
                   <input
-                    v-model="companyForm.nombre"
+                    v-model="ownerForm.first_name"
                     type="text"
                     class="form-control"
                     required
-                    placeholder="Ej: Acme Corporation"
+                    placeholder="Ej: Juan"
                   />
                 </div>
-                <div class="col-md-4">
-                  <label class="form-label">RUC (Opcional)</label>
+                <div class="col-md-6">
+                  <label class="form-label">Apellido *</label>
                   <input
-                    v-model="companyForm.ruc"
+                    v-model="ownerForm.last_name"
                     type="text"
                     class="form-control"
-                    placeholder="Ej: 1234567890001"
+                    required
+                    placeholder="Ej: Pérez"
                   />
                 </div>
               </div>
 
-              <!-- Owner Info (solo para crear) -->
-              <div v-if="!isEditMode">
-                <div class="row mb-3">
-                  <h6 class="text-success">
-                    <i class="fas fa-user-tie me-2"></i>Propietario Principal
-                  </h6>
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label class="form-label">Email *</label>
+                  <input
+                    v-model="ownerForm.email"
+                    type="email"
+                    class="form-control"
+                    required
+                    placeholder="juan.perez@empresa.com"
+                  />
                 </div>
-
-                <div class="row mb-3">
-                  <div class="col-md-6">
-                    <label class="form-label">Nombre *</label>
-                    <input
-                      v-model="ownerForm.first_name"
-                      type="text"
-                      class="form-control"
-                      required
-                      placeholder="Ej: Juan"
-                    />
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label">Apellido *</label>
-                    <input
-                      v-model="ownerForm.last_name"
-                      type="text"
-                      class="form-control"
-                      required
-                      placeholder="Ej: Pérez"
-                    />
-                  </div>
-                </div>
-
-                <div class="row mb-3">
-                  <div class="col-md-6">
-                    <label class="form-label">Email *</label>
-                    <input
-                      v-model="ownerForm.email"
-                      type="email"
-                      class="form-control"
-                      required
-                      placeholder="juan.perez@empresa.com"
-                    />
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label">Cédula *</label>
-                    <input
-                      v-model="ownerForm.cedula"
-                      type="text"
-                      class="form-control"
-                      required
-                      pattern="[0-9]{10}"
-                      placeholder="1234567890"
-                      maxlength="10"
-                    />
-                  </div>
+                <div class="col-md-6">
+                  <label class="form-label">Cédula *</label>
+                  <input
+                    v-model="ownerForm.cedula"
+                    type="text"
+                    class="form-control"
+                    required
+                    pattern="[0-9]{10}"
+                    placeholder="1234567890"
+                    maxlength="10"
+                  />
                 </div>
               </div>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-              Cancelar
-            </button>
-            <button
-              type="button"
-              class="btn btn-primary"
-              @click="handleSubmit"
-              :disabled="submitting"
-            >
-              <span v-if="submitting" class="spinner-border spinner-border-sm me-2"></span>
-              {{ isEditMode ? 'Actualizar' : 'Crear Empresa' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+            </div>
+          </form>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="secondary" variant="text" @click="showCreateModal = false">
+            Cancelar
+          </v-btn>
+          <v-btn color="primary" variant="text" @click="handleSubmit" :loading="submitting">
+            <span v-if="submitting" class="spinner-border spinner-border-sm me-2"></span>
+            {{ isEditMode ? 'Actualizar' : 'Crear Empresa' }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <!-- Modal: Company Users Hierarchy -->
-    <div class="modal fade" id="usersModal" tabindex="-1">
-      <div class="modal-dialog modal-xl">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">
-              <i class="fas fa-users me-2"></i>
-              Usuarios de {{ selectedCompany?.nombre }}
-            </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <v-dialog v-model="showUsersModal" max-width="1200px" persistent>
+      <v-card>
+        <v-card-title>
+          <i class="fas fa-users me-2"></i>
+          Usuarios de {{ selectedCompany?.nombre }}
+        </v-card-title>
+        <v-card-text>
+          <div v-if="loadingUsers" class="text-center py-4">
+            <div class="spinner-border text-primary"></div>
           </div>
-          <div class="modal-body">
-            <div v-if="loadingUsers" class="text-center py-4">
-              <div class="spinner-border text-primary"></div>
-            </div>
 
-            <div v-else-if="companyUsers">
-              <!-- Owner Section -->
-              <div class="mb-4">
-                <h6 class="text-success"><i class="fas fa-crown me-2"></i>Propietario Principal</h6>
-                <div v-if="companyUsers.hierarchy.owner" class="card bg-light">
-                  <div class="card-body py-2">
-                    <div class="row align-items-center">
-                      <div class="col">
-                        <strong
-                          >{{ companyUsers.hierarchy.owner.first_name }}
-                          {{ companyUsers.hierarchy.owner.last_name }}</strong
-                        >
-                        <br />
-                        <small class="text-muted">{{ companyUsers.hierarchy.owner.email }}</small>
-                      </div>
-                      <div class="col-auto">
-                        <span class="badge bg-success">Propietario</span>
-                      </div>
+          <div v-else-if="companyUsers">
+            <!-- Owner Section -->
+            <div class="mb-4">
+              <h6 class="text-success"><i class="fas fa-crown me-2"></i>Propietario Principal</h6>
+              <div v-if="companyUsers.hierarchy.owner" class="card bg-light">
+                <div class="card-body py-2">
+                  <div class="row align-items-center">
+                    <div class="col">
+                      <strong
+                        >{{ companyUsers.hierarchy.owner.first_name }}
+                        {{ companyUsers.hierarchy.owner.last_name }}</strong
+                      >
+                      <br />
+                      <small class="text-muted">{{ companyUsers.hierarchy.owner.email }}</small>
+                    </div>
+                    <div class="col-auto">
+                      <span class="badge bg-success">Propietario</span>
                     </div>
                   </div>
                 </div>
-                <div v-else class="alert alert-warning">
-                  <i class="fas fa-exclamation-triangle me-2"></i>
-                  Sin propietario asignado
-                </div>
               </div>
+              <div v-else class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Sin propietario asignado
+              </div>
+            </div>
 
-              <!-- Admins Section -->
-              <div class="mb-4">
-                <h6 class="text-primary">
-                  <i class="fas fa-user-tie me-2"></i>Administradores ({{
-                    companyUsers.hierarchy.admins.length
-                  }})
-                </h6>
-                <div v-if="companyUsers.hierarchy.admins.length === 0" class="text-muted">
-                  No hay administradores adicionales
-                </div>
-                <div v-else class="row">
-                  <div
-                    v-for="admin in companyUsers.hierarchy.admins"
-                    :key="admin.id"
-                    class="col-md-6 mb-2"
-                  >
-                    <div class="card">
-                      <div class="card-body py-2">
-                        <div class="row align-items-center">
-                          <div class="col">
-                            <strong>{{ admin.first_name }} {{ admin.last_name }}</strong>
-                            <br />
-                            <small class="text-muted">{{ admin.email }}</small>
-                          </div>
-                          <div class="col-auto">
-                            <span class="badge" :class="admin.gearbox ? 'bg-success' : 'bg-danger'">
-                              {{ admin.gearbox ? 'Activo' : 'Bloqueado' }}
-                            </span>
-                          </div>
+            <!-- Admins Section -->
+            <div class="mb-4">
+              <h6 class="text-primary">
+                <i class="fas fa-user-tie me-2"></i>Administradores ({{
+                  companyUsers.hierarchy.admins.length
+                }})
+              </h6>
+              <div v-if="companyUsers.hierarchy.admins.length === 0" class="text-muted">
+                No hay administradores adicionales
+              </div>
+              <div v-else class="row">
+                <div
+                  v-for="admin in companyUsers.hierarchy.admins"
+                  :key="admin.id"
+                  class="col-md-6 mb-2"
+                >
+                  <div class="card">
+                    <div class="card-body py-2">
+                      <div class="row align-items-center">
+                        <div class="col">
+                          <strong>{{ admin.first_name }} {{ admin.last_name }}</strong>
+                          <br />
+                          <small class="text-muted">{{ admin.email }}</small>
+                        </div>
+                        <div class="col-auto">
+                          <span class="badge" :class="admin.gearbox ? 'bg-success' : 'bg-danger'">
+                            {{ admin.gearbox ? 'Activo' : 'Bloqueado' }}
+                          </span>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
+            </div>
 
-              <!-- Employees Section -->
-              <div class="mb-4">
-                <h6 class="text-info">
-                  <i class="fas fa-users me-2"></i>Empleados ({{
-                    companyUsers.hierarchy.employees.length
-                  }})
-                </h6>
-                <div v-if="companyUsers.hierarchy.employees.length === 0" class="text-muted">
-                  No hay empleados registrados
-                </div>
-                <div v-else class="row">
-                  <div
-                    v-for="employee in companyUsers.hierarchy.employees"
-                    :key="employee.id"
-                    class="col-md-6 mb-2"
-                  >
-                    <div class="card">
-                      <div class="card-body py-2">
-                        <div class="row align-items-center">
-                          <div class="col">
-                            <strong>{{ employee.first_name }} {{ employee.last_name }}</strong>
-                            <br />
-                            <small class="text-muted"
-                              >{{ employee.email }} • {{ employee.cedula }}</small
-                            >
-                            <br />
-                            <small class="text-primary"
-                              >Disponible: ${{ employee.disponible || 0 }}</small
-                            >
-                          </div>
-                          <div class="col-auto">
-                            <span
-                              class="badge"
-                              :class="employee.gearbox ? 'bg-success' : 'bg-danger'"
-                            >
-                              {{ employee.gearbox ? 'Activo' : 'Bloqueado' }}
-                            </span>
-                          </div>
+            <!-- Employees Section -->
+            <div class="mb-4">
+              <h6 class="text-info">
+                <i class="fas fa-users me-2"></i>Empleados ({{
+                  companyUsers.hierarchy.employees.length
+                }})
+              </h6>
+              <div v-if="companyUsers.hierarchy.employees.length === 0" class="text-muted">
+                No hay empleados registrados
+              </div>
+              <div v-else class="row">
+                <div
+                  v-for="employee in companyUsers.hierarchy.employees"
+                  :key="employee.id"
+                  class="col-md-6 mb-2"
+                >
+                  <div class="card">
+                    <div class="card-body py-2">
+                      <div class="row align-items-center">
+                        <div class="col">
+                          <strong>{{ employee.first_name }} {{ employee.last_name }}</strong>
+                          <br />
+                          <small class="text-muted"
+                            >{{ employee.email }} • {{ employee.cedula }}</small
+                          >
+                          <br />
+                          <small class="text-primary"
+                            >Disponible: ${{ employee.disponible || 0 }}</small
+                          >
+                        </div>
+                        <div class="col-auto">
+                          <span
+                            class="badge"
+                            :class="employee.gearbox ? 'bg-success' : 'bg-danger'"
+                          >
+                            {{ employee.gearbox ? 'Activo' : 'Bloqueado' }}
+                          </span>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
+            </div>
 
-              <!-- Actions -->
-              <div class="text-center">
-                <button class="btn btn-primary me-2">
-                  <i class="fas fa-user-plus me-2"></i>Agregar Usuario
-                </button>
-                <button class="btn btn-success">
-                  <i class="fas fa-file-excel me-2"></i>Cargar Excel
-                </button>
-              </div>
+            <!-- Actions -->
+            <div class="text-center">
+              <button class="btn btn-primary me-2">
+                <i class="fas fa-user-plus me-2"></i>Agregar Usuario
+              </button>
+              <button class="btn btn-success">
+                <i class="fas fa-file-excel me-2"></i>Cargar Excel
+              </button>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal Ver Usuarios de Empresa -->
-    <div class="modal fade" id="viewUsersModal" tabindex="-1">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">
-              <i class="fas fa-users me-2"></i>
-              Usuarios de {{ selectedCompany?.nombre }}
-            </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <div v-if="companyUsers.length === 0" class="text-center py-3">
-              <p class="text-muted">No hay usuarios en esta empresa</p>
-            </div>
-            <div v-else class="table-responsive">
-              <table class="table table-sm">
-                <thead>
-                  <tr>
-                    <th>Nombre</th>
-                    <th>Email</th>
-                    <th>Rol</th>
-                    <th>Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="user in companyUsers" :key="user.id">
-                    <td>{{ user.first_name }} {{ user.last_name }}</td>
-                    <td>{{ user.email }}</td>
-                    <td>
-                      <span class="badge bg-info">{{ user.role }}</span>
-                    </td>
-                    <td>
-                      <span :class="user.gearbox ? 'badge bg-success' : 'badge bg-danger'">
-                        {{ user.gearbox ? 'Activo' : 'Bloqueado' }}
-                      </span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="secondary" variant="text" @click="showUsersModal = false"> Cerrar </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { Modal } from 'bootstrap'
 import { api } from '@/services/pocketbase'
 import { useSystemStore } from '@/stores/system'
 
@@ -511,6 +449,8 @@ const currentPage = ref(1)
 const itemsPerPage = 20
 
 // Modal states
+const showCreateModal = ref(false)
+const showUsersModal = ref(false)
 const isEditMode = ref(false)
 const selectedCompany = ref(null)
 const companyUsers = ref({
@@ -614,6 +554,7 @@ const openCreateModal = () => {
   isEditMode.value = false
   companyForm.value = { id: null, nombre: '', ruc: '', gearbox: true }
   ownerForm.value = { first_name: '', last_name: '', email: '', cedula: '' }
+  showCreateModal.value = true // <-- Asegurar que se abra el modal
 }
 
 const editCompany = (company) => {
@@ -625,8 +566,7 @@ const editCompany = (company) => {
     gearbox: company.gearbox,
   }
 
-  const modal = new Modal(document.getElementById('createCompanyModal'))
-  modal.show()
+  openCreateModal()
 }
 
 const handleSubmit = async () => {
@@ -647,8 +587,7 @@ const handleSubmit = async () => {
 
     await loadCompanies()
 
-    const modal = Modal.getInstance(document.getElementById('createCompanyModal'))
-    modal.hide()
+    openCreateModal()
   } catch (error) {
     console.error('Error saving company:', error)
     showToast('Error al guardar la empresa', 'danger')
@@ -658,14 +597,14 @@ const handleSubmit = async () => {
 }
 
 const viewCompanyUsers = async (company) => {
+  selectedCompany.value = company
+  loadingUsers.value = true
   try {
-    selectedCompany.value = company
-    loadingUsers.value = true
     companyUsers.value = await api.getCompanyUsersHierarchy(company.id)
+    showUsersModal.value = true // <-- Asegurar que se abra el modal
   } catch (error) {
     console.error('Error loading company users:', error)
     showToast('Error al cargar usuarios', 'danger')
-    companyUsers.value = { hierarchy: { owner: null, admins: [], employees: [] } }
   } finally {
     loadingUsers.value = false
   }
@@ -704,40 +643,3 @@ onMounted(() => {
   loadCompanies()
 })
 </script>
-
-<style scoped>
-.empresas-view {
-  min-height: 100vh;
-}
-
-.card-flexirol {
-  transition: transform 0.2s ease;
-}
-
-.card-flexirol:hover {
-  transform: translateY(-2px);
-}
-
-.badge {
-  font-size: 0.75em;
-}
-
-.btn-group-sm > .btn {
-  border-radius: 0.25rem;
-}
-
-.table th {
-  border-top: none;
-  font-weight: 600;
-  background-color: var(--flexirol-primary);
-  color: white;
-}
-
-.table-hover tbody tr:hover {
-  background-color: var(--flexirol-bg-light);
-}
-
-.modal-xl {
-  max-width: 1200px;
-}
-</style>

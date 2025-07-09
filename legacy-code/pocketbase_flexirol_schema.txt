@@ -88,6 +88,22 @@ WordPress users (empresas) → PocketBase companies
 - observaciones: Plain text (opcional)
 - banco_destino: Relation → bank_accounts single (cuenta destino)
 
+### Collection: system_config
+**Campos:**
+- id: auto-generated (ya existe)
+- name: Text (required) - identificador único "default_config"
+- porcentaje_servicio: Number (0-100) - default: 10
+- valor_fijo_mensual: Number (0-9999) - default: 50
+- dia_inicio: Number (1-31) - default: 2
+- dia_cierre: Number (1-31) - default: 28
+- porcentaje_maximo: Number (0-100) - default: 70
+- frecuencia_maxima: Number (1-10) - default: 3
+- dias_bloqueo: Number (0-31) - default: 2
+- dias_reinicio: Number (1-31) - default: 3
+- activo: Bool - default: true
+
+
+
 **Mapeo WordPress:**
 - wp_posts type='solicitud' → advance_requests
 - wp_posts.post_author → user_id
@@ -195,3 +211,4 @@ WordPress users (empresas) → PocketBase companies
   "fecha_excel": "2025-01-15"
 }
 ```
+

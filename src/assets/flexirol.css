@@ -1,7 +1,7 @@
-/* ===== FLEXIROL OPTIMIZED CSS (200 lines vs 600) ===== */
+/* ===== FLEXIROL ENHANCED CSS - VUETIFY + TAILWIND COMPATIBLE ===== */
 @import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;600&display=swap');
 
-/* ===== CORE VARIABLES (Minimal set) ===== */
+/* ===== CORE VARIABLES (Mantenidas + Nuevas) ===== */
 :root {
   /* Colores principales basados en imagen */
   --flexirol-primary: #4a90a4;
@@ -52,28 +52,42 @@ body {
   flex-direction: column;
 }
 
-/* ===== ENHANCED  COMPONENTS ===== */
-
-/* ===== GLASS MORPHISM ===== */
-
-/* Contenedor padre (ej: página completa) */
-.glass-morphism-bg {
-  background: linear-gradient(
-    135deg,
-    #3a6a776d 0%,
-    #1d918f7a 50%,
-
-    #fffc5d7b 100%
-  );
-  position: relative;
-  overflow: hidden;
-  flex-direction: column; /* Alinea el contenido verticalmente */
+/* ===== VUETIFY COLOR UTILITIES (Mayor especificidad) ===== */
+.v-application .text-flexirol-primary {
+  color: var(--flexirol-primary) !important;
+}
+.v-application .text-flexirol-secondary {
+  color: var(--flexirol-secondary) !important;
+}
+.v-application .text-flexirol-tertiary {
+  color: var(--flexirol-accent) !important;
+}
+.v-application .text-flexirol-quaternary {
+  color: var(--flexirol-warning) !important;
 }
 
+.v-application .bg-flexirol-primary {
+  background-color: var(--flexirol-primary) !important;
+}
+.v-application .bg-flexirol-secondary {
+  background-color: var(--flexirol-secondary) !important;
+}
+
+/* ===== TAILWIND COMPATIBILITY SCOPE ===== */
+.tw-scope {
+  /* Permite usar Tailwind con mayor especificidad cuando sea necesario */
+}
+
+/* ===== GLASS MORPHISM ENHANCED ===== */
+
+/* Contenedor padre (ej: página completa) */
 .glass-morphism-container {
-  min-height: 100vh; /* Asegura que ocupe toda la pantalla */
-  display: flex; /* Para centrar contenido si es necesario */
-  flex-direction: column; /* Alinea el contenido verticalmente */
+  background: linear-gradient(135deg, #3a6a7743 0%, #1d918f45 50%, #fffc3a4d 100%);
+  position: relative;
+  overflow: hidden;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .glass-morphism-container::before {
@@ -92,10 +106,56 @@ body {
 
 /* Elemento hijo (ej: card, menú) */
 .glass-morphism {
-  backdrop-filter: blur(10px);
-  border-radius: 1rem;
-  box-shadow: var(--flexirol-shadow-medium);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  width: 100%; /* Ocupa el ancho del padre */
-  height: 100%; /* Ocupa la altura del padre (si es necesario) */
+  background: rgba(255, 255, 255, 0.6) !important;
+  backdrop-filter: blur(10px) !important;
+  border-radius: 1rem !important;
+  box-shadow: var(--flexirol-shadow-medium) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* ===== GLASS MORPHISM PARA V-APP-BAR ===== */
+.v-app-bar.glass-app-bar {
+  background: linear-gradient(135deg, #3a6a7743 0%, #1d918f45 50%, #fffc3a4d 100%);
+  backdrop-filter: blur(10px) !important;
+  box-shadow: 0 4px 20px rgba(74, 144, 164, 0.15) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.v-app-bar.glass-app-bar .v-toolbar__content {
+  background: transparent !important;
+}
+
+/* ===== UTILITIES PARA MEJOR COMPATIBILIDAD ===== */
+
+/* Clase helper para forzar Tailwind cuando sea necesario */
+.force-tailwind {
+  /* Cualquier estilo aquí tendrá especificidad alta */
+}
+
+/* ===== RESPONSIVE ENHANCEMENTS ===== */
+@media (max-width: 768px) {
+  .glass-morphism {
+    border-radius: 0.5rem !important;
+    margin: 0.5rem !important;
+  }
+
+  .glass-app-bar {
+    backdrop-filter: blur(5px) !important;
+  }
+}
+
+/* ===== ANIMATION UTILITIES ===== */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity var(--flexirol-transition-medium);
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* ===== HELPER PARA DEBUG (remover en producción) ===== */
+.debug-colors {
+  border: 2px solid red !important;
 }

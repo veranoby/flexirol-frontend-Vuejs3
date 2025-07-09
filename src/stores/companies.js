@@ -213,5 +213,73 @@ export const useCompaniesStore = defineStore('companies', () => {
     defaultCompanyState,
     // NUEVO: Listar todas las empresas
     fetchCompanies,
+
+    // ===== GLOBAL SYSTEM CONFIG =====
+    globalConfig: ref(null),
+    globalConfigLoading: ref(false),
+    globalConfigError: ref(null),
+
+    async fetchGlobalConfig() {
+      this.globalConfigLoading.value = true
+      this.globalConfigError.value = null
+
+      try {
+        const config = await api.getSystemConfig()
+        this.globalConfig.value = config
+        return config
+      } catch (err) {
+        this.globalConfigError.value = `Error al cargar configuración global: ${err.message}`
+        console.error('Error fetching global config:', err)
+        throw err
+      } finally {
+        this.globalConfigLoading.value = false
+      }
+    },
+
+    async saveGlobalConfig(configData) {
+      if (!authStore.isSuperadmin) {
+        throw new Error('Solo superadministradores pueden guardar configuración global')
+      }
+
+      this.globalConfigLoading.value = true
+      this.globalConfigError.value = null
+
+      try {
+        const updatedConfig = await api.updateSystemConfig(configData)
+        this.globalConfig.value = updatedConfig
+        return updatedConfig
+      } catch (err) {
+        this.globalConfigError.value = `Error al guardar configuración global: ${err.message}`
+        console.error('Error saving global config:', err)
+        throw err
+      } finally {
+        this.globalConfigLoading.value = false
+      }
+    },
+
+    // Función para aplicar configuración global a nueva empresa
+    async createCompanyWithDefaults(companyData) {
+      try {
+        const defaults = await this.fetchGlobalConfig()
+
+        const companyWithDefaults = {
+          ...companyData,
+          // Aplicar defaults globales
+          porcentaje_servicio: defaults.porcentaje_servicio,
+          valor_fijo_mensual: defaults.valor_fijo_mensual,
+          dia_inicio: defaults.dia_inicio,
+          dia_cierre: defaults.dia_cierre,
+          porcentaje_maximo: defaults.porcentaje_maximo,
+          frecuencia_maxima: defaults.frecuencia_maxima,
+          dias_bloqueo: defaults.dias_bloqueo,
+          dias_reinicio: defaults.dias_reinicio,
+        }
+
+        return await api.createCompanyWithOwner(companyWithDefaults)
+      } catch (err) {
+        console.error('Error creating company with defaults:', err)
+        throw err
+      }
+    },
   }
 })

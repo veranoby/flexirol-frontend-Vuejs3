@@ -1,7 +1,7 @@
 <template>
   <v-app>
     <!-- Navigation Bar -->
-    <v-app-bar class="!glass-morphism-bg" v-if="authStore.isAuthenticated" dark elevation="2" app>
+    <v-app-bar class="glass-app-bar" v-if="authStore.isAuthenticated" dark elevation="2" app>
       <!-- Brand FlexiRol -->
       <router-link to="/dashboard" class="text-decoration-none d-flex align-items-center">
         <v-icon color="warning" class="me-2">mdi-chart-line</v-icon>
@@ -157,7 +157,7 @@
     <v-container
       v-if="authStore.isAuthenticated && showBreadcrumb"
       fluid
-      class="py-2 bg-grey-lighten-5 glass-morphism"
+      class="py-0 bg-grey-lighten-5 glass-morphism"
     >
       <v-breadcrumbs :items="breadcrumbItems" divider=">">
         <template v-slot:item="{ item }">
@@ -242,11 +242,12 @@ const snackbar = ref({
 
 // Listen for global snackbar events
 onMounted(() => {
-  window.addEventListener('show-snackbar', (event) => {
-    const { color, text, timeout, location } = event.detail
+  // Listen for toast events from stores
+  window.addEventListener('show-toast', (event) => {
+    const { message, color, timeout } = event.detail
     snackbar.value = {
       show: true,
-      message: text,
+      message,
       color,
       timeout,
     }

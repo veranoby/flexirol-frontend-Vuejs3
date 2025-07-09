@@ -2,11 +2,7 @@
   <div class="solicitudes-view">
     <!-- Loading Spinner -->
     <div v-if="loading" class="d-flex justify-center my-5">
-      <v-progress-circular
-        indeterminate
-        color="primary"
-        size="40"
-      ></v-progress-circular>
+      <v-progress-circular indeterminate color="primary" size="40"></v-progress-circular>
       <span class="ml-3">Cargando...</span>
     </div>
 
@@ -36,7 +32,7 @@
                   { title: 'Pendientes', value: 'pendiente' },
                   { title: 'Aprobados', value: 'aprobado' },
                   { title: 'Rechazados', value: 'rechazado' },
-                  { title: 'Pagados', value: 'pagado' }
+                  { title: 'Pagados', value: 'pagado' },
                 ]"
                 label="Estado"
                 clearable
@@ -91,7 +87,7 @@
                   { title: 'Pendientes', value: 'pendiente' },
                   { title: 'Aprobados', value: 'aprobado' },
                   { title: 'Rechazados', value: 'rechazado' },
-                  { title: 'Pagados', value: 'pagado' }
+                  { title: 'Pagados', value: 'pagado' },
                 ]"
                 label="Estado"
                 clearable
@@ -181,12 +177,7 @@
                   <v-icon left>mdi-check</v-icon>
                   Aprobar Seleccionados
                 </v-btn>
-                <v-btn
-                  size="small"
-                  variant="outlined"
-                  color="secondary"
-                  @click="clearFilters"
-                >
+                <v-btn size="small" variant="outlined" color="secondary" @click="clearFilters">
                   <v-icon left>mdi-filter-remove</v-icon>
                   Limpiar Filtros
                 </v-btn>
@@ -195,7 +186,9 @@
 
             <v-card-text class="pa-0">
               <div v-if="filteredRequests.length === 0" class="text-center py-5">
-                <v-icon size="48" class="text-medium-emphasis mb-3">mdi-file-document-multiple</v-icon>
+                <v-icon size="48" class="text-medium-emphasis mb-3"
+                  >mdi-file-document-multiple</v-icon
+                >
                 <p class="text-medium-emphasis">{{ emptyMessage }}</p>
               </div>
 
@@ -204,10 +197,7 @@
                   <thead>
                     <tr>
                       <th v-if="canProcessRequests" width="40">
-                        <v-checkbox
-                          v-model="selectAll"
-                          @change="toggleSelectAll"
-                        ></v-checkbox>
+                        <v-checkbox v-model="selectAll" @change="toggleSelectAll"></v-checkbox>
                       </th>
                       <th>Usuario</th>
                       <th v-if="showCompanyColumn">Empresa</th>
@@ -222,10 +212,7 @@
                   <tbody>
                     <tr v-for="request in paginatedRequests" :key="request.id">
                       <td v-if="canProcessRequests">
-                        <v-checkbox
-                          v-model="selectedRequests"
-                          :value="request.id"
-                        ></v-checkbox>
+                        <v-checkbox v-model="selectedRequests" :value="request.id"></v-checkbox>
                       </td>
                       <td>
                         <div class="d-flex align-center">
@@ -329,10 +316,7 @@
               </div>
 
               <!-- Pagination -->
-              <div
-                v-if="totalPages > 1"
-                class="d-flex justify-space-between align-center pa-3"
-              >
+              <div v-if="totalPages > 1" class="d-flex justify-space-between align-center pa-3">
                 <div class="text-medium-emphasis">
                   Mostrando {{ (currentPage - 1) * itemsPerPage + 1 }} a
                   {{ Math.min(currentPage * itemsPerPage, filteredRequests.length) }}
@@ -351,9 +335,14 @@
       </v-row>
     </v-container>
 
-    <!-- Create Request Modal (Usuario) -->
-    <v-dialog v-if="canCreateRequests" v-model="showCreateRequestModal" max-width="500px" persistent>
-      <v-card>
+    <!-- MODAL: Crear Solicitud -->
+    <v-dialog
+      v-if="canCreateRequests"
+      v-model="showCreateRequestModal"
+      max-width="500px"
+      persistent
+    >
+      <v-card class="glass-morphism">
         <v-card-title>
           <v-icon class="me-2">mdi-plus</v-icon>
           Nueva Solicitud de Adelanto
@@ -412,9 +401,7 @@
 
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn variant="outlined" @click="showCreateRequestModal = false">
-              Cancelar
-            </v-btn>
+            <v-btn variant="outlined" @click="showCreateRequestModal = false"> Cancelar </v-btn>
             <v-btn
               type="submit"
               color="primary"
@@ -428,9 +415,14 @@
       </v-card>
     </v-dialog>
 
-    <!-- Process Request Modal -->
-    <v-dialog v-if="canProcessRequests" v-model="showProcessRequestModal" max-width="500px" persistent>
-      <v-card>
+    <!-- MODAL: Procesar Solicitud -->
+    <v-dialog
+      v-if="canProcessRequests"
+      v-model="showProcessRequestModal"
+      max-width="500px"
+      persistent
+    >
+      <v-card class="glass-morphism">
         <v-card-title>
           <v-icon class="me-2">mdi-cog</v-icon>
           Procesar Solicitud
@@ -448,8 +440,8 @@
                 <v-alert type="info" variant="tonal">
                   <strong>
                     {{ selectedRequest.user?.first_name }}
-                    {{ selectedRequest.user?.last_name }}
-                  </strong><br />
+                    {{ selectedRequest.user?.last_name }} </strong
+                  ><br />
                   Monto solicitado:
                   <strong>${{ selectedRequest.monto_solicitado.toLocaleString() }}</strong>
                 </v-alert>
@@ -461,7 +453,7 @@
                   label="Acción *"
                   :items="[
                     { title: 'Aprobar', value: 'aprobar' },
-                    { title: 'Rechazar', value: 'rechazar' }
+                    { title: 'Rechazar', value: 'rechazar' },
                   ]"
                   required
                 ></v-select>
@@ -483,7 +475,9 @@
               <v-col cols="12">
                 <v-textarea
                   v-model="processForm.observaciones"
-                  :label="processForm.accion === 'rechazar' ? 'Motivo del Rechazo *' : 'Observaciones'"
+                  :label="
+                    processForm.accion === 'rechazar' ? 'Motivo del Rechazo *' : 'Observaciones'
+                  "
                   rows="3"
                   :required="processForm.accion === 'rechazar'"
                   :placeholder="
@@ -498,9 +492,7 @@
 
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn variant="outlined" @click="showProcessRequestModal = false">
-              Cancelar
-            </v-btn>
+            <v-btn variant="outlined" @click="showProcessRequestModal = false"> Cancelar </v-btn>
             <v-btn
               type="submit"
               :color="processForm.accion === 'aprobar' ? 'success' : 'error'"
