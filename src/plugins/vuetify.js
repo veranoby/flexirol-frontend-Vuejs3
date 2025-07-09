@@ -22,15 +22,6 @@ const flexirolTheme = {
     'flexirol-secondary': '#5d8aa8',
     'flexirol-tertiary': '#39711a',
     'flexirol-quaternary': '#ff8c00',
-
-    // Surface colors que permiten glass-morphism
-    surface: 'rgba(255, 255, 255, 0.9)',
-    background: 'rgb(244, 244, 255)',
-  },
-  variables: {
-    // ✅ Variables CSS para glass-morphism en v-app-bar
-    'theme-surface': 'rgba(255, 255, 255, 0.6)',
-    'theme-on-surface': '#2c3e50',
   },
 }
 

@@ -288,7 +288,7 @@ export const api = {
       return result
     } catch (error) {
       // Si no existe, crear configuración por defecto
-      console.log('Creating default system config...')
+      console.log('Creating default system config due to:', error.message)
       return await pb.collection('system_config').create({
         name: 'default_config',
         porcentaje_servicio: 10,

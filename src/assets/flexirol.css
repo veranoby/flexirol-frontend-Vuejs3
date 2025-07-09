@@ -11,8 +11,8 @@
   --flexirol-error: #dc3545;
 
   /* Gradientes elegantes (inspirado en imagen) */
-  --flexirol-gradient-main: linear-gradient(135deg, #e8f4f8 0%, #d1ecf1 50%, #b8e6ff 100%);
-  --flexirol-gradient-card: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+  --flexirol-gradient-main: linear-gradient(135deg, #ffffff2f 0%, #7fdbeb1d 50%, #faff6a40 100%);
+  --flexirol-gradient-card: linear-gradient(135deg, #ffffff59 0%, #2fd0ec10 50%, #f8ff3c2f 100%);
   --flexirol-gradient-hover: linear-gradient(
     135deg,
     rgba(74, 144, 164, 0.1) 0%,
@@ -52,27 +52,6 @@ body {
   flex-direction: column;
 }
 
-/* ===== VUETIFY COLOR UTILITIES (Mayor especificidad) ===== */
-.v-application .text-flexirol-primary {
-  color: var(--flexirol-primary) !important;
-}
-.v-application .text-flexirol-secondary {
-  color: var(--flexirol-secondary) !important;
-}
-.v-application .text-flexirol-tertiary {
-  color: var(--flexirol-accent) !important;
-}
-.v-application .text-flexirol-quaternary {
-  color: var(--flexirol-warning) !important;
-}
-
-.v-application .bg-flexirol-primary {
-  background-color: var(--flexirol-primary) !important;
-}
-.v-application .bg-flexirol-secondary {
-  background-color: var(--flexirol-secondary) !important;
-}
-
 /* ===== TAILWIND COMPATIBILITY SCOPE ===== */
 .tw-scope {
   /* Permite usar Tailwind con mayor especificidad cuando sea necesario */
@@ -106,11 +85,11 @@ body {
 
 /* Elemento hijo (ej: card, menú) */
 .glass-morphism {
-  background: rgba(255, 255, 255, 0.6) !important;
+  background: var(--flexirol-gradient-card) !important;
   backdrop-filter: blur(10px) !important;
   border-radius: 1rem !important;
   box-shadow: var(--flexirol-shadow-medium) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(134, 134, 134, 0.141) !important;
 }
 
 /* ===== GLASS MORPHISM PARA V-APP-BAR ===== */

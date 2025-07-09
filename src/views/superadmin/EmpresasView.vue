@@ -15,47 +15,44 @@
 
       <!-- Stats Cards -->
       <v-row class="mb-4">
-        <v-col md="3">
-          <v-card class="card-flexirol text-center">
+        <v-col md="2">
+          <v-card class="text-center glass-morphism">
             <v-card-text>
-              <v-icon class="mb-2" size="32" color="primary">mdi-office-building</v-icon>
-              <h4 class="text-primary">{{ stats.totalCompanies }}</h4>
+              <h4>
+                <v-icon class="mb-2" size="32" color="primary">mdi-office-building</v-icon>
+                {{ stats.totalCompanies }}
+              </h4>
               <p class="mb-0">Empresas Activas</p>
             </v-card-text>
           </v-card>
         </v-col>
-        <v-col md="3">
-          <v-card class="card-flexirol text-center">
+
+        <v-col md="2">
+          <v-card class="text-center glass-morphism">
             <v-card-text>
-              <v-icon class="mb-2" size="32" color="success">mdi-account-tie</v-icon>
-              <h4 class="text-success">{{ stats.totalOwners }}</h4>
-              <p class="mb-0">Propietarios</p>
-            </v-card-text>
-          </v-card>
-        </v-col>
-        <v-col md="3">
-          <v-card class="card-flexirol text-center">
-            <v-card-text>
-              <v-icon class="mb-2" size="32" color="info">mdi-account-multiple</v-icon>
-              <h4 class="text-info">{{ stats.totalAdmins }}</h4>
+              <h4>
+                <v-icon class="mb-2" size="32" color="info">mdi-account-multiple</v-icon>
+                {{ stats.totalAdmins }}
+              </h4>
               <p class="mb-0">Administradores</p>
             </v-card-text>
           </v-card>
         </v-col>
-        <v-col md="3">
-          <v-card class="card-flexirol text-center">
+        <v-col md="2">
+          <v-card class="text-center glass-morphism">
             <v-card-text>
-              <v-icon class="mb-2" size="32" color="warning">mdi-account-group</v-icon>
-              <h4 class="text-warning">{{ stats.totalEmployees }}</h4>
+              <h4>
+                <v-icon class="mb-2" size="32" color="warning">mdi-account-group</v-icon>
+                {{ stats.totalEmployees }}
+              </h4>
               <p class="mb-0">Empleados</p>
             </v-card-text>
           </v-card>
         </v-col>
-      </v-row>
 
-      <!-- Action Bar -->
-      <v-row class="mb-4">
-        <v-col md="8">
+        <!-- Action Bar -->
+
+        <v-col md="3">
           <v-text-field
             v-model="searchTerm"
             label="Buscar empresas"
@@ -64,7 +61,7 @@
             clearable
           ></v-text-field>
         </v-col>
-        <v-col md="4" class="text-end">
+        <v-col md="2" class="text-end">
           <v-btn color="primary" @click="openCreateModal">
             <v-icon left>mdi-plus</v-icon>
             Nueva Empresa

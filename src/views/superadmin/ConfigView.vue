@@ -256,12 +256,16 @@ const authStore = useAuthStore()
 const companiesStore = useCompaniesStore()
 const { showToast } = useToastSystem()
 
-// Mantener reactividad
+// ✅ CORRECCIÓN: Computed properties correctos
 const globalConfig = computed(() => companiesStore.globalConfig)
 const globalConfigLoading = computed(() => companiesStore.globalConfigLoading)
-const fetchGlobalConfig = () => companiesStore.fetchGlobalConfig()
+const globalConfigError = computed(() => companiesStore.globalConfigError) // ✅ AGREGADO: Faltaba esta línea
 
-// Estado del formulario
+// Referencias a funciones del store
+const fetchGlobalConfig = companiesStore.fetchGlobalConfig
+const saveGlobalConfig = companiesStore.saveGlobalConfig
+
+// ✅ CORRECTO: Estado del formulario con nombres exactos del schema system_config
 const formState = reactive({
   porcentaje_servicio: 10,
   valor_fijo_mensual: 50,
@@ -276,7 +280,7 @@ const formState = reactive({
 const alertMessage = ref('')
 const alertVariant = ref('success')
 
-// Computed
+// Computed para validación del formulario
 const isFormValid = computed(() => {
   return (
     formState.porcentaje_servicio >= 0 &&
@@ -340,7 +344,7 @@ const clearAlert = () => {
   alertVariant.value = 'success'
 }
 
-// Watch corregido
+// Watch para actualizar formulario cuando se carga la configuración
 watch(
   () => globalConfig.value,
   (newConfig) => {
@@ -361,10 +365,3 @@ onMounted(async () => {
   }
 })
 </script>
-
-<style scoped>
-.config-view {
-  max-width: 1000px;
-  margin: 0 auto;
-}
-</style>

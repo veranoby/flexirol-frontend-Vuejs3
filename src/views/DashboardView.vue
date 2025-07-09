@@ -16,8 +16,10 @@
         <v-col md="3" sm="6" class="mb-4">
           <v-card class="glass-morphism text-center">
             <v-card-text>
-              <v-icon class="mb-2" size="36" color="primary">mdi-office-building</v-icon>
-              <h4 class="text-primary">{{ stats.totalCompanies }}</h4>
+              <h2 class="text-blue-darken-1 mb-0">
+                <v-icon class="mb-2" size="36" color="primary">mdi-office-building</v-icon>
+                {{ stats.totalCompanies }}
+              </h2>
               <p class="text-grey-darken-1 mb-0">Empresas Activas</p>
             </v-card-text>
           </v-card>
@@ -25,8 +27,10 @@
         <v-col md="3" sm="6" class="mb-4">
           <v-card class="glass-morphism text-center">
             <v-card-text>
-              <v-icon class="mb-2" size="36" color="secondary">mdi-account</v-icon>
-              <h4 class="text-secondary">{{ stats.totalUsers }}</h4>
+              <h2 class="text-orange-darken-1 mb-0">
+                <v-icon class="mb-2" size="36" color="teal-orange-1">mdi-account</v-icon>
+                {{ stats.totalUsers }}
+              </h2>
               <p class="text-grey-darken-1 mb-0">Usuarios Total</p>
             </v-card-text>
           </v-card>
@@ -34,8 +38,10 @@
         <v-col md="3" sm="6" class="mb-4">
           <v-card class="glass-morphism text-center">
             <v-card-text>
-              <v-icon class="mb-2" size="36" color="tertiary">mdi-cash</v-icon>
-              <h4 class="text-tertiary">{{ stats.totalRequests }}</h4>
+              <h2 class="text-green-darken-1 mb-0">
+                <v-icon class="mb-2" size="36" color="green-darken-1">mdi-cash</v-icon>
+                {{ stats.totalRequests }}
+              </h2>
               <p class="text-grey-darken-1 mb-0">Solicitudes Mes</p>
             </v-card-text>
           </v-card>
@@ -43,8 +49,10 @@
         <v-col md="3" sm="6" class="mb-4">
           <v-card class="glass-morphism text-center">
             <v-card-text>
-              <v-icon class="mb-2" size="36" color="quaternary">mdi-currency-usd</v-icon>
-              <h4 class="text-quaternary">${{ stats.totalAmount }}</h4>
+              <h2 class="text-blue-grey-darken-1 mb-0">
+                <v-icon class="mb-2" size="36" color="blue-grey-darken-1">mdi-currency-usd</v-icon>
+                {{ stats.totalAmount }}
+              </h2>
               <p class="text-grey-darken-1 mb-0">Monto Total</p>
             </v-card-text>
           </v-card>
@@ -52,27 +60,7 @@
       </v-row>
 
       <v-row>
-        <v-col md="6" class="mb-4">
-          <v-card class="glass-morphism">
-            <v-card-title
-              ><v-icon class="mr-2">mdi-chart-line</v-icon>Acciones Rápidas</v-card-title
-            >
-            <v-card-text>
-              <div class="d-flex flex-column ga-2">
-                <v-btn to="/superadmin/usuarios" color="primary" variant="outlined">
-                  <v-icon class="mr-2">mdi-account-plus</v-icon>Gestionar Usuarios
-                </v-btn>
-                <v-btn to="/superadmin/empresas" color="secondary" variant="outlined">
-                  <v-icon class="mr-2">mdi-office-building</v-icon>Gestionar Empresas
-                </v-btn>
-                <v-btn to="/superadmin/config" color="tertiary" variant="outlined">
-                  <v-icon class="mr-2">mdi-cogs</v-icon>Configuración Global
-                </v-btn>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-        <v-col md="6" class="mb-4">
+        <v-col md="12" class="mb-4">
           <v-card class="glass-morphism">
             <v-card-title
               ><v-icon class="mr-2">mdi-clock-outline</v-icon>Actividad Reciente</v-card-title

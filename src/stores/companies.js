@@ -1,32 +1,38 @@
 import { defineStore } from 'pinia'
 import { ref, reactive } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { pb, api } from '@/services/pocketbase' // Añadir esta línea
+import { pb, api } from '@/services/pocketbase'
 
 // Helper function to create a default company state
 const defaultCompanyState = () => ({
   id: null,
   owner_id: null,
   company_name: '',
-  flexirol: 0, // Default to min as per PB schema
-  flexirol2: 0, // Default to min as per PB schema
-  flexirol3: '1', // Default to "1"
-  dia_inicio: 1, // Default to min as per PB schema
-  dia_cierre: 1, // Default to min as per PB schema
-  porcentaje: 0, // Default to min as per PB schema
-  dia_bloqueo: 0, // Default to min as per PB schema
-  frecuencia: 1, // Default to min as per PB schema
-  dia_reinicio: 1, // Default to min as per PB schema
-  // Add other fields from pocketbase_flexirol_schema.txt if they are part of this config view
+  flexirol: 0,
+  flexirol2: 0,
+  flexirol3: '1',
+  dia_inicio: 1,
+  dia_cierre: 1,
+  porcentaje: 0,
+  dia_bloqueo: 0,
+  frecuencia: 1,
+  dia_reinicio: 1,
 })
 
 export const useCompaniesStore = defineStore('companies', () => {
   const authStore = useAuthStore()
 
+  // ===== COMPANY CONFIG STATE =====
   const companyConfig = reactive(defaultCompanyState())
   const loading = ref(false)
   const error = ref(null)
 
+  // ===== GLOBAL SYSTEM CONFIG STATE =====
+  const globalConfig = ref(null)
+  const globalConfigLoading = ref(false)
+  const globalConfigError = ref(null)
+
+  // ===== HELPER FUNCTIONS =====
   function _setCompanyConfig(record) {
     companyConfig.id = record.id
     companyConfig.owner_id = record.owner_id
@@ -54,13 +60,13 @@ export const useCompaniesStore = defineStore('companies', () => {
         : defaultCompanyState().dia_reinicio
   }
 
+  // ===== COMPANY CONFIG FUNCTIONS =====
   async function fetchCompanyById(companyId) {
     loading.value = true
     error.value = null
     try {
-      const record = await pb.collection('companies').getOne(companyId) // Cambiado a pb.collection
+      const record = await pb.collection('companies').getOne(companyId)
       _setCompanyConfig(record)
-      // console.log('Fetched company config by ID:', companyConfig)
     } catch (e) {
       error.value = `Failed to fetch company configuration for ID ${companyId}: ${e.message}`
       console.error(error.value, e)
@@ -73,7 +79,7 @@ export const useCompaniesStore = defineStore('companies', () => {
   async function fetchCompanyToConfigure() {
     loading.value = true
     error.value = null
-    Object.assign(companyConfig, defaultCompanyState()) // Reset before fetching
+    Object.assign(companyConfig, defaultCompanyState())
 
     if (!authStore.user) {
       error.value = 'User not authenticated. Cannot determine company to configure.'
@@ -84,11 +90,9 @@ export const useCompaniesStore = defineStore('companies', () => {
     let companyIdToFetch = null
 
     if (authStore.isEmpresa || authStore.isSuperadmin) {
-      // Superadmin might also be an owner or have an assigned company
       if (authStore.user.assigned_companies && authStore.user.assigned_companies.length > 0) {
         companyIdToFetch = authStore.user.assigned_companies[0]
       } else if (authStore.user.company_id) {
-        // This field might exist on the user record in PocketBase
         companyIdToFetch = authStore.user.company_id
       }
     }
@@ -96,15 +100,13 @@ export const useCompaniesStore = defineStore('companies', () => {
     if (companyIdToFetch) {
       await fetchCompanyById(companyIdToFetch)
     } else if (authStore.isSuperadmin) {
-      // Superadmin fallback: try to fetch the first company from the collection
       console.log(
         'Superadmin: No specific company assigned, attempting to fetch first available company.',
       )
       try {
-        const resultList = await pb.collection('companies').getList(1, 1, { sort: 'created' }) // Cambiado a pb.collection
+        const resultList = await pb.collection('companies').getList(1, 1, { sort: 'created' })
         if (resultList.items && resultList.items.length > 0) {
           _setCompanyConfig(resultList.items[0])
-          // console.log('Superadmin fetched first available company:', companyConfig)
         } else {
           error.value = 'Superadmin: No companies found in the system to configure.'
           console.warn(error.value)
@@ -114,7 +116,6 @@ export const useCompaniesStore = defineStore('companies', () => {
         console.error(error.value, e)
       }
     } else {
-      // Non-superadmin without a company ID
       error.value = 'No company ID associated with this user account.'
       console.warn(error.value)
     }
@@ -122,14 +123,12 @@ export const useCompaniesStore = defineStore('companies', () => {
   }
 
   async function saveCompanyConfig(configDataToSave) {
-    // Accepts data as parameter
     if (!authStore.isSuperadmin) {
       error.value = 'Only superadmins can save company configuration.'
       console.error(error.value)
       return false
     }
 
-    // The ID of the company to update is taken from the passed-in data or current store state if not in data.
     const idToUpdate = configDataToSave.id || companyConfig.id
     if (!idToUpdate) {
       error.value = 'Company ID is missing. Cannot update configuration.'
@@ -140,8 +139,6 @@ export const useCompaniesStore = defineStore('companies', () => {
     loading.value = true
     error.value = null
 
-    // Prepare data for PocketBase from the passed object, ensuring correct types
-    // Only include fields relevant to this configuration form
     const dataForApi = {
       flexirol: Number(configDataToSave.flexirol),
       flexirol2: Number(configDataToSave.flexirol2),
@@ -155,11 +152,8 @@ export const useCompaniesStore = defineStore('companies', () => {
     }
 
     try {
-      // Update using the id from the form data, which should match companyConfig.id
-      const updatedRecord = await pb.collection('companies').update(idToUpdate, dataForApi) // Cambiado a pb.collection
-      // Update local state with the response from the server
+      const updatedRecord = await pb.collection('companies').update(idToUpdate, dataForApi)
       _setCompanyConfig(updatedRecord)
-      // console.log('Company configuration updated successfully and local state synced.');
       return true
     } catch (e) {
       error.value = `Failed to save company configuration: ${e.message}`
@@ -170,29 +164,22 @@ export const useCompaniesStore = defineStore('companies', () => {
     }
   }
 
-  // Function to update a specific field, useful for increment/decrement
   function updateField(field, value) {
     if (Object.prototype.hasOwnProperty.call(companyConfig, field)) {
       companyConfig[field] = value
     }
   }
 
-  // Reset to default state, could be used on logout or error
   function resetConfig() {
     Object.assign(companyConfig, defaultCompanyState())
     error.value = null
   }
 
-  /**
-   * Lista todas las empresas (usuarios con role='empresa') para filtros y administración
-   * @param {Object} params - Opcional: { page, perPage, search }
-   * @returns {Promise<{ items: Array, totalItems: number, totalPages: number }>}
-   */
   async function fetchCompanies(params = {}) {
     try {
       loading.value = true
-      const result = await api.getCompanies(params) // Cambiado a pb.getCompanies
-      return result // Devuelve { items: [], totalItems: 0 }
+      const result = await api.getCompanies(params)
+      return result
     } catch (error) {
       console.error('Error al cargar empresas:', error)
       return { items: [], totalItems: 0 }
@@ -201,85 +188,95 @@ export const useCompaniesStore = defineStore('companies', () => {
     }
   }
 
+  // ===== GLOBAL SYSTEM CONFIG FUNCTIONS =====
+  async function fetchGlobalConfig() {
+    globalConfigLoading.value = true // ✅ CORRECCIÓN: Sin `this`
+    globalConfigError.value = null
+
+    try {
+      const config = await api.getSystemConfig()
+      globalConfig.value = config
+      return config
+    } catch (err) {
+      globalConfigError.value = `Error al cargar configuración global: ${err.message}`
+      console.error('Error fetching global config:', err)
+      throw err
+    } finally {
+      globalConfigLoading.value = false
+    }
+  }
+
+  async function saveGlobalConfig(configData) {
+    if (!authStore.isSuperadmin) {
+      throw new Error('Solo superadministradores pueden guardar configuración global')
+    }
+
+    globalConfigLoading.value = true // ✅ CORRECCIÓN: Sin `this`
+    globalConfigError.value = null
+
+    try {
+      const updatedConfig = await api.updateSystemConfig(configData)
+      globalConfig.value = updatedConfig
+      return updatedConfig
+    } catch (err) {
+      globalConfigError.value = `Error al guardar configuración global: ${err.message}`
+      console.error('Error saving global config:', err)
+      throw err
+    } finally {
+      globalConfigLoading.value = false
+    }
+  }
+
+  // ✅ CORRECCIÓN CRÍTICA: Mapeo correcto system_config → companies
+  async function createCompanyWithDefaults(companyData) {
+    try {
+      const defaults = await fetchGlobalConfig() // ✅ CORRECCIÓN: Sin `this`
+
+      const companyWithDefaults = {
+        ...companyData,
+        // ✅ MAPEO CORRECTO system_config → companies schema
+        flexirol: defaults.porcentaje_servicio, // porcentaje_servicio → flexirol
+        flexirol2: defaults.valor_fijo_mensual, // valor_fijo_mensual → flexirol2
+        flexirol3: '1', // Default plan 1 (porcentaje)
+        dia_inicio: defaults.dia_inicio, // dia_inicio → dia_inicio ✅
+        dia_cierre: defaults.dia_cierre, // dia_cierre → dia_cierre ✅
+        porcentaje: defaults.porcentaje_maximo, // porcentaje_maximo → porcentaje
+        dia_bloqueo: defaults.dias_bloqueo, // dias_bloqueo → dia_bloqueo
+        frecuencia: defaults.frecuencia_maxima, // frecuencia_maxima → frecuencia
+        dia_reinicio: defaults.dias_reinicio, // dias_reinicio → dia_reinicio ✅
+      }
+
+      return await api.createCompanyWithOwner(companyWithDefaults)
+    } catch (err) {
+      console.error('Error creating company with defaults:', err)
+      throw err
+    }
+  }
+
+  // ===== RETURN ALL STATE AND FUNCTIONS =====
   return {
+    // Company Config State
     companyConfig,
     loading,
     error,
+
+    // Company Config Functions
     fetchCompanyToConfigure,
+    fetchCompanyById,
     saveCompanyConfig,
     updateField,
     resetConfig,
-    // Expose default state for potential use in component
-    defaultCompanyState,
-    // NUEVO: Listar todas las empresas
     fetchCompanies,
+    defaultCompanyState,
 
-    // ===== GLOBAL SYSTEM CONFIG =====
-    globalConfig: ref(null),
-    globalConfigLoading: ref(false),
-    globalConfigError: ref(null),
+    // Global System Config State
+    globalConfig,
+    globalConfigLoading,
+    globalConfigError,
 
-    async fetchGlobalConfig() {
-      this.globalConfigLoading.value = true
-      this.globalConfigError.value = null
-
-      try {
-        const config = await api.getSystemConfig()
-        this.globalConfig.value = config
-        return config
-      } catch (err) {
-        this.globalConfigError.value = `Error al cargar configuración global: ${err.message}`
-        console.error('Error fetching global config:', err)
-        throw err
-      } finally {
-        this.globalConfigLoading.value = false
-      }
-    },
-
-    async saveGlobalConfig(configData) {
-      if (!authStore.isSuperadmin) {
-        throw new Error('Solo superadministradores pueden guardar configuración global')
-      }
-
-      this.globalConfigLoading.value = true
-      this.globalConfigError.value = null
-
-      try {
-        const updatedConfig = await api.updateSystemConfig(configData)
-        this.globalConfig.value = updatedConfig
-        return updatedConfig
-      } catch (err) {
-        this.globalConfigError.value = `Error al guardar configuración global: ${err.message}`
-        console.error('Error saving global config:', err)
-        throw err
-      } finally {
-        this.globalConfigLoading.value = false
-      }
-    },
-
-    // Función para aplicar configuración global a nueva empresa
-    async createCompanyWithDefaults(companyData) {
-      try {
-        const defaults = await this.fetchGlobalConfig()
-
-        const companyWithDefaults = {
-          ...companyData,
-          // Aplicar defaults globales
-          porcentaje_servicio: defaults.porcentaje_servicio,
-          valor_fijo_mensual: defaults.valor_fijo_mensual,
-          dia_inicio: defaults.dia_inicio,
-          dia_cierre: defaults.dia_cierre,
-          porcentaje_maximo: defaults.porcentaje_maximo,
-          frecuencia_maxima: defaults.frecuencia_maxima,
-          dias_bloqueo: defaults.dias_bloqueo,
-          dias_reinicio: defaults.dias_reinicio,
-        }
-
-        return await api.createCompanyWithOwner(companyWithDefaults)
-      } catch (err) {
-        console.error('Error creating company with defaults:', err)
-        throw err
-      }
-    },
+    // Global System Config Functions
+    fetchGlobalConfig,
+    saveGlobalConfig,
+    createCompanyWithDefaults,
   }
 })
