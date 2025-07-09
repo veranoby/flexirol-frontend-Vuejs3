@@ -1,508 +1,651 @@
-<!-- ARCHIVO: src/views/superadmin/EmpresasView.vue - REEMPLAZAR COMPLETO -->
 <template>
-  <div class="empresas-view">
-    <v-container fluid class="py-4">
-      <!-- Header -->
-      <v-row class="mb-4">
-        <v-col cols="12">
-          <h2 class="mb-1">
-            <v-icon class="text-primary me-2">mdi-office-building</v-icon>
-            Gestión de Empresas
-          </h2>
-          <p class="text-muted">Administra las empresas y sus usuarios en el sistema</p>
-        </v-col>
-      </v-row>
+  <v-container fluid class="pa-6">
+    <!-- Header -->
+    <v-row class="mb-6">
+      <v-col cols="12">
+        <div class="d-flex align-center mb-2">
+          <v-icon class="text-primary me-3" size="32">mdi-office-building</v-icon>
+          <h1 class="text-h4 font-weight-bold">Gestión de Empresas</h1>
+        </div>
+        <p class="text-body-1 text-medium-emphasis">
+          Administra las empresas registradas y sus usuarios en el sistema
+        </p>
+      </v-col>
+    </v-row>
 
-      <!-- Stats Cards -->
-      <v-row class="mb-4">
-        <v-col md="2">
-          <v-card class="text-center glass-morphism">
-            <v-card-text>
-              <h4>
-                <v-icon class="mb-2" size="32" color="primary">mdi-office-building</v-icon>
-                {{ stats.totalCompanies }}
-              </h4>
-              <p class="mb-0">Empresas Activas</p>
-            </v-card-text>
-          </v-card>
-        </v-col>
+    <!-- Stats Cards -->
+    <v-row class="mb-6">
+      <v-col cols="12" md="2">
+        <v-card class="pa-4 text-center" color="primary" variant="tonal">
+          <v-icon size="40" class="mb-2">mdi-office-building</v-icon>
+          <div class="text-h4 font-weight-bold text-primary">{{ stats.totalCompanies }}</div>
+          <div class="text-body-2">Empresas Registradas</div>
+        </v-card>
+      </v-col>
+      <v-col cols="12" md="2">
+        <v-card class="pa-4 text-center" color="success" variant="tonal">
+          <v-icon size="40" class="mb-2">mdi-check-circle</v-icon>
+          <div class="text-h4 font-weight-bold text-success">{{ stats.activeCompanies }}</div>
+          <div class="text-body-2">Empresas Activas</div>
+        </v-card>
+      </v-col>
 
-        <v-col md="2">
-          <v-card class="text-center glass-morphism">
-            <v-card-text>
-              <h4>
-                <v-icon class="mb-2" size="32" color="info">mdi-account-multiple</v-icon>
-                {{ stats.totalAdmins }}
-              </h4>
-              <p class="mb-0">Administradores</p>
-            </v-card-text>
-          </v-card>
-        </v-col>
-        <v-col md="2">
-          <v-card class="text-center glass-morphism">
-            <v-card-text>
-              <h4>
-                <v-icon class="mb-2" size="32" color="warning">mdi-account-group</v-icon>
-                {{ stats.totalEmployees }}
-              </h4>
-              <p class="mb-0">Empleados</p>
-            </v-card-text>
-          </v-card>
-        </v-col>
+      <v-col cols="12" md="2">
+        <v-card class="pa-4 text-center" color="warning" variant="tonal">
+          <v-icon size="40" class="mb-2">mdi-account-multiple</v-icon>
+          <div class="text-h4 font-weight-bold text-warning">{{ stats.totalUsers }}</div>
+          <div class="text-body-2">Total Usuarios</div>
+        </v-card>
+      </v-col>
+    </v-row>
 
-        <!-- Action Bar -->
+    <!-- Controls -->
+    <v-row class="mb-4">
+      <v-col cols="12" md="6">
+        <v-text-field
+          v-model="searchTerm"
+          prepend-inner-icon="mdi-magnify"
+          label="Buscar empresas..."
+          variant="outlined"
+          density="compact"
+          clearable
+        />
+      </v-col>
+      <v-col cols="12" md="6" class="d-flex justify-end align-center">
+        <v-btn color="primary" size="large" @click="openCreateModal" :loading="loading">
+          <v-icon start>mdi-plus</v-icon>
+          Crear Empresa
+        </v-btn>
+      </v-col>
+    </v-row>
 
-        <v-col md="3">
-          <v-text-field
-            v-model="searchTerm"
-            label="Buscar empresas"
-            placeholder="Buscar por nombre, RUC o propietario..."
-            prepend-inner-icon="mdi-magnify"
-            clearable
-          ></v-text-field>
-        </v-col>
-        <v-col md="2" class="text-end">
-          <v-btn color="primary" @click="openCreateModal">
-            <v-icon left>mdi-plus</v-icon>
-            Nueva Empresa
-          </v-btn>
-        </v-col>
-      </v-row>
-
-      <!-- Loading State -->
-      <div v-if="loading" class="text-center py-5">
-        <v-progress-circular indeterminate color="primary" size="40"></v-progress-circular>
-        <p class="mt-3">Cargando empresas...</p>
-      </div>
-
-      <!-- Companies Table -->
-      <v-card v-else>
-        <v-card-title>
-          <v-icon left class="me-2">mdi-format-list-bulleted</v-icon>
-          Empresas Registradas ({{ filteredCompanies.length }})
-        </v-card-title>
-        <v-card-text class="pa-0">
-          <div v-if="filteredCompanies.length === 0" class="text-center py-5">
-            <v-icon size="48" class="text-muted mb-3">mdi-office-building</v-icon>
-            <h5 class="text-muted">No hay empresas registradas</h5>
-            <p class="text-muted">Crea la primera empresa para comenzar</p>
+    <!-- Companies Table -->
+    <v-card>
+      <v-data-table
+        :headers="tableHeaders"
+        :items="filteredCompanies"
+        :loading="loading"
+        class="elevation-1"
+        loading-text="Cargando empresas..."
+        no-data-text="No hay empresas registradas"
+        :items-per-page="15"
+        items-per-page-text="Empresas por página"
+      >
+        <!-- Company Info -->
+        <template #item.company_info="{ item }">
+          <div class="py-2">
+            <div class="text-body-1 font-weight-medium">{{ item.company_name }}</div>
+            <div class="text-body-2 text-medium-emphasis">
+              RUC: {{ item.ruc || 'No registrado' }}
+            </div>
           </div>
+        </template>
 
-          <div v-else>
-            <v-table>
-              <thead>
-                <tr>
-                  <th>Empresa</th>
-                  <th>Propietario</th>
-                  <th>Usuarios</th>
-                  <th>Estado</th>
-                  <th>Fecha Creación</th>
-                  <th class="text-center">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="company in paginatedCompanies" :key="company.id">
-                  <td>
-                    <div>
-                      <strong>{{ company.nombre }}</strong>
-                      <br />
-                      <small class="text-muted">{{ company.ruc || 'Sin RUC' }}</small>
+        <!-- Owner Info -->
+        <template #item.owner_info="{ item }">
+          <div class="py-2" v-if="item.expand?.owner_id">
+            <div class="text-body-1 font-weight-medium">
+              {{ item.expand.owner_id.first_name }} {{ item.expand.owner_id.last_name }}
+            </div>
+            <div class="text-body-2 text-medium-emphasis">
+              {{ item.expand.owner_id.email }}
+            </div>
+          </div>
+          <div v-else class="text-body-2 text-medium-emphasis">Sin propietario asignado</div>
+        </template>
+
+        <!-- User Stats -->
+        <template #item.user_stats="{ item }">
+          <div class="d-flex flex-column gap-1">
+            <v-chip color="primary" size="small" variant="tonal">
+              <v-icon start size="16">mdi-account-multiple</v-icon>
+              {{ item.users_count || 0 }} total
+            </v-chip>
+            <v-chip color="success" size="small" variant="tonal">
+              <v-icon start size="16">mdi-check</v-icon>
+              {{ item.active_users_count || 0 }} activos
+            </v-chip>
+          </div>
+        </template>
+
+        <!-- Status -->
+        <template #item.status="{ item }">
+          <v-chip :color="item.gearbox ? 'success' : 'error'" size="small" variant="tonal">
+            <v-icon start size="16">
+              {{ item.gearbox ? 'mdi-check-circle' : 'mdi-close-circle' }}
+            </v-icon>
+            {{ item.gearbox ? 'Activa' : 'Bloqueada' }}
+          </v-chip>
+        </template>
+
+        <!-- Actions -->
+        <template #item.actions="{ item }">
+          <div class="d-flex gap-1">
+            <v-tooltip text="Ver usuarios">
+              <template #activator="{ props }">
+                <v-btn
+                  v-bind="props"
+                  icon="mdi-account-multiple"
+                  size="small"
+                  variant="text"
+                  color="primary"
+                  @click="viewCompanyUsers(item)"
+                />
+              </template>
+            </v-tooltip>
+
+            <v-tooltip text="Editar empresa">
+              <template #activator="{ props }">
+                <v-btn
+                  v-bind="props"
+                  icon="mdi-pencil"
+                  size="small"
+                  variant="text"
+                  color="secondary"
+                  @click="editCompany(item)"
+                />
+              </template>
+            </v-tooltip>
+
+            <v-tooltip :text="item.gearbox ? 'Bloquear empresa' : 'Activar empresa'">
+              <template #activator="{ props }">
+                <v-btn
+                  v-bind="props"
+                  :icon="item.gearbox ? 'mdi-lock' : 'mdi-lock-open'"
+                  size="small"
+                  variant="text"
+                  :color="item.gearbox ? 'warning' : 'success'"
+                  @click="toggleCompanyStatus(item)"
+                />
+              </template>
+            </v-tooltip>
+
+            <v-tooltip text="Eliminar empresa">
+              <template #activator="{ props }">
+                <v-btn
+                  v-bind="props"
+                  icon="mdi-delete"
+                  size="small"
+                  variant="text"
+                  color="error"
+                  @click="deleteCompany(item)"
+                />
+              </template>
+            </v-tooltip>
+          </div>
+        </template>
+      </v-data-table>
+    </v-card>
+
+    <!-- Create/Edit Company Modal -->
+    <v-dialog v-model="companyModal" max-width="800px" persistent>
+      <v-card>
+        <v-card-title class="d-flex align-center">
+          <v-icon class="me-2">{{ isEditing ? 'mdi-pencil' : 'mdi-plus' }}</v-icon>
+          {{ isEditing ? 'Editar Empresa' : 'Crear Nueva Empresa' }}
+        </v-card-title>
+
+        <v-card-text>
+          <v-form ref="companyForm" v-model="companyFormValid">
+            <v-row>
+              <!-- Company Info -->
+              <v-col cols="12">
+                <v-divider class="mb-4" />
+                <h3 class="text-h6 mb-4">Información de la Empresa</h3>
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="companyFormData.company_name"
+                  label="Nombre de la Empresa *"
+                  variant="outlined"
+                  :rules="[rules.required]"
+                  prepend-inner-icon="mdi-office-building"
+                />
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="companyFormData.ruc"
+                  label="RUC"
+                  variant="outlined"
+                  prepend-inner-icon="mdi-card-account-details"
+                />
+              </v-col>
+
+              <!-- Owner Info -->
+              <v-col cols="12">
+                <v-divider class="mb-4" />
+                <h3 class="text-h6 mb-4">Propietario de la Empresa</h3>
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="ownerFormData.first_name"
+                  label="Nombre *"
+                  variant="outlined"
+                  :rules="[rules.required]"
+                  prepend-inner-icon="mdi-account"
+                />
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="ownerFormData.last_name"
+                  label="Apellido/Sucursal *"
+                  variant="outlined"
+                  :rules="[rules.required]"
+                  prepend-inner-icon="mdi-account"
+                />
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="ownerFormData.email"
+                  label="Email *"
+                  variant="outlined"
+                  :rules="[rules.required, rules.email]"
+                  prepend-inner-icon="mdi-email"
+                />
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="ownerFormData.username"
+                  label="Usuario"
+                  variant="outlined"
+                  hint="Se genera automáticamente si se deja vacío"
+                  prepend-inner-icon="mdi-account-circle"
+                  persistent-hint
+                />
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="ownerFormData.password"
+                  label="Contraseña"
+                  variant="outlined"
+                  type="password"
+                  hint="Se genera automáticamente si se deja vacía"
+                  prepend-inner-icon="mdi-lock"
+                  persistent-hint
+                />
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-switch
+                  v-model="ownerFormData.gearbox"
+                  label="Usuario habilitado"
+                  color="success"
+                  hide-details
+                />
+              </v-col>
+            </v-row>
+          </v-form>
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer />
+          <v-btn text="Cancelar" @click="closeCompanyModal" :disabled="companiesStore.loading" />
+          <v-btn
+            color="primary"
+            text="Guardar"
+            @click="saveCompany"
+            :loading="companiesStore.loading"
+            :disabled="!companyFormValid"
+          />
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Company Users Modal -->
+    <v-dialog v-model="usersModal" max-width="1200px">
+      <v-card v-if="selectedCompany">
+        <v-card-title class="d-flex align-center">
+          <v-icon class="me-2">mdi-account-multiple</v-icon>
+          Usuarios de {{ selectedCompany.company_name }}
+        </v-card-title>
+
+        <v-card-text>
+          <!-- Users Controls -->
+          <v-row class="mb-4">
+            <v-col cols="12" md="6">
+              <v-text-field
+                v-model="userSearchTerm"
+                prepend-inner-icon="mdi-magnify"
+                label="Buscar usuarios..."
+                variant="outlined"
+                density="compact"
+                clearable
+              />
+            </v-col>
+            <v-col cols="12" md="6" class="d-flex justify-end">
+              <v-btn
+                color="primary"
+                @click="openCreateUserModal"
+                :loading="companiesStore.loadingUsers"
+              >
+                <v-icon start>mdi-plus</v-icon>
+                Crear Usuario
+              </v-btn>
+            </v-col>
+          </v-row>
+
+          <!-- Users List -->
+          <div v-if="filteredUsers.length > 0">
+            <v-row>
+              <v-col v-for="user in filteredUsers" :key="user.id" cols="12" md="6" lg="4">
+                <v-card class="pa-3" variant="outlined">
+                  <div class="d-flex align-center mb-2">
+                    <v-avatar :color="user.gearbox ? 'success' : 'error'" size="40" class="me-3">
+                      <v-icon color="white">
+                        {{ user.gearbox ? 'mdi-account-check' : 'mdi-account-cancel' }}
+                      </v-icon>
+                    </v-avatar>
+                    <div class="flex-grow-1">
+                      <div class="text-body-1 font-weight-medium">
+                        {{ user.first_name }} {{ user.last_name }}
+                      </div>
+                      <div class="text-body-2 text-medium-emphasis">
+                        {{ user.email }}
+                      </div>
                     </div>
-                  </td>
-                  <td>
-                    <div v-if="company.expand?.owner_id">
-                      <strong>
-                        {{ company.expand.owner_id.first_name }}
-                        {{ company.expand.owner_id.last_name }}
-                      </strong>
-                      <br />
-                      <small class="text-muted">{{ company.expand.owner_id.email }}</small>
-                    </div>
-                    <span v-else class="text-muted">Sin propietario asignado</span>
-                  </td>
-                  <td>
-                    <v-chip color="info" size="small"
-                      >{{ company.user_count || 0 }} usuarios</v-chip
+                  </div>
+
+                  <v-divider class="my-2" />
+
+                  <div class="text-body-2 mb-2">
+                    <strong>Cédula:</strong> {{ user.cedula || 'No registrada' }}
+                  </div>
+                  <div class="text-body-2 mb-3">
+                    <strong>Disponible:</strong> ${{ user.disponible || 0 }}
+                  </div>
+
+                  <div class="d-flex gap-1">
+                    <v-btn
+                      size="small"
+                      variant="outlined"
+                      color="secondary"
+                      @click="editUser(user)"
                     >
-                  </td>
-                  <td>
-                    <v-chip :color="company.gearbox ? 'success' : 'error'" size="small">
-                      {{ company.gearbox ? 'Activa' : 'Bloqueada' }}
-                    </v-chip>
-                  </td>
-                  <td>
-                    <small>{{ formatDate(company.created) }}</small>
-                  </td>
-                  <td class="text-center">
-                    <v-btn-group size="small">
-                      <v-btn
-                        variant="outlined"
-                        color="primary"
-                        @click="viewCompanyUsers(company)"
-                        title="Ver usuarios"
-                      >
-                        <v-icon>mdi-account-multiple</v-icon>
-                      </v-btn>
-                      <v-btn
-                        variant="outlined"
-                        color="secondary"
-                        @click="editCompany(company)"
-                        title="Editar empresa"
-                      >
-                        <v-icon>mdi-pencil</v-icon>
-                      </v-btn>
-                      <v-btn
-                        variant="outlined"
-                        :color="company.gearbox ? 'warning' : 'success'"
-                        @click="toggleCompanyStatus(company)"
-                        :title="company.gearbox ? 'Bloquear empresa' : 'Activar empresa'"
-                      >
-                        <v-icon>{{ company.gearbox ? 'mdi-cancel' : 'mdi-check' }}</v-icon>
-                      </v-btn>
-                    </v-btn-group>
-                  </td>
-                </tr>
-              </tbody>
-            </v-table>
+                      <v-icon start size="16">mdi-pencil</v-icon>
+                      Editar
+                    </v-btn>
+                    <v-btn size="small" variant="outlined" color="error" @click="deleteUser(user)">
+                      <v-icon start size="16">mdi-delete</v-icon>
+                      Eliminar
+                    </v-btn>
+                  </div>
+                </v-card>
+              </v-col>
+            </v-row>
           </div>
 
-          <!-- Pagination -->
-          <div v-if="totalPages > 1" class="pa-3">
-            <v-pagination
-              v-model="currentPage"
-              :length="totalPages"
-              :total-visible="5"
-              size="small"
-            ></v-pagination>
+          <div v-else-if="!companiesStore.loadingUsers" class="text-center py-8">
+            <v-icon size="64" class="text-medium-emphasis mb-4">mdi-account-off</v-icon>
+            <h3 class="text-h6 mb-2">No hay usuarios registrados</h3>
+            <p class="text-body-2 text-medium-emphasis mb-4">
+              Esta empresa aún no tiene usuarios registrados
+            </p>
+            <v-btn color="primary" @click="openCreateUserModal">
+              <v-icon start>mdi-plus</v-icon>
+              Crear Primer Usuario
+            </v-btn>
+          </div>
+
+          <div v-if="companiesStore.loadingUsers" class="text-center py-8">
+            <v-progress-circular indeterminate color="primary" />
+            <p class="text-body-2 mt-2">Cargando usuarios...</p>
           </div>
         </v-card-text>
-      </v-card>
-    </v-container>
 
-    <!-- Modal: Create Company -->
-    <v-dialog v-model="showCreateModal" max-width="600px" persistent>
-      <v-card>
-        <v-card-title>
-          <i class="fas fa-plus-circle me-2"></i>
-          {{ isEditMode ? 'Editar Empresa' : 'Crear Nueva Empresa' }}
-        </v-card-title>
-        <v-card-text>
-          <form @submit.prevent="handleSubmit">
-            <!-- Company Info -->
-            <div class="row mb-3">
-              <h6 class="text-primary">
-                <i class="fas fa-building me-2"></i>Información de la Empresa
-              </h6>
-            </div>
-
-            <div class="row mb-3">
-              <div class="col-md-8">
-                <label class="form-label">Nombre de la Empresa *</label>
-                <input
-                  v-model="companyForm.nombre"
-                  type="text"
-                  class="form-control"
-                  required
-                  placeholder="Ej: Acme Corporation"
-                />
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">RUC (Opcional)</label>
-                <input
-                  v-model="companyForm.ruc"
-                  type="text"
-                  class="form-control"
-                  placeholder="Ej: 1234567890001"
-                />
-              </div>
-            </div>
-
-            <!-- Owner Info (solo para crear) -->
-            <div v-if="!isEditMode">
-              <div class="row mb-3">
-                <h6 class="text-success">
-                  <i class="fas fa-user-tie me-2"></i>Propietario Principal
-                </h6>
-              </div>
-
-              <div class="row mb-3">
-                <div class="col-md-6">
-                  <label class="form-label">Nombre *</label>
-                  <input
-                    v-model="ownerForm.first_name"
-                    type="text"
-                    class="form-control"
-                    required
-                    placeholder="Ej: Juan"
-                  />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Apellido *</label>
-                  <input
-                    v-model="ownerForm.last_name"
-                    type="text"
-                    class="form-control"
-                    required
-                    placeholder="Ej: Pérez"
-                  />
-                </div>
-              </div>
-
-              <div class="row mb-3">
-                <div class="col-md-6">
-                  <label class="form-label">Email *</label>
-                  <input
-                    v-model="ownerForm.email"
-                    type="email"
-                    class="form-control"
-                    required
-                    placeholder="juan.perez@empresa.com"
-                  />
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label">Cédula *</label>
-                  <input
-                    v-model="ownerForm.cedula"
-                    type="text"
-                    class="form-control"
-                    required
-                    pattern="[0-9]{10}"
-                    placeholder="1234567890"
-                    maxlength="10"
-                  />
-                </div>
-              </div>
-            </div>
-          </form>
-        </v-card-text>
         <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="secondary" variant="text" @click="showCreateModal = false">
-            Cancelar
-          </v-btn>
-          <v-btn color="primary" variant="text" @click="handleSubmit" :loading="submitting">
-            <span v-if="submitting" class="spinner-border spinner-border-sm me-2"></span>
-            {{ isEditMode ? 'Actualizar' : 'Crear Empresa' }}
-          </v-btn>
+          <v-spacer />
+          <v-btn text="Cerrar" @click="closeUsersModal" />
         </v-card-actions>
       </v-card>
     </v-dialog>
 
-    <!-- Modal: Company Users Hierarchy -->
-    <v-dialog v-model="showUsersModal" max-width="1200px" persistent>
+    <!-- Create User Modal -->
+    <v-dialog v-model="createUserModal" max-width="600px" persistent>
       <v-card>
-        <v-card-title>
-          <i class="fas fa-users me-2"></i>
-          Usuarios de {{ selectedCompany?.nombre }}
+        <v-card-title class="d-flex align-center">
+          <v-icon class="me-2">mdi-account-plus</v-icon>
+          Crear Usuario para {{ selectedCompany?.company_name }}
         </v-card-title>
+
         <v-card-text>
-          <div v-if="loadingUsers" class="text-center py-4">
-            <div class="spinner-border text-primary"></div>
-          </div>
+          <v-form ref="userForm" v-model="userFormValid">
+            <v-row>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="userFormData.first_name"
+                  label="Nombre *"
+                  variant="outlined"
+                  :rules="[rules.required]"
+                  prepend-inner-icon="mdi-account"
+                />
+              </v-col>
 
-          <div v-else-if="companyUsers">
-            <!-- Owner Section -->
-            <div class="mb-4">
-              <h6 class="text-success"><i class="fas fa-crown me-2"></i>Propietario Principal</h6>
-              <div v-if="companyUsers.hierarchy.owner" class="card bg-light">
-                <div class="card-body py-2">
-                  <div class="row align-items-center">
-                    <div class="col">
-                      <strong
-                        >{{ companyUsers.hierarchy.owner.first_name }}
-                        {{ companyUsers.hierarchy.owner.last_name }}</strong
-                      >
-                      <br />
-                      <small class="text-muted">{{ companyUsers.hierarchy.owner.email }}</small>
-                    </div>
-                    <div class="col-auto">
-                      <span class="badge bg-success">Propietario</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div v-else class="alert alert-warning">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                Sin propietario asignado
-              </div>
-            </div>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="userFormData.last_name"
+                  label="Apellido *"
+                  variant="outlined"
+                  :rules="[rules.required]"
+                  prepend-inner-icon="mdi-account"
+                />
+              </v-col>
 
-            <!-- Admins Section -->
-            <div class="mb-4">
-              <h6 class="text-primary">
-                <i class="fas fa-user-tie me-2"></i>Administradores ({{
-                  companyUsers.hierarchy.admins.length
-                }})
-              </h6>
-              <div v-if="companyUsers.hierarchy.admins.length === 0" class="text-muted">
-                No hay administradores adicionales
-              </div>
-              <div v-else class="row">
-                <div
-                  v-for="admin in companyUsers.hierarchy.admins"
-                  :key="admin.id"
-                  class="col-md-6 mb-2"
-                >
-                  <div class="card">
-                    <div class="card-body py-2">
-                      <div class="row align-items-center">
-                        <div class="col">
-                          <strong>{{ admin.first_name }} {{ admin.last_name }}</strong>
-                          <br />
-                          <small class="text-muted">{{ admin.email }}</small>
-                        </div>
-                        <div class="col-auto">
-                          <span class="badge" :class="admin.gearbox ? 'bg-success' : 'bg-danger'">
-                            {{ admin.gearbox ? 'Activo' : 'Bloqueado' }}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+              <v-col cols="12">
+                <v-text-field
+                  v-model="userFormData.email"
+                  label="Email *"
+                  variant="outlined"
+                  :rules="[rules.required, rules.email]"
+                  prepend-inner-icon="mdi-email"
+                />
+              </v-col>
 
-            <!-- Employees Section -->
-            <div class="mb-4">
-              <h6 class="text-info">
-                <i class="fas fa-users me-2"></i>Empleados ({{
-                  companyUsers.hierarchy.employees.length
-                }})
-              </h6>
-              <div v-if="companyUsers.hierarchy.employees.length === 0" class="text-muted">
-                No hay empleados registrados
-              </div>
-              <div v-else class="row">
-                <div
-                  v-for="employee in companyUsers.hierarchy.employees"
-                  :key="employee.id"
-                  class="col-md-6 mb-2"
-                >
-                  <div class="card">
-                    <div class="card-body py-2">
-                      <div class="row align-items-center">
-                        <div class="col">
-                          <strong>{{ employee.first_name }} {{ employee.last_name }}</strong>
-                          <br />
-                          <small class="text-muted"
-                            >{{ employee.email }} • {{ employee.cedula }}</small
-                          >
-                          <br />
-                          <small class="text-primary"
-                            >Disponible: ${{ employee.disponible || 0 }}</small
-                          >
-                        </div>
-                        <div class="col-auto">
-                          <span
-                            class="badge"
-                            :class="employee.gearbox ? 'bg-success' : 'bg-danger'"
-                          >
-                            {{ employee.gearbox ? 'Activo' : 'Bloqueado' }}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="userFormData.cedula"
+                  label="Cédula *"
+                  variant="outlined"
+                  :rules="[rules.required, rules.cedula]"
+                  prepend-inner-icon="mdi-card-account-details"
+                />
+              </v-col>
 
-            <!-- Actions -->
-            <div class="text-center">
-              <button class="btn btn-primary me-2">
-                <i class="fas fa-user-plus me-2"></i>Agregar Usuario
-              </button>
-              <button class="btn btn-success">
-                <i class="fas fa-file-excel me-2"></i>Cargar Excel
-              </button>
-            </div>
-          </div>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model.number="userFormData.disponible"
+                  label="Monto Disponible"
+                  variant="outlined"
+                  type="number"
+                  min="0"
+                  prepend-inner-icon="mdi-currency-usd"
+                />
+              </v-col>
+
+              <v-col cols="12">
+                <v-switch
+                  v-model="userFormData.gearbox"
+                  label="Usuario habilitado"
+                  color="success"
+                  hide-details
+                />
+              </v-col>
+            </v-row>
+          </v-form>
         </v-card-text>
+
         <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="secondary" variant="text" @click="showUsersModal = false"> Cerrar </v-btn>
+          <v-spacer />
+          <v-btn
+            text="Cancelar"
+            @click="closeCreateUserModal"
+            :disabled="companiesStore.loadingUsers"
+          />
+          <v-btn
+            color="primary"
+            text="Crear Usuario"
+            @click="saveUser"
+            :loading="companiesStore.loadingUsers"
+            :disabled="!userFormValid"
+          />
         </v-card-actions>
       </v-card>
     </v-dialog>
-  </div>
+
+    <!-- Delete Confirmation Modal -->
+    <v-dialog v-model="deleteModal" max-width="500px">
+      <v-card>
+        <v-card-title class="d-flex align-center text-error">
+          <v-icon class="me-2">mdi-alert-circle</v-icon>
+          Confirmar Eliminación
+        </v-card-title>
+
+        <v-card-text>
+          <div v-if="itemToDelete?.type === 'company'">
+            <p class="text-body-1 mb-3">
+              ¿Está seguro que desea eliminar la empresa
+              <strong>{{ itemToDelete.item?.company_name }}</strong
+              >?
+            </p>
+            <v-alert type="warning" variant="tonal" class="mb-3">
+              <strong>¡Atención!</strong> Esta acción eliminará también todos los usuarios asociados
+              a esta empresa. Esta acción no se puede deshacer.
+            </v-alert>
+            <p class="text-body-2">
+              Usuarios que serán eliminados:
+              <strong>{{ itemToDelete.item?.users_count || 0 }}</strong>
+            </p>
+          </div>
+
+          <div v-else-if="itemToDelete?.type === 'user'">
+            <p class="text-body-1">
+              ¿Está seguro que desea eliminar al usuario
+              <strong>{{ itemToDelete.item?.first_name }} {{ itemToDelete.item?.last_name }}</strong
+              >?
+            </p>
+            <v-alert type="warning" variant="tonal" class="mt-3">
+              Esta acción no se puede deshacer.
+            </v-alert>
+          </div>
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer />
+          <v-btn text="Cancelar" @click="closeDeleteModal" :disabled="deleting" />
+          <v-btn color="error" text="Eliminar" @click="confirmDelete" :loading="deleting" />
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Toast Notifications -->
+    <v-snackbar v-model="toast.show" :color="toast.color" :timeout="5000" location="top right">
+      {{ toast.message }}
+      <template #actions>
+        <v-btn color="white" variant="text" @click="toast.show = false"> Cerrar </v-btn>
+      </template>
+    </v-snackbar>
+  </v-container>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { api } from '@/services/pocketbase'
-import { useSystemStore } from '@/stores/system'
+import { ref, computed, onMounted, nextTick, onUnmounted } from 'vue'
+import { useCompaniesStore } from '@/stores/companies'
+import { useUsersStore } from '@/stores/users'
 
-const systemStore = useSystemStore()
-const { showToast } = systemStore
+// Stores
+const companiesStore = useCompaniesStore()
+const usersStore = useUsersStore()
 
-// State
-const companies = ref([])
-const loading = ref(false)
-const submitting = ref(false)
-const loadingUsers = ref(false)
+// Data
 const searchTerm = ref('')
-const currentPage = ref(1)
-const itemsPerPage = 20
+const userSearchTerm = ref('')
+const loading = ref(false)
+const deleting = ref(false)
 
-// Modal states
-const showCreateModal = ref(false)
-const showUsersModal = ref(false)
-const isEditMode = ref(false)
+// Modals
+const companyModal = ref(false)
+const usersModal = ref(false)
+const createUserModal = ref(false)
+const deleteModal = ref(false)
+
+// Forms
+const companyForm = ref()
+const userForm = ref()
+const companyFormValid = ref(false)
+const userFormValid = ref(false)
+const isEditing = ref(false)
 const selectedCompany = ref(null)
-const companyUsers = ref({
-  hierarchy: {
-    owner: null,
-    admins: [],
-    employees: [],
-  },
+const itemToDelete = ref(null)
+
+// Form Data
+const companyFormData = ref({
+  company_name: '',
+  ruc: '',
 })
 
-// Form data
-const companyForm = ref({
-  id: null,
-  nombre: '',
-  ruc: '',
+const ownerFormData = ref({
+  first_name: '',
+  last_name: '',
+  email: '',
+  username: '',
+  password: '',
   gearbox: true,
 })
 
-const ownerForm = ref({
+const userFormData = ref({
   first_name: '',
   last_name: '',
   email: '',
   cedula: '',
+  disponible: 0,
+  gearbox: true,
 })
 
-// Stats
-const stats = computed(() => {
-  const totalCompanies = companies.value.length
-  const totalOwners = companies.value.filter((c) => c.expand?.owner_id).length
-  let totalAdmins = 0
-  let totalEmployees = 0
-
-  companies.value.forEach((company) => {
-    if (company.user_stats) {
-      totalAdmins += company.user_stats.admins || 0
-      totalEmployees += company.user_stats.employees || 0
-    }
-  })
-
-  return {
-    totalCompanies,
-    totalOwners,
-    totalAdmins,
-    totalEmployees,
-  }
+// Toast
+const toast = ref({
+  show: false,
+  message: '',
+  color: 'success',
 })
 
-// Filtering and pagination
+// Validation Rules
+const rules = {
+  required: (value) => !!value || 'Este campo es requerido',
+  email: (value) => {
+    const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return pattern.test(value) || 'Email inválido'
+  },
+  cedula: (value) => {
+    const pattern = /^[0-9]{10}$/
+    return pattern.test(value) || 'Cédula debe tener 10 dígitos'
+  },
+}
+
+// Table Headers
+const tableHeaders = [
+  { title: 'Empresa', key: 'company_info', sortable: false },
+  { title: 'Propietario', key: 'owner_info', sortable: false },
+  { title: 'Usuarios', key: 'user_stats', sortable: false },
+  { title: 'Estado', key: 'status', sortable: false },
+  { title: 'Acciones', key: 'actions', sortable: false },
+]
+
+// Computed
+const stats = computed(() => companiesStore.stats)
+
 const filteredCompanies = computed(() => {
-  if (!searchTerm.value) return companies.value
+  if (!searchTerm.value) return companiesStore.companies
 
   const search = searchTerm.value.toLowerCase()
-  return companies.value.filter(
+  return companiesStore.companies.filter(
     (company) =>
-      company.nombre?.toLowerCase().includes(search) ||
+      company.company_name?.toLowerCase().includes(search) ||
       company.ruc?.toLowerCase().includes(search) ||
       company.expand?.owner_id?.first_name?.toLowerCase().includes(search) ||
       company.expand?.owner_id?.last_name?.toLowerCase().includes(search) ||
@@ -510,133 +653,250 @@ const filteredCompanies = computed(() => {
   )
 })
 
-const totalPages = computed(() => Math.ceil(filteredCompanies.value.length / itemsPerPage))
+const filteredUsers = computed(() => {
+  if (!userSearchTerm.value) return companiesStore.companyUsers
 
-const paginatedCompanies = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage
-  return filteredCompanies.value.slice(start, start + itemsPerPage)
-})
-
-const visiblePages = computed(() => {
-  const total = totalPages.value
-  const current = currentPage.value
-  const pages = []
-  const start = Math.max(1, current - 2)
-  const end = Math.min(total, current + 2)
-
-  for (let i = start; i <= end; i++) {
-    pages.push(i)
-  }
-  return pages
+  const search = userSearchTerm.value.toLowerCase()
+  return companiesStore.companyUsers.filter(
+    (user) =>
+      user.first_name?.toLowerCase().includes(search) ||
+      user.last_name?.toLowerCase().includes(search) ||
+      user.email?.toLowerCase().includes(search) ||
+      user.cedula?.toLowerCase().includes(search),
+  )
 })
 
 // Methods
-const loadCompanies = async () => {
-  loading.value = true
+const showToast = (message, color = 'success') => {
+  toast.value = { show: true, message, color }
+}
+
+// 1. Variable para controlar solicitudes
+let isMounted = true
+const abortController = new AbortController()
+
+onUnmounted(() => {
+  isMounted = false
+  abortController.abort()
+})
+
+onMounted(() => {
+  // Espera a que la ruta esté lista
+  nextTick(() => {
+    loadData()
+  })
+})
+
+const loadData = async () => {
+  if (!isMounted) return
+
   try {
-    const result = await api.getCompanies({}, 1, 1000)
-    companies.value = (result?.items || []).map((company) => ({
-      ...company,
-      expand: company.expand || { owner_id: null },
-    }))
-  } catch (error) {
-    console.error('Error loading companies:', error)
-    showToast('Error al cargar empresas', 'danger')
-  } finally {
-    loading.value = false
+    await companiesStore.fetchCompanies({
+      signal: abortController.signal,
+    })
+  } catch (err) {
+    if (err.name !== 'AbortError') {
+      showToast('Error al cargar datos', 'error')
+    }
   }
 }
 
 const openCreateModal = () => {
-  isEditMode.value = false
-  companyForm.value = { id: null, nombre: '', ruc: '', gearbox: true }
-  ownerForm.value = { first_name: '', last_name: '', email: '', cedula: '' }
-  showCreateModal.value = true // <-- Asegurar que se abra el modal
+  isEditing.value = false
+  companyFormData.value = { company_name: '', ruc: '' }
+  ownerFormData.value = {
+    first_name: '',
+    last_name: '',
+    email: '',
+    username: '',
+    password: '',
+    gearbox: true,
+  }
+  companyModal.value = true
 }
 
-const editCompany = (company) => {
-  isEditMode.value = true
-  companyForm.value = {
-    id: company.id,
-    nombre: company.nombre,
+const editCompany = async (company) => {
+  isEditing.value = true
+  companyFormData.value = {
+    company_name: company.company_name,
     ruc: company.ruc || '',
-    gearbox: company.gearbox,
   }
 
-  openCreateModal()
+  if (company.expand?.owner_id) {
+    ownerFormData.value = {
+      first_name: company.expand.owner_id.first_name,
+      last_name: company.expand.owner_id.last_name,
+      email: company.expand.owner_id.email,
+      username: company.expand.owner_id.username,
+      password: '',
+      gearbox: company.expand.owner_id.gearbox,
+    }
+  }
+
+  selectedCompany.value = company
+  companyModal.value = true
 }
 
-const handleSubmit = async () => {
-  if (submitting.value) return
+const closeCompanyModal = () => {
+  companyModal.value = false
+  selectedCompany.value = null
+  if (companyForm.value) {
+    companyForm.value.reset()
+  }
+}
 
-  submitting.value = true
+const saveCompany = async () => {
+  if (!companyFormValid.value) return
+
   try {
-    if (isEditMode.value) {
-      await api.updateCompany(companyForm.value.id, {
-        nombre: companyForm.value.nombre,
-        ruc: companyForm.value.ruc,
-      })
-      showToast('Empresa actualizada exitosamente', 'success')
+    let result
+    if (isEditing.value) {
+      result = await companiesStore.updateCompany(
+        selectedCompany.value.id,
+        companyFormData.value,
+        ownerFormData.value,
+      )
     } else {
-      await api.createCompanyWithOwner(companyForm.value, ownerForm.value)
-      showToast('Empresa y propietario creados exitosamente', 'success')
+      result = await companiesStore.createCompany(companyFormData.value, ownerFormData.value)
     }
 
-    await loadCompanies()
-
-    openCreateModal()
+    if (result.success) {
+      showToast(
+        isEditing.value ? 'Empresa actualizada correctamente' : 'Empresa creada correctamente',
+      )
+      closeCompanyModal()
+    } else {
+      showToast(result.error || 'Error al guardar empresa', 'error')
+    }
   } catch (error) {
-    console.error('Error saving company:', error)
-    showToast('Error al guardar la empresa', 'danger')
-  } finally {
-    submitting.value = false
-  }
-}
-
-const viewCompanyUsers = async (company) => {
-  selectedCompany.value = company
-  loadingUsers.value = true
-  try {
-    companyUsers.value = await api.getCompanyUsersHierarchy(company.id)
-    showUsersModal.value = true // <-- Asegurar que se abra el modal
-  } catch (error) {
-    console.error('Error loading company users:', error)
-    showToast('Error al cargar usuarios', 'danger')
-  } finally {
-    loadingUsers.value = false
+    showToast('Error al guardar empresa', 'error')
   }
 }
 
 const toggleCompanyStatus = async (company) => {
   try {
-    await api.updateCompany(company.id, {
-      gearbox: !company.gearbox,
-    })
-
-    company.gearbox = !company.gearbox
-    showToast(`Empresa ${company.gearbox ? 'activada' : 'bloqueada'} exitosamente`, 'success')
+    const result = await companiesStore.toggleCompanyStatus(company.id)
+    if (result.success) {
+      showToast(`Empresa ${result.newStatus ? 'activada' : 'bloqueada'} correctamente`)
+    } else {
+      showToast(result.error || 'Error al cambiar estado', 'error')
+    }
   } catch (error) {
-    console.error('Error toggling company status:', error)
-    showToast('Error al cambiar el estado de la empresa', 'danger')
+    showToast('Error al cambiar estado de la empresa', 'error')
   }
 }
 
-const changePage = (page) => {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page
+const viewCompanyUsers = async (company) => {
+  selectedCompany.value = company
+  usersModal.value = true
+  await companiesStore.fetchCompanyUsers(company.id)
+}
+
+const closeUsersModal = () => {
+  usersModal.value = false
+  selectedCompany.value = null
+  userSearchTerm.value = ''
+}
+
+const openCreateUserModal = () => {
+  userFormData.value = {
+    first_name: '',
+    last_name: '',
+    email: '',
+    cedula: '',
+    disponible: 0,
+    gearbox: true,
+  }
+  createUserModal.value = true
+}
+
+const closeCreateUserModal = () => {
+  createUserModal.value = false
+  if (userForm.value) {
+    userForm.value.reset()
   }
 }
 
-const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString('es-EC', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
+const saveUser = async () => {
+  if (!userFormValid.value || !selectedCompany.value) return
+
+  try {
+    const result = await companiesStore.createCompanyUser(
+      selectedCompany.value.id,
+      userFormData.value,
+    )
+
+    if (result.success) {
+      showToast('Usuario creado correctamente')
+      closeCreateUserModal()
+    } else {
+      showToast(result.error || 'Error al crear usuario', 'error')
+    }
+  } catch (error) {
+    showToast('Error al crear usuario', 'error')
+  }
+}
+
+const deleteCompany = (company) => {
+  itemToDelete.value = { type: 'company', item: company }
+  deleteModal.value = true
+}
+
+const deleteUser = (user) => {
+  itemToDelete.value = { type: 'user', item: user }
+  deleteModal.value = true
+}
+
+const closeDeleteModal = () => {
+  deleteModal.value = false
+  itemToDelete.value = null
+}
+
+const confirmDelete = async () => {
+  if (!itemToDelete.value) return
+
+  deleting.value = true
+  try {
+    if (itemToDelete.value.type === 'company') {
+      const result = await companiesStore.deleteCompany(itemToDelete.value.item.id)
+      if (result.success) {
+        showToast(`Empresa eliminada. Se eliminaron ${result.deletedUsers} usuarios.`)
+      } else {
+        showToast(result.error || 'Error al eliminar empresa', 'error')
+      }
+    } else if (itemToDelete.value.type === 'user') {
+      await usersStore.deleteUser(itemToDelete.value.item.id)
+      showToast('Usuario eliminado correctamente')
+      if (selectedCompany.value) {
+        await companiesStore.fetchCompanyUsers(selectedCompany.value.id)
+        await companiesStore.fetchCompanies() // Refresh counts
+      }
+    }
+  } catch (error) {
+    showToast('Error al eliminar', 'error')
+  } finally {
+    deleting.value = false
+    closeDeleteModal()
+  }
+}
+
+const editUser = (user) => {
+  // TODO: Implement user editing modal
+  showToast('Funcionalidad de edición en desarrollo', 'info')
 }
 
 // Lifecycle
 onMounted(() => {
-  loadCompanies()
+  loadData()
 })
 </script>
+
+<style scoped>
+.v-card {
+  transition: all 0.2s ease-in-out;
+}
+
+.v-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+</style>

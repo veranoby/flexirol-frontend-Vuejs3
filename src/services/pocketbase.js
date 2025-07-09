@@ -133,58 +133,192 @@ export const api = {
     return await pb.collection('companies').getList(page, perPage, params)
   },
 
-  async getCompanyUsers(companyId) {
-    return await this.getUsers({ company_id: companyId })
-  },
-
-  async getCompanyUsersHierarchy(companyId) {
-    if (!companyId) throw new Error('companyId is required')
-
-    const company = await pb.collection('companies').getOne(companyId, {
+  async getCompaniesWithStats(filters = {}, page = 1, perPage = 1000) {
+    const params = {
+      page,
+      perPage,
+      sort: '-created',
       expand: 'owner_id',
-      fields: 'id,nombre,owner_id',
-    })
+      ...(buildFilter(filters) && { filter: buildFilter(filters) }),
+    }
 
-    const allUsers = await pb.collection('users').getFullList({
-      filter: `company_id="${companyId}" || id="${company.owner_id}"`,
-      sort: 'role,-created',
-      fields: 'id,email,role,first_name,last_name',
-    })
+    const result = await pb.collection('companies').getList(page, perPage, params)
+
+    // Add user counts to each company
+    const companiesWithStats = await Promise.all(
+      result.items.map(async (company) => {
+        try {
+          // Get total users count
+          const totalUsers = await pb.collection('users').getList(1, 1, {
+            filter: `company_id="${company.id}"`,
+            fields: 'id',
+          })
+
+          // Get active users count
+          const activeUsers = await pb.collection('users').getList(1, 1, {
+            filter: `company_id="${company.id}" && gearbox=true`,
+            fields: 'id',
+          })
+
+          return {
+            ...company,
+            users_count: totalUsers.totalItems,
+            active_users_count: activeUsers.totalItems,
+            blocked_users_count: totalUsers.totalItems - activeUsers.totalItems,
+          }
+        } catch (err) {
+          console.error(`Error getting user counts for company ${company.id}:`, err)
+          return {
+            ...company,
+            users_count: 0,
+            active_users_count: 0,
+            blocked_users_count: 0,
+          }
+        }
+      }),
+    )
 
     return {
-      company,
-      hierarchy: {
-        owner: allUsers.find((u) => u.id === company.owner_id),
-        admins: allUsers.filter((u) => u.role === 'empresa' && u.id !== company.owner_id),
-        employees: allUsers.filter((u) => u.role === 'usuario'),
-      },
+      ...result,
+      items: companiesWithStats,
     }
   },
 
-  async createCompanyWithOwner(companyData, ownerData) {
-    if (!companyData?.nombre) throw new Error('Company name is required')
-    if (!ownerData?.email) throw new Error('Owner email is required')
+  async getCompanyById(id) {
+    return await pb.collection('companies').getOne(id, { expand: 'owner_id' })
+  },
 
-    const company = await pb.collection('companies').create({
-      nombre: companyData.nombre,
-      ruc: companyData.ruc || '',
-    })
-
-    const owner = await pb.collection('users').create({
-      ...ownerData,
-      role: 'empresa',
-      company_id: company.id,
-    })
-
-    await pb.collection('companies').update(company.id, {
-      owner_id: owner.id,
-    })
-
-    return { company, owner }
+  async createCompany(companyData) {
+    return await pb.collection('companies').create(companyData)
   },
 
   async updateCompany(id, companyData) {
     return await pb.collection('companies').update(id, companyData)
+  },
+
+  async deleteCompany(id) {
+    return await pb.collection('companies').delete(id)
+  },
+
+  async toggleCompanyStatus(id, status) {
+    return await pb.collection('companies').update(id, { gearbox: status })
+  },
+
+  async getCompanyUsers(companyId, filters = {}, page = 1, perPage = 1000) {
+    const companyFilter = `company_id="${companyId}"`
+    const additionalFilters = buildFilter(filters)
+    const finalFilter = additionalFilters
+      ? `${companyFilter} && ${additionalFilters}`
+      : companyFilter
+
+    return await pb.collection('users').getList(page, perPage, {
+      filter: finalFilter,
+      sort: '-created',
+    })
+  },
+
+  async getDefaultCompanyConfig() {
+    try {
+      const systemConfig = await pb
+        .collection('system_config')
+        .getFirstListItem('name="default_config"')
+      return {
+        flexirol: systemConfig.flexirol || 0,
+        flexirol2: systemConfig.flexirol2 || 0,
+        flexirol3: systemConfig.flexirol3 || '1',
+        dia_inicio: systemConfig.dia_inicio || 1,
+        dia_cierre: systemConfig.dia_cierre || 28,
+        porcentaje: systemConfig.porcentaje || 50,
+        dia_bloqueo: systemConfig.dia_bloqueo || 2,
+        frecuencia: systemConfig.frecuencia || 3,
+        dia_reinicio: systemConfig.dia_reinicio || 1,
+      }
+    } catch (err) {
+      console.warn('Could not fetch default config:', err)
+      return {
+        flexirol: 0,
+        flexirol2: 0,
+        flexirol3: '1',
+        dia_inicio: 1,
+        dia_cierre: 28,
+        porcentaje: 50,
+        dia_bloqueo: 2,
+        frecuencia: 3,
+        dia_reinicio: 1,
+      }
+    }
+  },
+
+  async createCompanyWithOwner(companyData, ownerData) {
+    try {
+      // Get default config
+      const defaultConfig = await this.getDefaultCompanyConfig()
+
+      // Create owner user first
+      const ownerUserData = {
+        ...ownerData,
+        username:
+          ownerData.username ||
+          `${ownerData.first_name}_${ownerData.last_name}`.toLowerCase().replace(/\s+/g, '_'),
+        password:
+          ownerData.password ||
+          ownerData.username ||
+          `${ownerData.first_name}_${ownerData.last_name}`.toLowerCase().replace(/\s+/g, '_'),
+        role: 'empresa',
+        gearbox: true,
+      }
+
+      const createdOwner = await pb.collection('users').create(ownerUserData)
+
+      // Create company with owner_id and default config
+      const companyCreateData = {
+        ...defaultConfig,
+        ...companyData,
+        owner_id: createdOwner.id,
+        gearbox: true,
+        fecha_excel: null,
+      }
+
+      const createdCompany = await pb.collection('companies').create(companyCreateData)
+
+      return {
+        success: true,
+        company: createdCompany,
+        owner: createdOwner,
+      }
+    } catch (err) {
+      return {
+        success: false,
+        error: err.message,
+      }
+    }
+  },
+
+  async deleteCompanyWithUsers(companyId) {
+    try {
+      // Get all users of this company
+      const companyUsersResult = await pb.collection('users').getList(1, 1000, {
+        filter: `company_id="${companyId}"`,
+      })
+
+      // Delete all company users
+      for (const user of companyUsersResult.items) {
+        await pb.collection('users').delete(user.id)
+      }
+
+      // Delete the company itself
+      await pb.collection('companies').delete(companyId)
+
+      return {
+        success: true,
+        deletedUsers: companyUsersResult.items.length,
+      }
+    } catch (err) {
+      return {
+        success: false,
+        error: err.message,
+      }
+    }
   },
 
   // Advance Requests

@@ -124,8 +124,12 @@ export const useUsersStore = defineStore('users', () => {
         totalItems: result.totalItems,
       }
     } catch (err) {
-      error.value = `Error al cargar usuarios: ${err.message}`
-      console.error('Error fetching users:', err)
+      if (err.isAbort) {
+        console.warn('Request was cancelled:', err.message)
+      } else {
+        error.value = `Error al cargar usuarios: ${err.message}`
+        console.error('Error fetching users:', err)
+      }
       throw err
     } finally {
       loading.value = false

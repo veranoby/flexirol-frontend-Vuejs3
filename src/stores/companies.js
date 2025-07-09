@@ -1,42 +1,89 @@
 import { defineStore } from 'pinia'
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { pb, api } from '@/services/pocketbase'
+import { useUsersStore } from '@/stores/users'
 
 // Helper function to create a default company state
 const defaultCompanyState = () => ({
   id: null,
   owner_id: null,
   company_name: '',
+  ruc: '',
   flexirol: 0,
   flexirol2: 0,
   flexirol3: '1',
   dia_inicio: 1,
-  dia_cierre: 1,
-  porcentaje: 0,
-  dia_bloqueo: 0,
-  frecuencia: 1,
+  dia_cierre: 28,
+  porcentaje: 50,
+  dia_bloqueo: 2,
+  frecuencia: 3,
   dia_reinicio: 1,
+  gearbox: true,
+  fecha_excel: null,
 })
+
+const defaultCompanyOwner = () => ({
+  first_name: '',
+  last_name: '',
+  email: '',
+  username: '',
+  password: '',
+  role: 'empresa',
+  gearbox: true,
+})
+
+// ===== GLOBAL SYSTEM CONFIG STATE =====
+const globalConfig = ref(null)
+const globalConfigLoading = ref(false)
+const globalConfigError = ref(null)
 
 export const useCompaniesStore = defineStore('companies', () => {
   const authStore = useAuthStore()
 
-  // ===== COMPANY CONFIG STATE =====
+  // EXISTING CONFIG STATE (mantener compatibilidad)
   const companyConfig = reactive(defaultCompanyState())
+
+  // NEW MANAGEMENT STATE
+  const companies = ref([])
   const loading = ref(false)
   const error = ref(null)
+  const selectedCompany = ref(null)
+  const companyUsers = ref([])
+  const loadingUsers = ref(false)
 
-  // ===== GLOBAL SYSTEM CONFIG STATE =====
-  const globalConfig = ref(null)
-  const globalConfigLoading = ref(false)
-  const globalConfigError = ref(null)
+  // COMPUTED PROPERTIES
+  const companiesWithStats = computed(() => {
+    return companies.value.map((company) => ({
+      ...company,
+      user_stats: {
+        total: company.users_count || 0,
+        active: company.active_users_count || 0,
+        blocked: company.blocked_users_count || 0,
+      },
+    }))
+  })
 
-  // ===== HELPER FUNCTIONS =====
+  const stats = computed(() => {
+    const totalCompanies = companies.value.length
+    const activeCompanies = companies.value.filter((c) => c.gearbox).length
+    const usersStore = useUsersStore()
+
+    return {
+      totalCompanies,
+      activeCompanies,
+      blockedCompanies: totalCompanies - activeCompanies,
+      totalUsers: usersStore.users?.value?.length || 0,
+      totalOwners: companies.value.filter((c) => c.expand?.owner_id).length,
+    }
+  })
+
+  // EXISTING CONFIG FUNCTIONS (mantener para compatibilidad)
   function _setCompanyConfig(record) {
     companyConfig.id = record.id
     companyConfig.owner_id = record.owner_id
     companyConfig.company_name = record.company_name || ''
+    companyConfig.ruc = record.ruc || ''
     companyConfig.flexirol =
       record.flexirol !== undefined ? Number(record.flexirol) : defaultCompanyState().flexirol
     companyConfig.flexirol2 =
@@ -58,137 +105,68 @@ export const useCompaniesStore = defineStore('companies', () => {
       record.dia_reinicio !== undefined
         ? Number(record.dia_reinicio)
         : defaultCompanyState().dia_reinicio
+    companyConfig.gearbox =
+      record.gearbox !== undefined ? record.gearbox : defaultCompanyState().gearbox
   }
 
-  // ===== COMPANY CONFIG FUNCTIONS =====
-  async function fetchCompanyById(companyId) {
+  // NEW CRUD FUNCTIONS
+
+  /**
+   * Fetch all companies with user counts and owner info
+   */
+  async function fetchCompanies(options = {}) {
     loading.value = true
     error.value = null
+
     try {
-      const record = await pb.collection('companies').getOne(companyId)
-      _setCompanyConfig(record)
-    } catch (e) {
-      error.value = `Failed to fetch company configuration for ID ${companyId}: ${e.message}`
-      console.error(error.value, e)
-      Object.assign(companyConfig, defaultCompanyState())
-    } finally {
-      loading.value = false
-    }
-  }
+      // Get companies with owner expansion
+      const result = await pb.collection('companies').getList(1, 1000, {
+        expand: 'owner_id',
+        sort: '-created',
+        ...options, // Pasa la señal de aborto
+      })
 
-  async function fetchCompanyToConfigure() {
-    loading.value = true
-    error.value = null
-    Object.assign(companyConfig, defaultCompanyState())
+      // Optimized: Fetch user counts in a single batch query
+      const companyIds = result.items.map((c) => c.id)
+      const [totalUsers, activeUsers] = await Promise.all([
+        pb.collection('users').getList(1, 1, {
+          filter: `company_id ?in [${companyIds.map((id) => `"${id}"`).join(',')}]`,
+          fields: 'id,company_id',
+        }),
+        pb.collection('users').getList(1, 1, {
+          filter: `company_id ?in [${companyIds.map((id) => `"${id}"`).join(',')}] && gearbox=true`,
+          fields: 'id,company_id',
+        }),
+      ])
 
-    if (!authStore.user) {
-      error.value = 'User not authenticated. Cannot determine company to configure.'
-      loading.value = false
-      return
-    }
+      // Map counts to companies
+      const companiesWithCounts = result.items.map((company) => {
+        const companyTotal = totalUsers.items.filter((u) => u.company_id === company.id).length
+        const companyActive = activeUsers.items.filter((u) => u.company_id === company.id).length
 
-    let companyIdToFetch = null
-
-    if (authStore.isEmpresa || authStore.isSuperadmin) {
-      if (authStore.user.assigned_companies && authStore.user.assigned_companies.length > 0) {
-        companyIdToFetch = authStore.user.assigned_companies[0]
-      } else if (authStore.user.company_id) {
-        companyIdToFetch = authStore.user.company_id
-      }
-    }
-
-    if (companyIdToFetch) {
-      await fetchCompanyById(companyIdToFetch)
-    } else if (authStore.isSuperadmin) {
-      console.log(
-        'Superadmin: No specific company assigned, attempting to fetch first available company.',
-      )
-      try {
-        const resultList = await pb.collection('companies').getList(1, 1, { sort: 'created' })
-        if (resultList.items && resultList.items.length > 0) {
-          _setCompanyConfig(resultList.items[0])
-        } else {
-          error.value = 'Superadmin: No companies found in the system to configure.'
-          console.warn(error.value)
+        return {
+          ...company,
+          users_count: companyTotal,
+          active_users_count: companyActive,
+          blocked_users_count: companyTotal - companyActive,
         }
-      } catch (e) {
-        error.value = `Superadmin: Failed to fetch first company: ${e.message}`
-        console.error(error.value, e)
+      })
+
+      companies.value = companiesWithCounts
+    } catch (err) {
+      if (err.isAbort) {
+        console.log('Request cancelled intentionally')
+      } else {
+        error.value = `Error fetching companies: ${err.message}`
+        console.error('Error fetching companies:', err)
       }
-    } else {
-      error.value = 'No company ID associated with this user account.'
-      console.warn(error.value)
-    }
-    loading.value = false
-  }
-
-  async function saveCompanyConfig(configDataToSave) {
-    if (!authStore.isSuperadmin) {
-      error.value = 'Only superadmins can save company configuration.'
-      console.error(error.value)
-      return false
-    }
-
-    const idToUpdate = configDataToSave.id || companyConfig.id
-    if (!idToUpdate) {
-      error.value = 'Company ID is missing. Cannot update configuration.'
-      console.error(error.value)
-      return false
-    }
-
-    loading.value = true
-    error.value = null
-
-    const dataForApi = {
-      flexirol: Number(configDataToSave.flexirol),
-      flexirol2: Number(configDataToSave.flexirol2),
-      flexirol3: String(configDataToSave.flexirol3),
-      dia_inicio: Number(configDataToSave.dia_inicio),
-      dia_cierre: Number(configDataToSave.dia_cierre),
-      porcentaje: Number(configDataToSave.porcentaje),
-      dia_bloqueo: Number(configDataToSave.dia_bloqueo),
-      frecuencia: Number(configDataToSave.frecuencia),
-      dia_reinicio: Number(configDataToSave.dia_reinicio),
-    }
-
-    try {
-      const updatedRecord = await pb.collection('companies').update(idToUpdate, dataForApi)
-      _setCompanyConfig(updatedRecord)
-      return true
-    } catch (e) {
-      error.value = `Failed to save company configuration: ${e.message}`
-      console.error(error.value, e)
-      return false
     } finally {
       loading.value = false
     }
   }
 
-  function updateField(field, value) {
-    if (Object.prototype.hasOwnProperty.call(companyConfig, field)) {
-      companyConfig[field] = value
-    }
-  }
+  /* CARGAR CONFIGURACION GLOBAL */
 
-  function resetConfig() {
-    Object.assign(companyConfig, defaultCompanyState())
-    error.value = null
-  }
-
-  async function fetchCompanies(params = {}) {
-    try {
-      loading.value = true
-      const result = await api.getCompanies(params)
-      return result
-    } catch (error) {
-      console.error('Error al cargar empresas:', error)
-      return { items: [], totalItems: 0 }
-    } finally {
-      loading.value = false
-    }
-  }
-
-  // ===== GLOBAL SYSTEM CONFIG FUNCTIONS =====
   async function fetchGlobalConfig() {
     globalConfigLoading.value = true // ✅ CORRECCIÓN: Sin `this`
     globalConfigError.value = null
@@ -227,56 +205,361 @@ export const useCompaniesStore = defineStore('companies', () => {
     }
   }
 
-  // ✅ CORRECCIÓN CRÍTICA: Mapeo correcto system_config → companies
-  async function createCompanyWithDefaults(companyData) {
-    try {
-      const defaults = await fetchGlobalConfig() // ✅ CORRECCIÓN: Sin `this`
+  /**
+   * Create new company with owner user
+   */
+  async function createCompany(companyData, ownerData) {
+    loading.value = true
+    error.value = null
 
-      const companyWithDefaults = {
-        ...companyData,
-        // ✅ MAPEO CORRECTO system_config → companies schema
-        flexirol: defaults.porcentaje_servicio, // porcentaje_servicio → flexirol
-        flexirol2: defaults.valor_fijo_mensual, // valor_fijo_mensual → flexirol2
-        flexirol3: '1', // Default plan 1 (porcentaje)
-        dia_inicio: defaults.dia_inicio, // dia_inicio → dia_inicio ✅
-        dia_cierre: defaults.dia_cierre, // dia_cierre → dia_cierre ✅
-        porcentaje: defaults.porcentaje_maximo, // porcentaje_maximo → porcentaje
-        dia_bloqueo: defaults.dias_bloqueo, // dias_bloqueo → dia_bloqueo
-        frecuencia: defaults.frecuencia_maxima, // frecuencia_maxima → frecuencia
-        dia_reinicio: defaults.dias_reinicio, // dias_reinicio → dia_reinicio ✅
+    try {
+      // Get default config from system_config
+      let defaultConfig = {}
+      try {
+        const systemConfig = await pb
+          .collection('system_config')
+          .getFirstListItem('name="default_config"')
+        defaultConfig = {
+          flexirol: systemConfig.flexirol || 0,
+          flexirol2: systemConfig.flexirol2 || 0,
+          flexirol3: systemConfig.flexirol3 || '1',
+          dia_inicio: systemConfig.dia_inicio || 1,
+          dia_cierre: systemConfig.dia_cierre || 28,
+          porcentaje: systemConfig.porcentaje || 50,
+          dia_bloqueo: systemConfig.dia_bloqueo || 2,
+          frecuencia: systemConfig.frecuencia || 3,
+          dia_reinicio: systemConfig.dia_reinicio || 1,
+        }
+      } catch (configErr) {
+        console.warn('Could not fetch default config, using fallback:', configErr)
+        defaultConfig = defaultCompanyState()
       }
 
-      return await api.createCompanyWithOwner(companyWithDefaults)
+      // Create owner user first
+      const ownerUserData = {
+        ...ownerData,
+        username:
+          ownerData.username ||
+          `${ownerData.first_name}_${ownerData.last_name}`.toLowerCase().replace(/\s+/g, '_'),
+        password:
+          ownerData.password ||
+          ownerData.username ||
+          `${ownerData.first_name}_${ownerData.last_name}`.toLowerCase().replace(/\s+/g, '_'),
+        role: 'empresa',
+        gearbox: true,
+      }
+
+      const createdOwner = await pb.collection('users').create(ownerUserData)
+
+      // Create company with owner_id and default config
+      const companyCreateData = {
+        ...defaultConfig,
+        ...companyData,
+        owner_id: createdOwner.id,
+        gearbox: true,
+        fecha_excel: null,
+      }
+
+      const createdCompany = await pb.collection('companies').create(companyCreateData)
+
+      // Refresh companies list
+      await fetchCompanies()
+
+      return { success: true, company: createdCompany, owner: createdOwner }
     } catch (err) {
-      console.error('Error creating company with defaults:', err)
-      throw err
+      error.value = `Error creating company: ${err.message}`
+      console.error('Error creating company:', err)
+      return { success: false, error: err.message }
+    } finally {
+      loading.value = false
     }
   }
 
-  // ===== RETURN ALL STATE AND FUNCTIONS =====
+  /**
+   * Update company information
+   */
+  async function updateCompany(companyId, companyData, ownerData = null) {
+    loading.value = true
+    error.value = null
+
+    try {
+      // Update company
+      const updatedCompany = await pb.collection('companies').update(companyId, companyData)
+
+      // Update owner if provided
+      if (ownerData && updatedCompany.owner_id) {
+        await pb.collection('users').update(updatedCompany.owner_id, ownerData)
+      }
+
+      // Refresh companies list
+      await fetchCompanies()
+
+      return { success: true, company: updatedCompany }
+    } catch (err) {
+      error.value = `Error updating company: ${err.message}`
+      console.error('Error updating company:', err)
+      return { success: false, error: err.message }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
+   * Toggle company status (gearbox)
+   */
+  async function toggleCompanyStatus(companyId) {
+    try {
+      const company = companies.value.find((c) => c.id === companyId)
+      if (!company) throw new Error('Company not found')
+
+      const newStatus = !company.gearbox
+      await pb.collection('companies').update(companyId, { gearbox: newStatus })
+
+      // Update local state
+      company.gearbox = newStatus
+
+      return { success: true, newStatus }
+    } catch (err) {
+      error.value = `Error toggling company status: ${err.message}`
+      console.error('Error toggling company status:', err)
+      return { success: false, error: err.message }
+    }
+  }
+
+  /**
+   * Delete company and all its users
+   */
+  async function deleteCompany(companyId) {
+    loading.value = true
+    error.value = null
+
+    try {
+      // First, get all users of this company
+      const companyUsersResult = await pb.collection('users').getList(1, 1000, {
+        filter: `company_id="${companyId}"`,
+      })
+
+      // Delete all company users
+      for (const user of companyUsersResult.items) {
+        await pb.collection('users').delete(user.id)
+      }
+
+      // Delete the company
+      await pb.collection('companies').delete(companyId)
+
+      // Refresh companies list
+      await fetchCompanies()
+
+      return { success: true, deletedUsers: companyUsersResult.items.length }
+    } catch (err) {
+      error.value = `Error deleting company: ${err.message}`
+      console.error('Error deleting company:', err)
+      return { success: false, error: err.message }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
+   * Fetch users for a specific company
+   */
+  async function fetchCompanyUsers(companyId) {
+    loadingUsers.value = true
+    error.value = null
+
+    try {
+      const result = await pb.collection('users').getList(1, 1000, {
+        filter: `company_id="${companyId}"`,
+        sort: '-created',
+      })
+
+      companyUsers.value = result.items
+      return result.items
+    } catch (err) {
+      error.value = `Error fetching company users: ${err.message}`
+      console.error('Error fetching company users:', err)
+      return []
+    } finally {
+      loadingUsers.value = false
+    }
+  }
+
+  /**
+   * Create user for company
+   */
+  async function createCompanyUser(companyId, userData) {
+    loadingUsers.value = true
+    error.value = null
+
+    try {
+      const userCreateData = {
+        ...userData,
+        company_id: companyId,
+        role: 'usuario',
+        username:
+          userData.username ||
+          `${userData.first_name}_${userData.last_name}_${userData.cedula}`
+            .toLowerCase()
+            .replace(/\s+/g, '_'),
+        password:
+          userData.password ||
+          userData.username ||
+          `${userData.first_name}_${userData.last_name}_${userData.cedula}`
+            .toLowerCase()
+            .replace(/\s+/g, '_'),
+        disponible: userData.disponible || 0,
+        gearbox: userData.gearbox !== undefined ? userData.gearbox : true,
+      }
+
+      const createdUser = await pb.collection('users').create(userCreateData)
+
+      // Refresh company users
+      await fetchCompanyUsers(companyId)
+
+      // Refresh companies to update counts
+      await fetchCompanies()
+
+      return { success: true, user: createdUser }
+    } catch (err) {
+      error.value = `Error creating user: ${err.message}`
+      console.error('Error creating user:', err)
+      return { success: false, error: err.message }
+    } finally {
+      loadingUsers.value = false
+    }
+  }
+
+  // EXISTING CONFIG FUNCTIONS (mantener para compatibilidad)
+  async function fetchCompanyById(companyId) {
+    loading.value = true
+    error.value = null
+    try {
+      const record = await pb.collection('companies').getOne(companyId)
+      _setCompanyConfig(record)
+      return record // ✅ Añadir este return
+    } catch (e) {
+      error.value = `Failed to fetch company configuration for ID ${companyId}: ${e.message}`
+      console.error(error.value, e)
+      throw e // Relanzar el error para manejo en funciones superiores
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function fetchCompanyToConfigure() {
+    loading.value = true
+    error.value = null
+    Object.assign(companyConfig, defaultCompanyState())
+
+    if (!authStore.user) {
+      error.value = 'User not authenticated. Cannot determine company to configure.'
+      loading.value = false
+      return
+    }
+
+    let companyIdToFetch = null
+
+    if (authStore.isEmpresa || authStore.isSuperadmin) {
+      if (authStore.user.assigned_companies && authStore.user.assigned_companies.length > 0) {
+        companyIdToFetch = authStore.user.assigned_companies[0]
+      } else if (authStore.user.company_id) {
+        companyIdToFetch = authStore.user.company_id
+      }
+    }
+
+    if (companyIdToFetch) {
+      await fetchCompanyById(companyIdToFetch)
+    } else if (authStore.isSuperadmin) {
+      try {
+        const resultList = await pb.collection('companies').getList(1, 1, { sort: 'created' })
+        if (resultList.items && resultList.items.length > 0) {
+          _setCompanyConfig(resultList.items[0])
+        } else {
+          error.value = 'Superadmin: No companies found in the system to configure.'
+        }
+      } catch (e) {
+        error.value = `Failed to fetch companies for superadmin: ${e.message}`
+        console.error(error.value, e)
+      }
+    } else {
+      error.value = 'Current user role cannot configure companies.'
+    }
+
+    loading.value = false
+  }
+
+  async function saveCompanyConfig() {
+    loading.value = true
+    error.value = null
+
+    if (!companyConfig.id) {
+      error.value = 'No company configuration loaded to save.'
+      loading.value = false
+      return { success: false, error: error.value }
+    }
+
+    try {
+      const updateData = { ...companyConfig }
+      delete updateData.id
+
+      const updatedRecord = await pb.collection('companies').update(companyConfig.id, updateData)
+      _setCompanyConfig(updatedRecord)
+
+      return { success: true, data: updatedRecord }
+    } catch (e) {
+      error.value = `Failed to save company configuration: ${e.message}`
+      console.error(error.value, e)
+      return { success: false, error: error.value }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  function resetCompanyConfig() {
+    Object.assign(companyConfig, defaultCompanyState())
+    error.value = null
+  }
+
   return {
-    // Company Config State
+    // EXISTING STATE (mantener compatibilidad)
     companyConfig,
     loading,
     error,
-
-    // Company Config Functions
-    fetchCompanyToConfigure,
-    fetchCompanyById,
-    saveCompanyConfig,
-    updateField,
-    resetConfig,
-    fetchCompanies,
-    defaultCompanyState,
 
     // Global System Config State
     globalConfig,
     globalConfigLoading,
     globalConfigError,
 
-    // Global System Config Functions
+    // NEW MANAGEMENT STATE
+    companies,
+    selectedCompany,
+    companyUsers,
+    loadingUsers,
+
+    // COMPUTED
+    companiesWithStats,
+    stats,
+
+    // EXISTING ACTIONS (mantener compatibilidad)
+    fetchCompanyById,
+    fetchCompanyToConfigure,
+    saveCompanyConfig,
+    resetCompanyConfig,
+
+    // NEW CRUD ACTIONS
     fetchGlobalConfig,
     saveGlobalConfig,
-    createCompanyWithDefaults,
+    fetchCompanies,
+    createCompany,
+    updateCompany,
+    toggleCompanyStatus,
+    deleteCompany,
+    fetchCompanyUsers,
+    createCompanyUser,
+
+    // HELPERS
+    defaultCompanyState,
+    defaultCompanyOwner,
   }
 })

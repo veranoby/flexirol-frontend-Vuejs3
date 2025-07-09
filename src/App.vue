@@ -90,10 +90,6 @@
             <v-list-item-title>Mi Perfil</v-list-item-title>
           </v-list-item>
 
-          <v-list-item @click="goToSettings" prepend-icon="mdi-cog">
-            <v-list-item-title>Configuración</v-list-item-title>
-          </v-list-item>
-
           <v-divider></v-divider>
 
           <v-list-item @click="logout" prepend-icon="mdi-logout" class="text-error">

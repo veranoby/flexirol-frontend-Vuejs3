@@ -1,5 +1,5 @@
 <template>
-  <v-container class="config-view">
+  <v-container>
     <!-- Header -->
     <v-row class="mb-4">
       <v-col cols="12">
@@ -34,44 +34,6 @@
       {{ alertMessage }}
     </v-alert>
 
-    <!-- READ-ONLY VIEW (Empresa/Operador) -->
-    <v-card v-if="!authStore.isSuperadmin && globalConfig" class="glass-morphism mb-4">
-      <v-card-title class="bg-primary text-white">
-        <v-icon class="me-2">mdi-eye</v-icon>
-        Configuración del Sistema (Solo Lectura)
-      </v-card-title>
-      <v-card-text>
-        <v-alert type="info" variant="tonal" class="mb-4">
-          Esta configuración es establecida por FlexiRol y se aplica a su empresa. Si requiere
-          cambios, contacte con soporte@flexirol.com
-        </v-alert>
-
-        <v-row>
-          <v-col md="6">
-            <h6 class="text-h6">Plan 1: Porcentaje sobre transacción</h6>
-            <p class="text-body-1">{{ globalConfig.porcentaje_servicio }}% del anticipo</p>
-          </v-col>
-          <v-col md="6">
-            <h6 class="text-h6">Plan 2: Valor fijo mensual</h6>
-            <p class="text-body-1">${{ globalConfig.valor_fijo_mensual }} por mes</p>
-          </v-col>
-        </v-row>
-
-        <v-divider class="my-4"></v-divider>
-
-        <v-row>
-          <v-col md="3"> <strong>Día inicio ciclo:</strong> {{ globalConfig.dia_inicio }} </v-col>
-          <v-col md="3"> <strong>Día cierre ciclo:</strong> {{ globalConfig.dia_cierre }} </v-col>
-          <v-col md="3">
-            <strong>% máximo sueldo:</strong> {{ globalConfig.porcentaje_maximo }}%
-          </v-col>
-          <v-col md="3">
-            <strong>Solicitudes/mes:</strong> {{ globalConfig.frecuencia_maxima }}
-          </v-col>
-        </v-row>
-      </v-card-text>
-    </v-card>
-
     <!-- EDIT VIEW (Solo Superadmin) -->
     <v-card v-else-if="authStore.isSuperadmin && globalConfig" class="glass-morphism mb-4">
       <v-card-title class="d-flex align-center">
@@ -83,10 +45,9 @@
         <v-form @submit.prevent="saveConfiguration">
           <!-- Plan 1: Porcentaje -->
           <v-row class="mb-4">
-            <v-col cols="12">
-              <h6 class="text-h6 text-primary">Plan 1: Porcentaje sobre transacción</h6>
-            </v-col>
-            <v-col md="6">
+            <v-col cols="12" md="6" sm="12">
+              <h6 class="text-h6 text-primary mb-2">Plan 1: Porcentaje sobre transacción</h6>
+
               <v-text-field
                 v-model.number="formState.porcentaje_servicio"
                 label="Porcentaje del servicio FlexiRol"
@@ -105,14 +66,10 @@
                 </template>
               </v-text-field>
             </v-col>
-          </v-row>
 
-          <!-- Plan 2: Valor Fijo -->
-          <v-row class="mb-4">
-            <v-col cols="12">
-              <h6 class="text-h6 text-primary">Plan 2: Valor fijo mensual</h6>
-            </v-col>
-            <v-col md="6">
+            <!-- Plan 2: Valor Fijo -->
+            <v-col cols="12" md="6" sm="12">
+              <h6 class="text-h6 text-primary mb-2">Plan 2: Valor fijo mensual</h6>
               <v-text-field
                 v-model.number="formState.valor_fijo_mensual"
                 label="Valor mensual fijo"
@@ -141,7 +98,7 @@
             </v-col>
 
             <!-- Día inicio ciclo -->
-            <v-col md="3" sm="6">
+            <v-col cols="12" md="3" sm="6">
               <v-text-field
                 v-model.number="formState.dia_inicio"
                 label="Día inicio ciclo"
@@ -153,7 +110,7 @@
             </v-col>
 
             <!-- Día cierre ciclo -->
-            <v-col md="3" sm="6">
+            <v-col cols="12" md="3" sm="6">
               <v-text-field
                 v-model.number="formState.dia_cierre"
                 label="Día cierre ciclo"
@@ -165,7 +122,7 @@
             </v-col>
 
             <!-- Porcentaje máximo -->
-            <v-col md="3" sm="6">
+            <v-col cols="12" md="3" sm="6">
               <v-text-field
                 v-model.number="formState.porcentaje_maximo"
                 label="% máximo del sueldo"
@@ -178,7 +135,7 @@
             </v-col>
 
             <!-- Frecuencia máxima -->
-            <v-col md="3" sm="6">
+            <v-col cols="12" md="3" sm="6">
               <v-text-field
                 v-model.number="formState.frecuencia_maxima"
                 label="Solicitudes por mes"
@@ -186,11 +143,19 @@
                 :rules="[(v) => v >= 1 || 'Mínimo 1 solicitud']"
                 variant="outlined"
                 density="comfortable"
-              ></v-text-field>
+              >
+                <template #append>
+                  <v-tooltip text="Cuantas solicitudes pueden realizarse al mes">
+                    <template #activator="{ props }">
+                      <v-icon v-bind="props" color="grey">mdi-help-circle</v-icon>
+                    </template>
+                  </v-tooltip>
+                </template></v-text-field
+              >
             </v-col>
 
             <!-- Días bloqueo -->
-            <v-col md="6" sm="6">
+            <v-col cols="12" md="3" sm="6">
               <v-text-field
                 v-model.number="formState.dias_bloqueo"
                 label="Días bloqueo antes de cierre"
@@ -198,11 +163,21 @@
                 :rules="[(v) => (v >= 0 && v <= 31) || 'Debe ser 0-31']"
                 variant="outlined"
                 density="comfortable"
-              ></v-text-field>
+              >
+                <template #append>
+                  <v-tooltip
+                    text="las solicitudes de peticiones iniciaran y se bloquearan este numero de dias dentro de su ciclo de Anticipos mensual"
+                  >
+                    <template #activator="{ props }">
+                      <v-icon v-bind="props" color="grey">mdi-help-circle</v-icon>
+                    </template>
+                  </v-tooltip>
+                </template></v-text-field
+              >
             </v-col>
 
             <!-- Días reinicio -->
-            <v-col md="6" sm="6">
+            <v-col cols="12" md="3" sm="6">
               <v-text-field
                 v-model.number="formState.dias_reinicio"
                 label="Días para reiniciar después de pago"
@@ -210,25 +185,33 @@
                 :rules="[(v) => (v >= 1 && v <= 31) || 'Debe ser 1-31']"
                 variant="outlined"
                 density="comfortable"
-              ></v-text-field>
+              >
+                <template #append>
+                  <v-tooltip
+                    text="despues de realizar un deposito, cuandos dias despues se rehabilita poder solicitar Anticipos"
+                  >
+                    <template #activator="{ props }">
+                      <v-icon v-bind="props" color="grey">mdi-help-circle</v-icon>
+                    </template>
+                  </v-tooltip>
+                </template></v-text-field
+              >
             </v-col>
-          </v-row>
 
-          <!-- Actions -->
-          <v-row>
-            <v-col cols="12">
+            <!-- Actions -->
+            <v-col cols="12" md="3" sm="6">
               <v-btn
                 type="submit"
                 color="primary"
-                size="large"
                 :loading="globalConfigLoading"
                 :disabled="!isFormValid"
               >
                 <v-icon class="me-2">mdi-content-save</v-icon>
-                Guardar Configuración Global
+                Guardar Configuración
               </v-btn>
-
-              <v-btn variant="outlined" class="ml-2" @click="resetForm">
+            </v-col>
+            <v-col cols="12" md="3" sm="6">
+              <v-btn color="error" @click="resetForm">
                 <v-icon class="me-2">mdi-refresh</v-icon>
                 Restablecer
               </v-btn>
