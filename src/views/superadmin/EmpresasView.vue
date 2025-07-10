@@ -40,7 +40,7 @@
         <v-card class="pa-4 text-center" color="info" variant="tonal">
           <v-icon size="40" class="mb-2">mdi-account-multiple</v-icon>
           <div class="text-h4 font-weight-bold text-info">{{ globalStats.totalUsers }}</div>
-          <div class="text-body-2">Total Usuarios</div>
+          <div class="text-body-2">Total Usuarios Sistema</div>
         </v-card>
       </v-col>
     </v-row>
@@ -348,83 +348,85 @@
                 </h6>
               </v-col>
 
-              <v-col cols="12" md="4">
-                <v-text-field
-                  v-model.number="empresaConfig.porcentaje"
-                  label="Porcentaje máximo (%)"
-                  variant="outlined"
-                  type="number"
-                  min="0"
-                  max="100"
-                  hint="Porcentaje máximo del sueldo disponible"
-                  persistent-hint
-                />
-              </v-col>
+              <v-row>
+                <v-col cols="12" md="4">
+                  <v-text-field
+                    v-model.number="empresaConfig.porcentaje"
+                    label="Porcentaje máximo (%)"
+                    variant="outlined"
+                    type="number"
+                    min="0"
+                    max="100"
+                    hint="Porcentaje máximo del sueldo disponible"
+                    persistent-hint
+                  />
+                </v-col>
 
-              <v-col cols="12" md="4">
-                <v-text-field
-                  v-model.number="empresaConfig.dia_inicio"
-                  label="Día inicio de ciclo"
-                  variant="outlined"
-                  type="number"
-                  min="1"
-                  max="31"
-                  hint="Día del mes que inicia el ciclo"
-                  persistent-hint
-                />
-              </v-col>
+                <v-col cols="12" md="4">
+                  <v-text-field
+                    v-model.number="empresaConfig.dia_inicio"
+                    label="Día inicio de ciclo"
+                    variant="outlined"
+                    type="number"
+                    min="1"
+                    max="31"
+                    hint="Día del mes que inicia el ciclo"
+                    persistent-hint
+                  />
+                </v-col>
 
-              <v-col cols="12" md="4">
-                <v-text-field
-                  v-model.number="empresaConfig.dia_cierre"
-                  label="Día cierre de ciclo"
-                  variant="outlined"
-                  type="number"
-                  min="1"
-                  max="31"
-                  hint="Día del mes que cierra el ciclo"
-                  persistent-hint
-                />
-              </v-col>
+                <v-col cols="12" md="4">
+                  <v-text-field
+                    v-model.number="empresaConfig.dia_cierre"
+                    label="Día cierre de ciclo"
+                    variant="outlined"
+                    type="number"
+                    min="1"
+                    max="31"
+                    hint="Día del mes que cierra el ciclo"
+                    persistent-hint
+                  />
+                </v-col>
 
-              <v-col cols="12" md="4">
-                <v-text-field
-                  v-model.number="empresaConfig.frecuencia"
-                  label="Frecuencia máxima mensual"
-                  variant="outlined"
-                  type="number"
-                  min="1"
-                  max="10"
-                  hint="Máximo anticipos por mes"
-                  persistent-hint
-                />
-              </v-col>
+                <v-col cols="12" md="4">
+                  <v-text-field
+                    v-model.number="empresaConfig.frecuencia"
+                    label="Frecuencia máxima mensual"
+                    variant="outlined"
+                    type="number"
+                    min="1"
+                    max="10"
+                    hint="Máximo anticipos por mes"
+                    persistent-hint
+                  />
+                </v-col>
 
-              <v-col cols="12" md="4">
-                <v-text-field
-                  v-model.number="empresaConfig.dia_bloqueo"
-                  label="Días bloqueo antes cierre"
-                  variant="outlined"
-                  type="number"
-                  min="0"
-                  max="31"
-                  hint="Días antes del cierre para bloquear solicitudes"
-                  persistent-hint
-                />
-              </v-col>
+                <v-col cols="12" md="4">
+                  <v-text-field
+                    v-model.number="empresaConfig.dia_bloqueo"
+                    label="Días bloqueo antes cierre"
+                    variant="outlined"
+                    type="number"
+                    min="0"
+                    max="31"
+                    hint="Días antes del cierre para bloquear solicitudes"
+                    persistent-hint
+                  />
+                </v-col>
 
-              <v-col cols="12" md="4">
-                <v-text-field
-                  v-model.number="empresaConfig.dia_reinicio"
-                  label="Días para reiniciar"
-                  variant="outlined"
-                  type="number"
-                  min="1"
-                  max="31"
-                  hint="Días después del pago para reiniciar"
-                  persistent-hint
-                />
-              </v-col>
+                <v-col cols="12" md="4">
+                  <v-text-field
+                    v-model.number="empresaConfig.dia_reinicio"
+                    label="Días para reiniciar"
+                    variant="outlined"
+                    type="number"
+                    min="1"
+                    max="31"
+                    hint="Días después del pago para reiniciar"
+                    persistent-hint
+                  />
+                </v-col>
+              </v-row>
             </v-row>
           </v-form>
         </v-card-text>
@@ -899,6 +901,7 @@ import { ref, computed, onMounted, reactive } from 'vue'
 import { useCompaniesStore } from '@/stores/companies'
 import { useUsersStore } from '@/stores/users'
 import { useSystemStore } from '@/stores/system'
+import { api } from '@/services/pocketbase'
 
 // Stores
 const companiesStore = useCompaniesStore()
@@ -1105,22 +1108,24 @@ const paginatedRows = computed(() => {
 
 // ========== METHODS (del legacy) ==========
 
-// Validación Excel vencido (del legacy)
+// REEMPLAZAR computed property
 const isExcelVencido = (fechaExcel) => {
-  if (!fechaExcel || fechaExcel === 'No creado') {
+  if (!fechaExcel || fechaExcel === 'No creado') return true
+
+  try {
+    // Parsear fecha en formato DD/MM/YYYY
+    const [day, month, year] = fechaExcel.split('/')
+    const excelDate = new Date(`${year}-${month}-${day}`)
+
+    // Obtener fecha de cierre del mes anterior (día 28)
+    const hoy = new Date()
+    const prevMonthClose = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 28)
+
+    return excelDate < prevMonthClose
+  } catch {
+    // Si hay error en el parsing, considerar como vencido
     return true
   }
-
-  const hoy = new Date()
-  const hoyMes = hoy.getMonth()
-  const hoyAnio = hoy.getFullYear()
-
-  const cierreMesAnterior = new Date(hoyAnio, hoyMes, 28)
-
-  const res = fechaExcel.split('/')
-  const diaExcel = new Date(`${res[1]}/${res[0]}/${res[2]}`)
-
-  return diaExcel < cierreMesAnterior
 }
 
 // Username computation (del legacy)
@@ -1165,7 +1170,7 @@ const loadEmpresas = async () => {
     // Load companies and global user stats like DashboardView
     const [companiesResult, usersResult] = await Promise.all([
       companiesStore.fetchCompanies(),
-      api.getGlobalUserStats(), // New optimized method
+      api.getGlobalUserStats(), // Using the new optimized method
     ])
 
     globalStats.value.totalUsers = usersResult.totalItems
@@ -1287,13 +1292,22 @@ const saveEmpresa = async () => {
 
 const toggleStatus = async (element) => {
   try {
-    const newStatus = element.gearbox !== 'true'
-    await companiesStore.updateCompany(element.id, {
+    const newStatus = !(element.gearbox === 'true' || element.gearbox === true)
+
+    // Update company AND owner gearbox together using the new sync method
+    const result = await api.updateCompanyWithOwnerSync(element.id, {
+      company_name: `${element.first_name} ${element.last_name}`.trim(),
+      ruc: element.ruc,
       gearbox: newStatus,
     })
 
-    element.gearbox = String(newStatus)
-    showAlert(`Empresa ${newStatus ? 'activada' : 'bloqueada'} exitosamente`)
+    if (result.success) {
+      element.gearbox = String(newStatus)
+      showAlert(`Empresa ${newStatus ? 'activada' : 'bloqueada'} exitosamente`)
+      await loadEmpresas() // Refresh data to ensure consistency
+    } else {
+      showAlert('Error al sincronizar estado', 'error')
+    }
   } catch (error) {
     console.error('Error toggling status:', error)
     showAlert('Error al cambiar estado', 'error')
