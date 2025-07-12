@@ -584,6 +584,34 @@ export const useUsersStore = defineStore(
       }
     }
 
+    /**
+     * Validate user base data (default values based on company or global config)
+     */
+    async function validateUserBaseData(userData) {
+      try {
+        if (userData.role === 'usuario' || userData.role === 'operador') {
+          // Obtener configuración de la empresa si el usuario no es empresa
+          if (userData.company_id) {
+            const company = await api.getCompanyById(userData.company_id)
+            userData.flexirol = company.flexirol
+            userData.flexirol2 = company.flexirol2
+            userData.flexirol3 = company.flexirol3
+          } else {
+            throw new Error('El usuario debe pertenecer a una empresa')
+          }
+        } else if (userData.role === 'empresa') {
+          // Usar configuración global para empresas
+          const config = await api.getSystemConfig()
+          userData.flexirol = config.porcentaje_servicio
+          userData.flexirol2 = config.valor_fijo_mensual
+          userData.flexirol3 = config.plan_default
+        }
+      } catch (error) {
+        console.error('Error en validateUserBaseData:', error)
+        throw error
+      }
+    }
+
     return {
       // State
       users,

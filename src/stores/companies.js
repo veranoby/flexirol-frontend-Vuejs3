@@ -356,28 +356,17 @@ export const useCompaniesStore = defineStore(
       error.value = null
 
       try {
-        // Get default config once
-        let defaultConfig = defaultCompanyState()
-        try {
-          const systemConfig = await pb
-            .collection('system_config')
-            .getFirstListItem('name="default_config"', {
-              fields:
-                'flexirol,flexirol2,flexirol3,dia_inicio,dia_cierre,porcentaje,dia_bloqueo,frecuencia,dia_reinicio',
-            })
-          defaultConfig = {
-            flexirol: systemConfig.flexirol || 0,
-            flexirol2: systemConfig.flexirol2 || 0,
-            flexirol3: systemConfig.flexirol3 || '1',
-            dia_inicio: systemConfig.dia_inicio || 1,
-            dia_cierre: systemConfig.dia_cierre || 28,
-            porcentaje: systemConfig.porcentaje || 50,
-            dia_bloqueo: systemConfig.dia_bloqueo || 2,
-            frecuencia: systemConfig.frecuencia || 3,
-            dia_reinicio: systemConfig.dia_reinicio || 1,
-          }
-        } catch (configErr) {
-          console.warn('Using fallback config:', configErr)
+        const config = await api.getSystemConfig()
+        const companyConfig = {
+          flexirol: config.porcentaje_servicio,
+          flexirol2: config.valor_fijo_mensual,
+          flexirol3: config.plan_default,
+          dia_inicio: config.dia_inicio,
+          dia_cierre: config.dia_cierre,
+          porcentaje: config.porcentaje_maximo,
+          dia_bloqueo: config.dias_bloqueo,
+          frecuencia: config.frecuencia_maxima,
+          dia_reinicio: config.dias_reinicio,
         }
 
         // Create owner user (legacy mapping)
@@ -396,13 +385,15 @@ export const useCompaniesStore = defineStore(
             `${ownerData.first_name}_${ownerData.last_name}`.toLowerCase().replace(/\s+/g, '_'),
           role: 'empresa',
           gearbox: ownerData.gearbox === 'true' || ownerData.gearbox === true,
+          emailVisibility: true, // CRÍTICO: owners deben tener email visible
+          phone_number: ownerData.phone_number || '',
         }
 
         const createdOwner = await pb.collection('users').create(ownerUserData)
 
         // Create company (legacy mapping)
         const companyCreateData = {
-          ...defaultConfig,
+          ...companyConfig,
           company_name: companyData.nombre || companyData.company_name || '',
           ruc: companyData.ruc || '',
           owner_id: createdOwner.id,
@@ -518,6 +509,8 @@ export const useCompaniesStore = defineStore(
               .replace(/\s+/g, '_'),
           disponible: userData.disponible || 0,
           gearbox: userData.gearbox === 'true' || userData.gearbox === true,
+          emailVisibility: true, // CRÍTICO: users deben tener email visible
+          phone_number: userData.phone_number || '',
         }
 
         const createdUser = await pb.collection('users').create(userCreateData)

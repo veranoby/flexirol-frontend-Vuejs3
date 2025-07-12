@@ -273,6 +273,7 @@
                   v-model="newItem.first_name"
                   label="Nombre Empresa *"
                   variant="outlined"
+                  density="compact"
                   :rules="[rules.required]"
                   @input="computedUsername"
                 />
@@ -283,6 +284,7 @@
                   v-model="newItem.last_name"
                   label="Sucursal/Sede"
                   variant="outlined"
+                  density="compact"
                   @input="computedUsername"
                 />
               </v-col>
@@ -292,6 +294,18 @@
                   v-model="newItem.cedula"
                   label="Cedula/RUC (Opcional)"
                   variant="outlined"
+                  density="compact"
+                />
+              </v-col>
+
+              <!-- Phone Number -->
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="newItem.phone_number"
+                  label="Teléfono"
+                  placeholder="0999999999"
+                  variant="outlined"
+                  density="compact"
                 />
               </v-col>
 
@@ -300,6 +314,7 @@
                 <v-switch
                   v-model="newItem.gearbox"
                   label="Empresa habilitada"
+                  density="compact"
                   color="success"
                   true-value="true"
                   false-value="false"
@@ -455,6 +470,7 @@
                   v-model="newItem.email"
                   label="Email *"
                   variant="outlined"
+                  density="compact"
                   :rules="[rules.required, rules.email]"
                 />
 
@@ -464,6 +480,7 @@
                   variant="outlined"
                   hint="Se genera automáticamente"
                   persistent-hint
+                  density="compact"
                 />
 
                 <v-text-field
@@ -472,6 +489,7 @@
                   variant="outlined"
                   hint="Se genera automáticamente"
                   persistent-hint
+                  density="compact"
                 />
               </v-col>
 
@@ -496,8 +514,12 @@
                     />
                   </v-col>
 
+                  <!-- Password reset button -->
                   <v-col cols="12" md="4">
-                    <v-btn @click="showPasswordModal = true"> Cambiar contraseña </v-btn>
+                    <v-btn color="error" @click="showPasswordModal = true" variant="flat">
+                      <v-icon start>mdi-lock-reset</v-icon>
+                      Cambiar Contraseña
+                    </v-btn>
                   </v-col>
                 </v-row>
               </v-col>
@@ -520,6 +542,7 @@
                     type="number"
                     min="0"
                     max="100"
+                    density="compact"
                     hint="Porcentaje máximo del sueldo disponible"
                     persistent-hint
                   />
@@ -531,6 +554,7 @@
                     label="Día inicio de ciclo"
                     variant="outlined"
                     type="number"
+                    density="compact"
                     min="1"
                     max="31"
                     hint="Día del mes que inicia el ciclo"
@@ -544,6 +568,7 @@
                     label="Día cierre de ciclo"
                     variant="outlined"
                     type="number"
+                    density="compact"
                     min="1"
                     max="31"
                     hint="Día del mes que cierra el ciclo"
@@ -557,6 +582,7 @@
                     label="Frecuencia máxima mensual"
                     variant="outlined"
                     type="number"
+                    density="compact"
                     min="1"
                     max="10"
                     hint="Máximo anticipos por mes"
@@ -570,6 +596,7 @@
                     label="Días bloqueo antes cierre"
                     variant="outlined"
                     type="number"
+                    density="compact"
                     min="0"
                     max="31"
                     hint="Días antes del cierre para bloquear solicitudes"
@@ -583,6 +610,7 @@
                     label="Días para reiniciar"
                     variant="outlined"
                     type="number"
+                    density="compact"
                     min="1"
                     max="31"
                     hint="Días después del pago para reiniciar"
@@ -1130,13 +1158,18 @@ const itemsPerPage = 20
 const newItem = reactive({
   first_name: '',
   last_name: '',
-  email: '', // Cambiado de user_email
-  username: '', // Cambiado de user_login
-  password: '', // Cambiado de user_pass
+  email: '',
+  username: '',
+  password: '',
   role: 'empresa',
-  gearbox: true, // Booleano, no string
+  gearbox: true,
   cedula: '',
-  company_id: '', // Cambiado de empresa
+  company_id: '',
+  phone_number: '',
+  // Campos de configuración empresa (valores default del sistema):
+  flexirol: 10, // Plan 1: porcentaje
+  flexirol2: 50, // Plan 2: valor fijo
+  flexirol3: '1', // Plan activo
 })
 
 const newUsuario = reactive({
@@ -1178,6 +1211,9 @@ const empresaConfig = reactive({
   frecuencia: 3,
   dia_bloqueo: 2,
   dia_reinicio: 1,
+  flexirol: 10, // AGREGAR
+  flexirol2: 50, // AGREGAR
+  flexirol3: '1', // AGREGAR
 })
 
 const deleteItem = ref({
@@ -1399,12 +1435,19 @@ const openCreateModal = async () => {
     gearbox: true,
     cedula: '',
     company_id: '',
+    phone_number: '',
   })
 
-  // Solo para creación: cargar valores por defecto de system_config
+  // Cargar configuración default del sistema
   try {
     const defaultConfig = await api.getDefaultCompanyConfig()
     Object.assign(empresaConfig, defaultConfig)
+    Object.assign(newItem, {
+      ...newItem,
+      flexirol: defaultConfig.flexirol,
+      flexirol2: defaultConfig.flexirol2,
+      flexirol3: defaultConfig.flexirol3,
+    })
   } catch (error) {
     console.error('Error loading default config:', error)
     // Mantener valores hardcodeados como fallback
@@ -1428,6 +1471,7 @@ const startEdit = async (company) => {
     username: company.expand?.owner_id?.username || '',
     cedula: company.cedula || '',
     gearbox: String(company.gearbox),
+    phone_number: company.phone_number || '', // Cargar el nuevo campo
   })
 
   // 2. Cargar configuración existente
@@ -1463,38 +1507,66 @@ const saveEmpresa = async () => {
   try {
     let result
     if (isEditMode.value) {
-      result = await companiesStore.updateCompany(
-        newItem.id,
-        {
-          company_name: `${newItem.first_name} ${newItem.last_name}`.trim(),
-          cedula: newItem.cedula,
-          gearbox: newItem.gearbox === 'true',
-          ...empresaConfig,
-        },
-        {
-          first_name: newItem.first_name,
-          last_name: newItem.last_name,
-          email: newItem.email,
-          gearbox: newItem.gearbox === 'true',
-        },
-      )
+      // Datos de la empresa (actualización)
+      const companyData = {
+        company_name: `${newItem.first_name} ${newItem.last_name}`.trim(),
+        cedula: newItem.cedula,
+        gearbox: newItem.gearbox === 'true',
+        phone_number: newItem.phone_number,
+        flexirol: empresaConfig.flexirol,
+        flexirol2: empresaConfig.flexirol2,
+        flexirol3: empresaConfig.flexirol3,
+        porcentaje: empresaConfig.porcentaje,
+        dia_inicio: empresaConfig.dia_inicio,
+        dia_cierre: empresaConfig.dia_cierre,
+        frecuencia: empresaConfig.frecuencia,
+        dia_bloqueo: empresaConfig.dia_bloqueo,
+        dia_reinicio: empresaConfig.dia_reinicio,
+      }
+
+      // Datos del propietario (actualización)
+      const ownerData = {
+        first_name: newItem.first_name,
+        last_name: newItem.last_name,
+        email: newItem.email,
+        gearbox: newItem.gearbox === 'true',
+        phone_number: newItem.phone_number,
+        emailVisibility: true, // CRÍTICO para owners
+      }
+
+      result = await companiesStore.updateCompany(newItem.id, companyData, ownerData)
     } else {
-      result = await companiesStore.createCompanyWithOwner(
-        {
-          company_name: `${newItem.first_name} ${newItem.last_name}`.trim(),
-          cedula: newItem.cedula,
-          gearbox: newItem.gearbox === 'true',
-          ...empresaConfig,
-        },
-        {
-          first_name: newItem.first_name,
-          last_name: newItem.last_name,
-          email: newItem.email,
-          username: newItem.username,
-          user_pass: newItem.password,
-          gearbox: newItem.gearbox === 'true',
-        },
-      )
+      // Datos de la empresa (creación)
+      const companyData = {
+        company_name: `${newItem.first_name} ${newItem.last_name}`.trim(),
+        cedula: newItem.cedula,
+        gearbox: newItem.gearbox === 'true',
+        phone_number: newItem.phone_number,
+        flexirol: empresaConfig.flexirol,
+        flexirol2: empresaConfig.flexirol2,
+        flexirol3: empresaConfig.flexirol3,
+        porcentaje: empresaConfig.porcentaje,
+        dia_inicio: empresaConfig.dia_inicio,
+        dia_cierre: empresaConfig.dia_cierre,
+        frecuencia: empresaConfig.frecuencia,
+        dia_bloqueo: empresaConfig.dia_bloqueo,
+        dia_reinicio: empresaConfig.dia_reinicio,
+      }
+
+      // Datos del propietario (creación)
+      const ownerData = {
+        first_name: newItem.first_name,
+        last_name: newItem.last_name,
+        email: newItem.email,
+        username: newItem.username,
+        password: newItem.password,
+        gearbox: newItem.gearbox === 'true',
+        phone_number: newItem.phone_number,
+        emailVisibility: true, // CRÍTICO para owners
+        role: 'empresa',
+      }
+
+      result = await companiesStore.createCompanyWithOwner(companyData, ownerData)
     }
 
     if (result.success) {
@@ -1716,16 +1788,13 @@ const saveEditedUsuario = async () => {
 }
 
 // 2. Método para cambiar contraseña
+
 const changePassword = async () => {
   try {
     if (!newPassword.value) return
 
-    await api.updateUser(newItem.id, {
-      password: newPassword.value,
-      passwordConfirm: newPassword.value,
-    })
-
-    showAlert('Contraseña actualizada exitosamente')
+    await usersStore.updateUserPassword(newItem.id, newPassword.value)
+    showAlert('Contraseña actualizada correctamente')
     showPasswordModal.value = false
     newPassword.value = ''
   } catch (error) {
