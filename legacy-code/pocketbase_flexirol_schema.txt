@@ -30,9 +30,11 @@ WordPress users (empresas) → PocketBase companies
 - address: Plain text (opcional) 
 - city: Plain text (opcional)
 - phone_number: Plain text (opcional)
+- state: Plain text (opcional) 
+- zip_code: Plain text (opcional)
 - birth_date: Date (opcional)
 - gender: Select ["hombre", "mujer"] (opcional)
-
+- emailVisibility: Boolean
  
 **Reglas de negocio:**
 - role="usuario" DEBE tener company_id (no puede ser null)
