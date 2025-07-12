@@ -13,7 +13,7 @@ WordPress users (empresas) → PocketBase companies
 ## ===== COLLECTIONS DETALLADAS =====
 
 ### Collection: users (Auth collection - extendida)
-**Campos base PocketBase:** id, email, username, password, created, updated
+**Campos base PocketBase:** id, email, username, password, created, updated, emailVisibility
 **Campos personalizados agregados:**
 - first_name: Plain text (requerido) 
 - last_name: Plain text (requerido)

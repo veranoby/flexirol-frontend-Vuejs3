@@ -1,47 +1,50 @@
 <template>
-  <v-container fluid class="pa-6">
+  <v-container fluid class="pa-6 tw-scope">
     <!-- Header con stats -->
     <v-row class="mb-6">
       <v-col cols="12">
         <h1 class="text-h4 font-weight-bold mb-2">
           <v-icon class="text-primary me-3" size="32">mdi-office-building</v-icon>
           Gestión de Empresas
+
+          <!-- Stats Chips (reemplazo de cards) -->
+
+          <v-chip class="ma-2" color="primary" size="x-large" :prepend-icon="'mdi-office-building'">
+            {{ empresa_info_set.length }}
+            <template #append>
+              <span class="ml-1 text-caption">Empresas Registradas</span>
+            </template>
+          </v-chip>
+
+          <v-chip class="ma-2" color="success" size="x-large" :prepend-icon="'mdi-check-circle'">
+            {{ empresasActivas }}
+            <template #append>
+              <span class="ml-1 text-caption">Empresas Activas</span>
+            </template>
+          </v-chip>
+
+          <v-chip
+            class="ma-2"
+            color="warning"
+            size="x-large"
+            :prepend-icon="'mdi-file-excel-outline'"
+          >
+            {{ empresasSinExcel }}
+            <template #append>
+              <span class="ml-1 text-caption">Sin Excel Actualizado</span>
+            </template>
+          </v-chip>
+
+          <v-chip class="ma-2" color="info" size="x-large" :prepend-icon="'mdi-account-multiple'">
+            {{ globalStats.totalUsers }}
+            <template #append>
+              <span class="ml-1 text-caption">Total Usuarios Sistema</span>
+            </template>
+          </v-chip>
         </h1>
-        <p class="text-body-1 text-medium-emphasis">
+        <p class="text-body-1 text-bold text-blue-grey-darken-4">
           Administración completa de empresas y sus usuarios
         </p>
-      </v-col>
-    </v-row>
-
-    <!-- Stats Cards (del legacy) -->
-    <v-row class="mb-6">
-      <v-col cols="12" md="3">
-        <v-card class="pa-4 text-center" color="primary" variant="tonal">
-          <v-icon size="40" class="mb-2">mdi-office-building</v-icon>
-          <div class="text-h4 font-weight-bold text-primary">{{ empresa_info_set.length }}</div>
-          <div class="text-body-2">Empresas Registradas</div>
-        </v-card>
-      </v-col>
-      <v-col cols="12" md="3">
-        <v-card class="pa-4 text-center" color="success" variant="tonal">
-          <v-icon size="40" class="mb-2">mdi-check-circle</v-icon>
-          <div class="text-h4 font-weight-bold text-success">{{ empresasActivas }}</div>
-          <div class="text-body-2">Empresas Activas</div>
-        </v-card>
-      </v-col>
-      <v-col cols="12" md="3">
-        <v-card class="pa-4 text-center" color="warning" variant="tonal">
-          <v-icon size="40" class="mb-2">mdi-file-excel-outline</v-icon>
-          <div class="text-h4 font-weight-bold text-warning">{{ empresasSinExcel }}</div>
-          <div class="text-body-2">Sin Excel Actualizado</div>
-        </v-card>
-      </v-col>
-      <v-col cols="12" md="3">
-        <v-card class="pa-4 text-center" color="info" variant="tonal">
-          <v-icon size="40" class="mb-2">mdi-account-multiple</v-icon>
-          <div class="text-h4 font-weight-bold text-info">{{ globalStats.totalUsers }}</div>
-          <div class="text-body-2">Total Usuarios Sistema</div>
-        </v-card>
       </v-col>
     </v-row>
 
@@ -120,30 +123,57 @@
               v-for="(element, index) in paginatedRows"
               :key="element.id"
               cols="12"
-              md="6"
-              lg="4"
+              md="4"
+              lg="3"
             >
               <v-card
-                class="h-100"
-                :color="element.gearbox ? 'transparent' : 'error'"
-                :variant="element.gearbox ? 'outlined' : 'tonal'"
+                class="h-100 glass-morphism"
+                :color="element.gearbox ? 'blue-grey-darken-3' : 'error'"
+                :variant="element.gearbox ? 'text' : 'outlined'"
               >
                 <v-card-text>
                   <!-- Header empresa -->
                   <div class="d-flex align-center mb-3">
-                    <v-avatar :color="element.gearbox ? 'success' : 'error'" size="40" class="me-3">
+                    <!-- Status -->
+
+                    <v-avatar
+                      :color="element.gearbox === 'true' ? 'success' : 'error'"
+                      size="40"
+                      class="me-3"
+                    >
                       <v-icon color="white">
                         {{
-                          element.gearbox ? 'mdi-office-building' : 'mdi-office-building-outline'
+                          element.gearbox === 'true'
+                            ? 'mdi-office-building'
+                            : 'mdi-office-building-outline'
                         }}
                       </v-icon>
                     </v-avatar>
+
                     <div class="flex-grow-1">
-                      <div class="text-body-1 font-weight-bold">
-                        {{ element.first_name }} {{ element.last_name }}
+                      <div>
+                        <span class="text-body-1 font-weight-bold">{{ element.first_name }} - </span
+                        ><span class="text-body-2">{{ element.last_name }}</span>
+
+                        <v-chip
+                          v-if="isExcelVencido(element.fecha_excel)"
+                          color="warning"
+                          size="x-small"
+                          class="ml-2"
+                        >
+                          <v-icon size="16" class="me-1">mdi-file-excel</v-icon>
+
+                          Excel Vencido
+                        </v-chip>
+
+                        <v-chip v-else color="success" size="x-small" class="ml-2">
+                          <v-icon size="16" class="me-1">mdi-file-excel</v-icon>
+
+                          Ultima Actualizacion: {{ element.fecha_excel || 'No creado' }}
+                        </v-chip>
                       </div>
                       <div class="text-body-2 text-medium-emphasis">
-                        RUC: {{ element.ruc || 'No registrado' }}
+                        RUC: {{ element.cedula || 'No registrado' }}
                       </div>
                     </div>
                   </div>
@@ -153,55 +183,30 @@
 
                   <div class="text-body-2 mb-2">
                     <v-icon size="16" class="me-1">mdi-email</v-icon>
-                    {{ element.user_email }}
-                  </div>
+                    {{ element.email }}
 
-                  <div class="text-body-2 mb-2">
                     <v-icon size="16" class="me-1">mdi-calendar</v-icon>
                     Creado: {{ formatDate(element.user_registered) }}
                   </div>
 
-                  <div class="text-body-2 mb-3">
-                    <v-icon size="16" class="me-1">mdi-file-excel</v-icon>
-                    Excel: {{ element.fecha_excel || 'No creado' }}
-                    <v-chip
-                      v-if="isExcelVencido(element.fecha_excel)"
-                      color="warning"
-                      size="x-small"
-                      class="ml-2"
-                    >
-                      Vencido
-                    </v-chip>
-                  </div>
-
-                  <!-- Status -->
-                  <div class="d-flex align-center mb-3">
-                    <v-chip
-                      :color="element.gearbox ? 'success' : 'error'"
-                      size="small"
-                      variant="tonal"
-                    >
-                      <v-icon start size="16">
-                        {{ element.gearbox ? 'mdi-check-circle' : 'mdi-close-circle' }}
-                      </v-icon>
-                      {{ element.gearbox ? 'Activa' : 'Bloqueada' }}
-                    </v-chip>
-                  </div>
+                  <div class="text-body-2 mb-3"></div>
 
                   <!-- Acciones -->
                   <div class="d-flex gap-1">
                     <v-btn
-                      size="small"
-                      variant="outlined"
-                      color="primary"
+                      size="x-small"
+                      class="ma-1"
+                      variant="tonal"
+                      color="blue-grey-darken-2"
                       @click="viewUsers(element)"
                     >
                       <v-icon start size="16">mdi-account-multiple</v-icon>
                       Usuarios
                     </v-btn>
                     <v-btn
-                      size="small"
-                      variant="outlined"
+                      size="x-small"
+                      class="ma-1"
+                      variant="tonal"
                       color="secondary"
                       @click="startEdit(element)"
                     >
@@ -209,8 +214,9 @@
                       Editar
                     </v-btn>
                     <v-btn
-                      size="small"
-                      variant="outlined"
+                      size="x-small"
+                      class="ma-1"
+                      variant="tonal"
                       :color="element.gearbox ? 'warning' : 'success'"
                       @click="toggleStatus(element)"
                     >
@@ -220,8 +226,9 @@
                       {{ element.gearbox ? 'Bloquear' : 'Activar' }}
                     </v-btn>
                     <v-btn
-                      size="small"
-                      variant="outlined"
+                      size="x-small"
+                      class="ma-1"
+                      variant="tonal"
                       color="error"
                       @click="startDelete(element)"
                     >
@@ -245,7 +252,7 @@
     <!-- Modal Crear/Editar Empresa (estructura del legacy) -->
     <v-dialog v-model="showCreateModal" max-width="700px" persistent>
       <v-card>
-        <v-card-title class="d-flex align-center">
+        <v-card-title color="primary" class="d-flex align-center">
           <v-icon class="me-2">{{ isEditMode ? 'mdi-pencil' : 'mdi-plus' }}</v-icon>
           {{ isEditMode ? 'Editar Empresa' : 'Crear Nueva Empresa' }}
         </v-card-title>
@@ -254,7 +261,7 @@
           <v-form ref="empresaForm" v-model="formValid">
             <!-- Tipo de usuario (del legacy) -->
             <v-alert v-if="!isEditMode" type="info" variant="tonal" class="mb-4">
-              <strong>Tipo de usuario:</strong> Empresa (Propietario)
+              <strong>Tipo de usuario:</strong> Empresa (admin)
             </v-alert>
 
             <v-row>
@@ -287,17 +294,22 @@
 
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="newItem.user_email"
-                  label="Email *"
+                  v-model="newItem.cedula"
+                  label="Cedula/RUC (Opcional)"
                   variant="outlined"
-                  :rules="[rules.required, rules.email]"
                 />
               </v-col>
 
+              <!-- Estado -->
               <v-col cols="12" md="6">
-                <v-text-field v-model="newItem.ruc" label="RUC (Opcional)" variant="outlined" />
+                <v-switch
+                  v-model="newItem.gearbox"
+                  label="Empresa habilitada"
+                  color="success"
+                  true-value="true"
+                  false-value="false"
+                />
               </v-col>
-
               <!-- Datos de acceso -->
               <v-col cols="12">
                 <h6 class="text-h6 mb-3">
@@ -306,37 +318,56 @@
                 </h6>
               </v-col>
 
-              <v-col cols="12" md="6">
+              <v-col v-if="!isEditMode" cols="12">
                 <v-text-field
-                  v-model="newItem.user_login"
+                  v-model="newItem.email"
+                  label="Email *"
+                  variant="outlined"
+                  :rules="[rules.required, rules.email]"
+                />
+
+                <v-text-field
+                  v-model="newItem.username"
                   label="Usuario"
                   variant="outlined"
-                  readonly
                   hint="Se genera automáticamente"
                   persistent-hint
                 />
-              </v-col>
 
-              <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="newItem.user_pass"
+                  v-model="newItem.password"
                   label="Contraseña"
                   variant="outlined"
-                  readonly
                   hint="Se genera automáticamente"
                   persistent-hint
                 />
               </v-col>
 
-              <!-- Estado -->
-              <v-col cols="12">
-                <v-switch
-                  v-model="newItem.gearbox"
-                  label="Empresa habilitada"
-                  color="success"
-                  true-value="true"
-                  false-value="false"
-                />
+              <v-col v-else cols="12">
+                <v-row>
+                  <v-col cols="12" md="4">
+                    <v-text-field
+                      v-model="newItem.email"
+                      label="Email *"
+                      variant="solo-filled"
+                      readonly
+                      density="compact"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="4">
+                    <v-text-field
+                      v-model="newItem.username"
+                      label="Usuario"
+                      readonly
+                      density="compact"
+                      variant="solo-filled"
+                    />
+                  </v-col>
+
+                  <v-col cols="12" md="4">
+                    <v-btn @click="showPasswordModal = true"> Cambiar contraseña </v-btn>
+                  </v-col>
+                </v-row>
               </v-col>
 
               <!-- Configuración de Anticipos -->
@@ -433,8 +464,17 @@
 
         <v-card-actions>
           <v-spacer />
-          <v-btn text="Cancelar" @click="closeCreateModal" :disabled="submitting" />
           <v-btn
+            class="ma-1"
+            variant="tonal"
+            color="error"
+            text="Cancelar"
+            @click="closeCreateModal"
+            :disabled="submitting"
+          />
+          <v-btn
+            class="ma-1"
+            variant="tonal"
             color="primary"
             text="Guardar"
             @click="saveEmpresa"
@@ -476,7 +516,7 @@
 
               <v-col cols="12">
                 <v-text-field
-                  v-model="editedUsuario.user_email"
+                  v-model="editedUsuario.email"
                   label="Email *"
                   variant="outlined"
                   :rules="[rules.required, rules.email]"
@@ -503,12 +543,12 @@
               </v-col>
 
               <v-col cols="12" md="6">
-                <v-text-field v-model="editedUsuario.ciudad" label="Ciudad" variant="outlined" />
+                <v-text-field v-model="editedUsuario.city" label="Ciudad" variant="outlined" />
               </v-col>
 
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="editedUsuario.direccion"
+                  v-model="editedUsuario.address"
                   label="Dirección"
                   variant="outlined"
                 />
@@ -516,23 +556,23 @@
 
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="editedUsuario.nacimiento"
-                  label="Fecha de Nacimiento"
+                  v-model="editedUsuario.username"
+                  label="Usuario"
                   variant="outlined"
-                  type="date"
+                  readonly
+                  hint="Se genera automáticamente"
+                  persistent-hint
                 />
               </v-col>
 
               <v-col cols="12" md="6">
-                <v-select
-                  v-model="editedUsuario.gender"
-                  :items="[
-                    { title: 'Masculino', value: 'M' },
-                    { title: 'Femenino', value: 'F' },
-                    { title: 'Otro', value: 'O' },
-                  ]"
-                  label="Género"
+                <v-text-field
+                  v-model="editedUsuario.password"
+                  label="Contraseña"
                   variant="outlined"
+                  readonly
+                  hint="Se genera automáticamente"
+                  persistent-hint
                 />
               </v-col>
 
@@ -640,7 +680,7 @@
                         {{ elementUsuario.first_name }} {{ elementUsuario.last_name }}
                       </div>
                       <div class="text-body-2 text-medium-emphasis">
-                        {{ elementUsuario.user_email }}
+                        {{ elementUsuario.email }}
                       </div>
                     </div>
                   </div>
@@ -654,7 +694,7 @@
                     <strong>Disponible:</strong> ${{ elementUsuario.disponible || 0 }}
                   </div>
                   <div class="text-body-2 mb-3">
-                    <strong>Usuario:</strong> {{ elementUsuario.user_login }}
+                    <strong>Usuario:</strong> {{ elementUsuario.username }}
                   </div>
 
                   <div class="d-flex gap-1">
@@ -739,7 +779,7 @@
 
               <v-col cols="12">
                 <v-text-field
-                  v-model="newUsuario.user_email"
+                  v-model="newUsuario.email"
                   label="Email *"
                   variant="outlined"
                   :rules="[rules.required, rules.email]"
@@ -767,38 +807,16 @@
               </v-col>
 
               <v-col cols="12" md="6">
-                <v-text-field v-model="newUsuario.ciudad" label="Ciudad" variant="outlined" />
+                <v-text-field v-model="newUsuario.city" label="Ciudad" variant="outlined" />
               </v-col>
 
               <v-col cols="12" md="6">
-                <v-text-field v-model="newUsuario.direccion" label="Dirección" variant="outlined" />
-              </v-col>
-
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="newUsuario.nacimiento"
-                  label="Fecha de Nacimiento"
-                  variant="outlined"
-                  type="date"
-                />
-              </v-col>
-
-              <v-col cols="12" md="6">
-                <v-select
-                  v-model="newUsuario.gender"
-                  :items="[
-                    { title: 'Masculino', value: 'M' },
-                    { title: 'Femenino', value: 'F' },
-                    { title: 'Otro', value: 'O' },
-                  ]"
-                  label="Género"
-                  variant="outlined"
-                />
+                <v-text-field v-model="newUsuario.address" label="Dirección" variant="outlined" />
               </v-col>
 
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="newUsuario.user_login"
+                  v-model="newUsuario.username"
                   label="Usuario"
                   variant="outlined"
                   readonly
@@ -809,7 +827,7 @@
 
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="newUsuario.user_pass"
+                  v-model="newUsuario.password"
                   label="Contraseña"
                   variant="outlined"
                   readonly
@@ -893,6 +911,30 @@
         <v-btn color="white" variant="text" @click="alert.show = false"> Cerrar </v-btn>
       </template>
     </v-snackbar>
+
+    <!-- Modal Cambiar Contraseña -->
+    <v-dialog v-model="showPasswordModal" max-width="500px">
+      <v-card>
+        <v-card-title>
+          <v-icon class="me-2">mdi-key</v-icon>
+          Cambiar contraseña
+        </v-card-title>
+        <v-card-text>
+          <v-text-field
+            v-model="newPassword"
+            label="Nueva contraseña"
+            type="password"
+            :rules="passwordRules"
+            variant="outlined"
+          />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn @click="showPasswordModal = false">Cancelar</v-btn>
+          <v-btn color="primary" @click="changePassword" :disabled="!newPassword"> Guardar </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -935,6 +977,14 @@ const isEditMode = ref(false)
 const isEditUserMode = ref(false)
 const selectedEmpresa = ref(null)
 
+// 1. Añadir estado reactivo para el modal y nueva contraseña
+const showPasswordModal = ref(false)
+const newPassword = ref('')
+const passwordRules = [
+  (v) => !!v || 'Contraseña requerida',
+  (v) => (v && v.length >= 8) || 'Mínimo 8 caracteres',
+]
+
 // Form validation
 const formValid = ref(false)
 const userFormValid = ref(false)
@@ -944,52 +994,49 @@ const editUserFormValid = ref(false)
 const currentPage = ref(1)
 const itemsPerPage = 20
 
-// Forms (estructura del legacy)
+// Forms (actualizado según esquema PocketBase)
 const newItem = reactive({
   first_name: '',
   last_name: '',
-  user_email: '',
-  user_login: '',
-  user_pass: '',
+  email: '', // Cambiado de user_email
+  username: '', // Cambiado de user_login
+  password: '', // Cambiado de user_pass
   role: 'empresa',
-  gearbox: 'true',
-  ruc: '',
-  empresa: '',
+  gearbox: true, // Booleano, no string
+  cedula: '',
+  company_id: '', // Cambiado de empresa
 })
 
 const newUsuario = reactive({
   first_name: '',
   last_name: '',
-  user_email: '',
-  user_login: '',
-  user_pass: '',
+  email: '', // Cambiado de user_email
+  username: '', // Cambiado de user_login
+  password: '', // Cambiado de user_pass
   role: 'usuario',
-  gearbox: 'true',
+  gearbox: true, // Booleano, no string
   cedula: '',
   disponible: 0,
-  empresa: '',
-  ciudad: '',
-  direccion: '',
-  nacimiento: '',
-  gender: '',
+  company_id: '', // Cambiado de empresa
+  city: '', // Cambiado de ciudad
+  address: '', // Cambiado de direccion
+  // Eliminados: nacimiento, gender (no existen en el esquema)
 })
 
 const editedUsuario = reactive({
   id: '',
   first_name: '',
   last_name: '',
-  user_email: '',
-  user_login: '',
-  user_pass: '',
+  email: '', // Cambiado de user_email
+  username: '', // Cambiado de user_login
   role: 'usuario',
-  gearbox: 'true',
+  gearbox: true, // Booleano, no string
   cedula: '',
   disponible: 0,
-  empresa: '',
-  ciudad: '',
-  direccion: '',
-  nacimiento: '',
-  gender: '',
+  company_id: '', // Cambiado de empresa
+  city: '', // Cambiado de ciudad
+  address: '', // Cambiado de direccion
+  // Eliminados: nacimiento, gender (no existen en el esquema)
 })
 
 const empresaConfig = reactive({
@@ -1004,8 +1051,8 @@ const empresaConfig = reactive({
 const deleteItem = ref({
   first_name: '',
   last_name: '',
-  user_email: '',
-  user_login: '',
+  email: '',
+  username: '',
   tipo: 'empresa',
 })
 
@@ -1050,8 +1097,8 @@ const filteredRows = computed(() => {
       (element) =>
         element.first_name?.toLowerCase().includes(search) ||
         element.last_name?.toLowerCase().includes(search) ||
-        element.user_email?.toLowerCase().includes(search) ||
-        element.ruc?.toLowerCase().includes(search),
+        element.email?.toLowerCase().includes(search) ||
+        element.cedula?.toLowerCase().includes(search),
     )
   }
 
@@ -1084,7 +1131,7 @@ const filteredRowsUsuarios = computed(() => {
       (element) =>
         element.first_name?.toLowerCase().includes(search) ||
         element.last_name?.toLowerCase().includes(search) ||
-        element.user_email?.toLowerCase().includes(search) ||
+        element.email?.toLowerCase().includes(search) ||
         element.cedula?.toLowerCase().includes(search),
     )
   }
@@ -1132,8 +1179,8 @@ const isExcelVencido = (fechaExcel) => {
 const computedUsername = () => {
   const userLogin = `${newItem.first_name}_${newItem.last_name}`.replace(/\s+/g, '_').toUpperCase()
 
-  newItem.user_login = userLogin
-  newItem.user_pass = userLogin
+  newItem.username = userLogin
+  newItem.password = userLogin
 }
 
 const computedUsernameUsuario = () => {
@@ -1141,8 +1188,8 @@ const computedUsernameUsuario = () => {
     .replace(/\s+/g, '_')
     .toUpperCase()
 
-  newUsuario.user_login = userLogin
-  newUsuario.user_pass = userLogin
+  newUsuario.username = userLogin
+  newUsuario.password = userLogin
 }
 
 // Alert system
@@ -1181,11 +1228,20 @@ const loadEmpresas = async () => {
       // Legacy mapping for display
       first_name: company.expand?.owner_id?.first_name || company.company_name || '',
       last_name: company.expand?.owner_id?.last_name || '',
-      user_email: company.expand?.owner_id?.email || '',
-      user_login: company.expand?.owner_id?.username || '',
+      email: company.expand?.owner_id?.email || '',
+      username: company.expand?.owner_id?.username || '',
+      cedula: company.expand?.owner_id?.cedula || '',
       user_registered: company.expand?.owner_id?.created || company.created,
-      gearbox: String(company.gearbox), // EMPRESA gearbox, not owner
-      user_count: company.users_count || 0,
+      gearbox: String(company.gearbox), // ← Usar gearbox de la EMPRESA (no del owner)
+      user_count: company.users_count,
+      porcentaje: company.porcentaje,
+      dia_inicio: company.dia_inicio,
+      dia_cierre: company.dia_cierre,
+      frecuencia: company.frecuencia,
+      dia_bloqueo: company.dia_bloqueo,
+      dia_reinicio: company.dia_reinicio,
+
+      fecha_excel: company.fecha_excel,
     }))
   } catch (error) {
     console.error('Error loading empresas:', error)
@@ -1195,35 +1251,67 @@ const loadEmpresas = async () => {
   }
 }
 
-const openCreateModal = () => {
+const openCreateModal = async () => {
   isEditMode.value = false
   Object.assign(newItem, {
     first_name: '',
     last_name: '',
-    user_email: '',
-    user_login: '',
-    user_pass: '',
+    email: '',
+    username: '',
+    password: '',
     role: 'empresa',
-    gearbox: 'true',
-    ruc: '',
-    empresa: '',
+    gearbox: true,
+    cedula: '',
+    company_id: '',
   })
+
+  // Solo para creación: cargar valores por defecto de system_config
+  try {
+    const defaultConfig = await api.getDefaultCompanyConfig()
+    Object.assign(empresaConfig, defaultConfig)
+  } catch (error) {
+    console.error('Error loading default config:', error)
+    // Mantener valores hardcodeados como fallback
+  }
+
   showCreateModal.value = true
 }
 
-const startEdit = (element) => {
+const startEdit = async (company) => {
   isEditMode.value = true
+
+  // Debug 1: Verificar datos crudos de la empresa
+  console.log('Datos empresa recibidos:', company)
+
+  // 1. Cargar datos básicos
   Object.assign(newItem, {
-    id: element.id,
-    first_name: element.first_name,
-    last_name: element.last_name,
-    user_email: element.user_email,
-    user_login: element.user_login,
-    user_pass: '',
-    role: 'empresa',
-    gearbox: String(element.gearbox),
-    ruc: element.ruc || '',
+    id: company.id,
+    first_name: company.expand?.owner_id?.first_name || company.company_name || '',
+    last_name: company.expand?.owner_id?.last_name || '',
+    email: company.expand?.owner_id?.email || '',
+    username: company.expand?.owner_id?.username || '',
+    cedula: company.cedula || '',
+    gearbox: String(company.gearbox),
   })
+
+  // 2. Cargar configuración existente
+  const configData = {
+    porcentaje: company.porcentaje ?? company.flexirol, // Usar flexirol como fallback
+    dia_inicio: company.dia_inicio,
+    dia_cierre: company.dia_cierre,
+    frecuencia: company.frecuencia,
+    dia_bloqueo: company.dia_bloqueo,
+    dia_reinicio: company.dia_reinicio,
+  }
+
+  // Debug 2: Verificar valores antes de asignar
+  console.log('Configuración a asignar:', configData)
+
+  Object.assign(empresaConfig, configData)
+
+  // Debug 3: Verificar estado final
+  console.log('Estado final empresaConfig:', empresaConfig)
+
   showCreateModal.value = true
 }
 
@@ -1243,14 +1331,14 @@ const saveEmpresa = async () => {
         newItem.id,
         {
           company_name: `${newItem.first_name} ${newItem.last_name}`.trim(),
-          ruc: newItem.ruc,
+          cedula: newItem.cedula,
           gearbox: newItem.gearbox === 'true',
           ...empresaConfig,
         },
         {
           first_name: newItem.first_name,
           last_name: newItem.last_name,
-          email: newItem.user_email,
+          email: newItem.email,
           gearbox: newItem.gearbox === 'true',
         },
       )
@@ -1258,16 +1346,16 @@ const saveEmpresa = async () => {
       result = await companiesStore.createCompanyWithOwner(
         {
           company_name: `${newItem.first_name} ${newItem.last_name}`.trim(),
-          ruc: newItem.ruc,
+          cedula: newItem.cedula,
           gearbox: newItem.gearbox === 'true',
           ...empresaConfig,
         },
         {
           first_name: newItem.first_name,
           last_name: newItem.last_name,
-          email: newItem.user_email,
-          user_login: newItem.user_login,
-          user_pass: newItem.user_pass,
+          email: newItem.email,
+          username: newItem.username,
+          user_pass: newItem.password,
           gearbox: newItem.gearbox === 'true',
         },
       )
@@ -1292,22 +1380,13 @@ const saveEmpresa = async () => {
 
 const toggleStatus = async (element) => {
   try {
-    const newStatus = !(element.gearbox === 'true' || element.gearbox === true)
-
-    // Update company AND owner gearbox together using the new sync method
-    const result = await api.updateCompanyWithOwnerSync(element.id, {
-      company_name: `${element.first_name} ${element.last_name}`.trim(),
-      ruc: element.ruc,
-      gearbox: newStatus,
+    const newStatus = !(element.gearbox === 'true')
+    await api.updateCompanyWithOwnerSync(element.id, {
+      gearbox: newStatus, // ← Actualiza gearbox de la empresa (y propaga al owner)
     })
-
-    if (result.success) {
-      element.gearbox = String(newStatus)
-      showAlert(`Empresa ${newStatus ? 'activada' : 'bloqueada'} exitosamente`)
-      await loadEmpresas() // Refresh data to ensure consistency
-    } else {
-      showAlert('Error al sincronizar estado', 'error')
-    }
+    element.gearbox = String(newStatus)
+    showAlert(`Empresa ${newStatus ? 'activada' : 'bloqueada'} exitosamente`)
+    await loadEmpresas() // Refresh data to ensure consistency
   } catch (error) {
     console.error('Error toggling status:', error)
     showAlert('Error al cambiar estado', 'error')
@@ -1347,14 +1426,14 @@ const openCreateUserModal = () => {
   Object.assign(newUsuario, {
     first_name: '',
     last_name: '',
-    user_email: '',
-    user_login: '',
-    user_pass: '',
+    email: '',
+    username: '',
+    password: '',
     role: 'usuario',
-    gearbox: 'true',
+    gearbox: true,
     cedula: '',
     disponible: 0,
-    empresa: selectedEmpresa.value?.id || '',
+    company_id: selectedEmpresa.value?.id || '',
   })
   showCreateUserModal.value = true
 }
@@ -1371,11 +1450,11 @@ const saveUsuario = async () => {
     const result = await companiesStore.createUserForCompany(selectedEmpresa.value.id, {
       first_name: newUsuario.first_name,
       last_name: newUsuario.last_name,
-      user_email: newUsuario.user_email,
+      email: newUsuario.email,
       cedula: newUsuario.cedula,
       disponible: newUsuario.disponible,
-      user_login: newUsuario.user_login,
-      user_pass: newUsuario.user_pass,
+      username: newUsuario.username,
+      user_pass: newUsuario.password,
       gearbox: newUsuario.gearbox === 'true',
     })
 
@@ -1449,14 +1528,12 @@ const startEditUsuario = (element) => {
     id: element.id,
     first_name: element.first_name,
     last_name: element.last_name,
-    user_email: element.user_email || element.email,
-    user_login: element.user_login || element.username,
+    email: element.email || element.email,
+    username: element.username || element.username,
     cedula: element.cedula,
     disponible: element.disponible,
-    ciudad: element.ciudad || element.city || '',
-    direccion: element.direccion || element.address || '',
-    nacimiento: element.nacimiento || element.birth_date || '',
-    gender: element.gender || '',
+    city: element.city || element.ciudad || '',
+    address: element.address || element.direccion || '',
     gearbox: String(element.gearbox),
   })
   showEditUserModal.value = true
@@ -1475,13 +1552,11 @@ const saveEditedUsuario = async () => {
     const updateData = {
       first_name: editedUsuario.first_name,
       last_name: editedUsuario.last_name,
-      email: editedUsuario.user_email,
+      email: editedUsuario.email,
       cedula: editedUsuario.cedula,
       disponible: editedUsuario.disponible,
-      city: editedUsuario.ciudad,
-      address: editedUsuario.direccion,
-      birth_date: editedUsuario.nacimiento,
-      gender: editedUsuario.gender,
+      city: editedUsuario.city,
+      address: editedUsuario.address,
       gearbox: editedUsuario.gearbox === 'true',
     }
 
@@ -1498,6 +1573,25 @@ const saveEditedUsuario = async () => {
     showAlert('Error al actualizar usuario', 'error')
   } finally {
     submittingUser.value = false
+  }
+}
+
+// 2. Método para cambiar contraseña
+const changePassword = async () => {
+  try {
+    if (!newPassword.value) return
+
+    await api.updateUser(newItem.id, {
+      password: newPassword.value,
+      passwordConfirm: newPassword.value,
+    })
+
+    showAlert('Contraseña actualizada exitosamente')
+    showPasswordModal.value = false
+    newPassword.value = ''
+  } catch (error) {
+    showAlert('Error al cambiar contraseña', 'error')
+    console.error('Error changing password:', error)
   }
 }
 

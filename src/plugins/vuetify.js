@@ -45,6 +45,9 @@ export default createVuetify({
   },
   // ✅ Configuración para permitir glass-morphism
   defaults: {
+    global: {
+      fontFamily: "'Ubuntu', sans-serif",
+    },
     VAppBar: {
       // Permite override de estilos por defecto
       flat: true,

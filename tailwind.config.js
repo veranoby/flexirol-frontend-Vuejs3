@@ -8,6 +8,9 @@ export default {
   },
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["'Ubuntu'", 'sans-serif'], // ← Esto aplica Ubuntu como fuente base
+      },
       // ✅ Colores FlexiRol compatibles con Tailwind
       colors: {
         flexirol: {

@@ -234,7 +234,7 @@ export const useCompaniesStore = defineStore(
           expand: 'owner_id',
           sort: '-created',
           fields:
-            'id,company_name,ruc,gearbox,created,fecha_excel,expand.owner_id.id,expand.owner_id.first_name,expand.owner_id.last_name,expand.owner_id.email,expand.owner_id.username,expand.owner_id.created,expand.owner_id.gearbox',
+            'id,owner_id,company_name,flexirol,flexirol2,flexirol3,dia_inicio , dia_cierre , porcentaje , dia_bloqueo , frecuencia , dia_reinicio , fecha_excel , gearbox,created,expand.owner_id.first_name,expand.owner_id.last_name,expand.owner_id.email,expand.owner_id.cedula,expand.owner_id.username,expand.owner_id.created,expand.owner_id.gearbox',
         })
 
         // Store companies without user counts first (avoid multiple async calls)
