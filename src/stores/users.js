@@ -18,10 +18,9 @@ export const useUsersStore = defineStore(
     const totalPages = ref(1)
     const itemsPerPage = 50
 
-    // Cache state
-    const cachedUsers = ref([])
-    const lastFetch = ref(0)
-    const CACHE_TTL = 5 * 60 * 1000 // 5 minutes cache
+    // Cache control
+    const usersFetchTime = ref({}) // { filterKey: timestamp }
+    const USERS_CACHE_DURATION = 5 * 60 * 1000 // 5 minutos
 
     // Getters
 
@@ -63,26 +62,29 @@ export const useUsersStore = defineStore(
     // Actions
 
     /**
-     * Optimized fetchUsers with caching
+     * Optimized fetchUsers with caching by filters
      */
-    async function fetchUsers(filters = {}, page = 1, perPage = itemsPerPage) {
-      const now = Date.now()
+    async function fetchUsers(filters = {}, forceRefresh = false) {
+      const cacheKey = JSON.stringify(filters)
 
-      // Return cached results if available and no filters applied
-      if (
-        now - lastFetch.value < CACHE_TTL &&
-        cachedUsers.value.length &&
-        Object.keys(filters).length === 0
-      ) {
-        users.value = cachedUsers.value
-        return {
-          items: cachedUsers.value,
-          page: 1,
-          totalPages: 1,
-          totalItems: cachedUsers.value.length,
+      // Check cache first
+      if (!forceRefresh && users.value.length > 0 && usersFetchTime.value[cacheKey]) {
+        const elapsed = Date.now() - usersFetchTime.value[cacheKey]
+        if (elapsed < USERS_CACHE_DURATION) {
+          console.log('🎯 Cache hit: users', {
+            elapsed: (elapsed / 1000).toFixed(1) + 's',
+            filters,
+          })
+          return {
+            items: users.value,
+            page: currentPage.value,
+            totalPages: totalPages.value,
+            totalItems: users.value.length,
+          }
         }
       }
 
+      console.log('📡 Fetching users from PocketBase...', filters)
       loading.value = true
       error.value = null
 
@@ -122,8 +124,8 @@ export const useUsersStore = defineStore(
         const filterString = filterParts.length > 0 ? filterParts.join(' && ') : ''
 
         const result = await api.getUsers({
-          page,
-          perPage,
+          page: currentPage.value,
+          perPage: itemsPerPage,
           filter: filterString,
           sort: '-created',
           expand: 'company_id',
@@ -133,11 +135,12 @@ export const useUsersStore = defineStore(
         const mappedItems = result.items.map(mapUserData)
         users.value = mappedItems
 
-        // Update cache if no filters
-        if (Object.keys(filters).length === 0) {
-          cachedUsers.value = mappedItems
-          lastFetch.value = now
-        }
+        // Update cache
+        usersFetchTime.value[cacheKey] = Date.now()
+        console.log('✅ Users fetched and cached', {
+          count: users.value.length,
+          filters,
+        })
 
         currentPage.value = result.page
         totalPages.value = result.totalPages
@@ -149,12 +152,8 @@ export const useUsersStore = defineStore(
           totalItems: result.totalItems,
         }
       } catch (err) {
-        if (err.isAbort) {
-          console.warn('Request was cancelled:', err.message)
-        } else {
-          error.value = `Error al cargar usuarios: ${err.message}`
-          console.error('Error fetching users:', err)
-        }
+        error.value = `Error al cargar usuarios: ${err.message}`
+        console.error('Error fetching users:', err)
         throw err
       } finally {
         loading.value = false
@@ -181,17 +180,17 @@ export const useUsersStore = defineStore(
       error.value = null
 
       try {
-        // Validate data using system store
+        // Validación de datos (preservada)
         await systemStore.validateUserBaseData(userData)
 
-        // Generate username
+        // Generar username (preservado)
         const username = systemStore.generateUsername(
           userData.first_name,
           userData.last_name,
           userData.cedula,
         )
 
-        // Prepare user object
+        // Preparar objeto de usuario (preservado)
         const newUser = {
           first_name: userData.first_name.trim(),
           last_name: userData.last_name.trim(),
@@ -200,23 +199,28 @@ export const useUsersStore = defineStore(
           cedula: userData.cedula.trim(),
           role: userData.role || 'usuario',
           gearbox: userData.gearbox !== undefined ? userData.gearbox : true,
-          password: userData.password || userData.cedula, // Default password is cedula
+          password: userData.password || userData.cedula,
           passwordConfirm: userData.password || userData.cedula,
           company_id: userData.role === 'empresa' ? null : userData.company_id,
           disponible: userData.disponible || 0,
         }
 
-        // Additional fields based on role
+        // Campos adicionales (preservado)
         if (userData.role === 'operador' && userData.assigned_companies) {
           newUser.assigned_companies = userData.assigned_companies
         }
 
         const createdUser = await api.createUser(newUser)
+        const mappedUser = mapUserData(createdUser)
 
-        // Add to local state
-        users.value.unshift(mapUserData(createdUser))
+        // Actualización local optimista
+        users.value.unshift(mappedUser)
+        console.log('➕ User created and added locally', {
+          id: createdUser.id,
+          username: createdUser.username,
+        })
 
-        return createdUser
+        return mappedUser
       } catch (err) {
         error.value = `Error al crear usuario: ${err.message}`
         console.error('Error creating user:', err)
@@ -227,48 +231,35 @@ export const useUsersStore = defineStore(
     }
 
     /**
-     * Update an existing user
+     * Update user locally (optimistic updates)
+     */
+    function updateUserLocal(userId, updates) {
+      const user = users.value.find((u) => u.id === userId)
+      if (user) {
+        Object.assign(user, updates)
+        console.log('🔄 User updated locally', { userId, updates })
+      }
+    }
+
+    /**
+     * Optimized updateUser with optimistic updates
      */
     async function updateUser(userId, userData) {
-      loading.value = true
-      error.value = null
+      // Update locally first
+      updateUserLocal(userId, userData)
 
       try {
-        // Validate data using system store
-        await systemStore.validateUserBaseData(userData, true, userId)
+        const updated = await api.updateUser(userId, userData)
 
-        // Prepare update object (remove password fields for updates)
-        const updateData = {
-          first_name: userData.first_name.trim(),
-          last_name: userData.last_name.trim(),
-          email: userData.email.toLowerCase().trim(),
-          cedula: userData.cedula.trim(),
-          role: userData.role,
-          gearbox: userData.gearbox,
-          company_id: userData.role === 'empresa' ? null : userData.company_id,
-          disponible: userData.disponible || 0,
-        }
+        // Update local state with full response
+        updateUserLocal(userId, mapUserData(updated))
 
-        // Handle role-specific fields
-        if (userData.role === 'operador' && userData.assigned_companies) {
-          updateData.assigned_companies = userData.assigned_companies
-        }
-
-        const updatedUser = await api.updateUser(userId, updateData)
-
-        // Update local state
-        const index = users.value.findIndex((user) => user.id === userId)
-        if (index !== -1) {
-          users.value[index] = mapUserData(updatedUser)
-        }
-
-        return updatedUser
+        return updated
       } catch (err) {
-        error.value = `Error al actualizar usuario: ${err.message}`
-        console.error('Error updating user:', err)
+        // Rollback on error
+        console.warn('⚠️ Update failed, refreshing from server...')
+        await fetchUsers({}, true) // force refresh
         throw err
-      } finally {
-        loading.value = false
       }
     }
 
@@ -316,11 +307,9 @@ export const useUsersStore = defineStore(
 
       try {
         const user = users.value.find((u) => u.id === userId)
-        if (!user) {
-          throw new Error('Usuario no encontrado')
-        }
+        if (!user) throw new Error('Usuario no encontrado')
 
-        // **LOGIC PRESERVADA**: Si es empresa, borrar todos sus empleados primero
+        // **LOGIC PRESERVADA**: Si es empresa, borrar empleados primero
         if (user.role === 'empresa') {
           const employeeUsers = users.value.filter(
             (u) => u.company_id === userId && u.role === 'usuario',
@@ -328,21 +317,32 @@ export const useUsersStore = defineStore(
 
           for (const employee of employeeUsers) {
             await api.deleteUser(employee.id)
+            users.value = users.value.filter((u) => u.id !== employee.id)
           }
 
-          console.log(`Deleted ${employeeUsers.length} employees of company ${user.first_name}`)
+          console.log(`🗑️ Deleted ${employeeUsers.length} employees of company ${user.first_name}`)
         }
 
         // Borrar el usuario principal
         await api.deleteUser(userId)
-
-        // Remove from local state
-        users.value = users.value.filter((u) => u.id !== userId || u.company_id === userId)
+        users.value = users.value.filter((u) => u.id !== userId)
+        console.log('🗑️ User deleted locally', {
+          userId,
+          name: `${user.first_name} ${user.last_name}`,
+        })
 
         return true
       } catch (err) {
         error.value = `Error al eliminar usuario: ${err.message}`
         console.error('Error deleting user:', err)
+
+        // Recargar datos en caso de error
+        const currentFilters = {
+          role: authStore.isEmpresa ? 'usuario' : null,
+          company_id: authStore.isEmpresa ? authStore.user.id : null,
+        }
+        await fetchUsers(currentFilters, true) // force refresh
+
         throw err
       } finally {
         loading.value = false
@@ -591,11 +591,11 @@ export const useUsersStore = defineStore(
       error,
       currentPage,
       totalPages,
-      // Cache state (optional to expose)
-      // cachedUsers,
-      // lastFetch,
 
-      // Getters
+      // Cache state (opcional exponer)
+      // usersFetchTime,
+
+      // Getters (existentes)
       allUsers,
       myCompanyUsers,
       usersByRole,
@@ -606,7 +606,7 @@ export const useUsersStore = defineStore(
 
       // Actions
       fetchUsers,
-      fetchUsersByRole, // Legacy compatibility
+      fetchUsersByRole,
       createUser,
       updateUser,
       deleteUser,
@@ -619,27 +619,20 @@ export const useUsersStore = defineStore(
       exportUsers,
       clearUsers,
 
-      // **BUSINESS LOGIC PRESERVADA**: Validaciones críticas
+      // Business logic
       checkCedulaExists,
       checkEmailExists,
 
       // Helpers
       validateUserData,
+      updateUserLocal, // Nueva función expuesta
     }
   },
   {
     persist: {
       key: 'flexirol-users',
       storage: sessionStorage,
-      paths: ['users', 'cachedUsers', 'lastFetch', 'currentPage', 'totalPages'],
-      afterRestore: (context) => {
-        // Optional: Validate cache on restore
-        const now = Date.now()
-        if (now - context.store.lastFetch > context.store.CACHE_TTL) {
-          context.store.cachedUsers = []
-          context.store.lastFetch = 0
-        }
-      },
+      paths: ['users', 'currentPage', 'totalPages', 'usersFetchTime'],
     },
   },
 )

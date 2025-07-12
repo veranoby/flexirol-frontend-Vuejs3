@@ -1,7 +1,5 @@
-## 🎯 **SCHEMA MEJORADO RECOMENDADO:**
 
 # FLEXIROL - POCKETBASE SCHEMA COMPLETO
-# Migración WordPress → PocketBase con mapeo completo y reglas de negocio
 
 ## ===== MAPEO WORDPRESS → POCKETBASE =====
 
@@ -22,22 +20,20 @@ WordPress users (empresas) → PocketBase companies
 - cedula: Plain text (10 dígitos, único) 
 - company_id: Relation → companies single (nueva relación)
 - assigned_companies: Relation → companies multiple (solo operadores)
+- flexirol: Number (0-100) - Plan 1: Porcentaje del servicio  
+- flexirol2: Number (0-9999) - Plan 2: Valor fijo mensual
+- flexirol3: Select ["1", "2"] - Tipo de plan activo
+- porcentaje: Number (0-100) - Porcentaje máximo del disponible
 - disponible: Number (monto disponible para anticipos)
 - gearbox: Bool (activo/inactivo)
 - phone_number: Plain text (opcional)
 - address: Plain text (opcional) 
 - city: Plain text (opcional)
+- phone_number: Plain text (opcional)
+- birth_date: Date (opcional)
+- gender: Select ["hombre", "mujer"] (opcional)
 
-**Mapeo WordPress:**
-- wp_users.user_login → username
-- wp_users.user_email → email  
-- wp_usermeta.first_name → first_name
-- wp_usermeta.last_name → last_name
-- wp_usermeta.cedula → cedula
-- wp_usermeta.empresa → company_id (ID del usuario empresa)
-- wp_usermeta.disponible → disponible
-- wp_usermeta.gearbox → gearbox
-
+ 
 **Reglas de negocio:**
 - role="usuario" DEBE tener company_id (no puede ser null)
 - role="empresa" NO tiene company_id (es la empresa madre)
@@ -62,12 +58,6 @@ WordPress users (empresas) → PocketBase companies
 - dia_reinicio: Number (1-31) - Días después de pago para reactivar
 - gearbox: Bool (empresa activa/inactiva)
 
-**Mapeo WordPress:**
-- wp_usermeta donde role='empresa' → company record
-- wp_usermeta.flexirol → flexirol (default: 10)
-- wp_usermeta.flexirol2 → flexirol2 (default: 10) 
-- wp_usermeta.flexirol3 → flexirol3 (default: "1")
-- wp_usermeta.fecha_excel → fecha_excel (default: null)
 
 **Reglas de negocio:**
 - fecha_excel DEBE estar actualizada o usuarios se bloquean
@@ -166,50 +156,4 @@ WordPress users (empresas) → PocketBase companies
 - Formato específico para Banco Guayaquil: PA, CUENTA ORIGINAL, headers especiales
 - Formato otros bancos: TIPO CUENTA, NUMERO CUENTA, headers estándar
 - Al generar: solicitudes "pendiente" → "procesando"
-
-## ===== EJEMPLOS DE DATOS =====
-
-### Usuario empresa:
-```json
-{
-  "id": "empresa_001", 
-  "email": "admin@empresa.com",
-  "first_name": "Empresa",
-  "last_name": "Demo", 
-  "role": "empresa",
-  "company_id": null,
-  "gearbox": true
-}
-```
-
-### Usuario empleado:
-```json
-{
-  "id": "user_001",
-  "email": "empleado@empresa.com", 
-  "first_name": "Juan",
-  "last_name": "Pérez",
-  "role": "usuario",
-  "cedula": "0912345678",
-  "company_id": "empresa_001",
-  "disponible": 500,
-  "gearbox": true
-}
-```
-
-### Configuración empresa:
-```json
-{
-  "id": "company_001",
-  "company_name": "Empresa Demo",
-  "owner_id": "empresa_001",
-  "flexirol3": "1",
-  "flexirol": 10,
-  "dia_inicio": 2,
-  "dia_cierre": 28,
-  "porcentaje": 50,
-  "frecuencia": 3,
-  "fecha_excel": "2025-01-15"
-}
-```
 

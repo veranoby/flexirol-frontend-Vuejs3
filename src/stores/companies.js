@@ -27,6 +27,10 @@ export const useCompaniesStore = defineStore(
   () => {
     const authStore = useAuthStore()
 
+    // ========== CACHE CONTROL ==========
+    const lastFetch = ref(null)
+    const CACHE_DURATION = 5 * 60 * 1000 // 5 minutos
+
     // ========== EXISTING CONFIG STATE (MANTENER PARA CONFIGVIEW) ==========
     const companyConfig = reactive(defaultCompanyState())
     const globalConfig = ref(null)
@@ -224,7 +228,20 @@ export const useCompaniesStore = defineStore(
     /**
      * OPTIMIZED: Single query to avoid PocketBase autocancellation
      */
-    async function fetchCompanies() {
+    async function fetchCompanies(forceRefresh = false) {
+      // Check cache first
+      if (!forceRefresh && companies.value.length > 0 && lastFetch.value) {
+        const elapsed = Date.now() - lastFetch.value
+        if (elapsed < CACHE_DURATION) {
+          console.log('🎯 Cache hit: companies', {
+            elapsed: (elapsed / 1000).toFixed(1) + 's',
+            count: companies.value.length,
+          })
+          return companies.value
+        }
+      }
+
+      console.log('📡 Fetching companies from PocketBase...')
       loading.value = true
       error.value = null
 
@@ -237,19 +254,18 @@ export const useCompaniesStore = defineStore(
             'id,owner_id,company_name,flexirol,flexirol2,flexirol3,dia_inicio , dia_cierre , porcentaje , dia_bloqueo , frecuencia , dia_reinicio , fecha_excel , gearbox,created,expand.owner_id.first_name,expand.owner_id.last_name,expand.owner_id.email,expand.owner_id.cedula,expand.owner_id.username,expand.owner_id.created,expand.owner_id.gearbox',
         })
 
-        // Store companies without user counts first (avoid multiple async calls)
-        companies.value = result.items.map((company) => ({
-          ...company,
-          users_count: 0,
-          active_users_count: 0,
-          blocked_users_count: 0,
-        }))
+        companies.value = result.items
+        lastFetch.value = Date.now()
+        console.log('✅ Companies fetched and cached', { count: companies.value.length })
 
-        // OPTIONAL: Load user counts in background (not blocking UI)
+        // Background update of user counts
         loadUserCountsInBackground()
+
+        return companies.value
       } catch (err) {
         error.value = `Error fetching companies: ${err.message}`
         console.error('Error fetching companies:', err)
+        throw err
       } finally {
         loading.value = false
       }
@@ -410,37 +426,27 @@ export const useCompaniesStore = defineStore(
      * OPTIMIZED: Update company without affecting unrelated data
      */
     async function updateCompany(companyId, companyData, ownerData = null) {
-      loading.value = true
-      error.value = null
+      // Update locally first (optimistic update)
+      updateCompanyLocal(companyId, companyData)
+      if (ownerData && companies.value.find((c) => c.id === companyId)?.owner_id) {
+        console.log('🔄 Optimistic owner update skipped (needs API call)')
+      }
 
       try {
-        // Update company
-        const updateData = {
-          company_name: companyData.nombre || companyData.company_name,
-          ruc: companyData.ruc,
-          gearbox: companyData.gearbox === 'true' || companyData.gearbox === true,
+        const updated = await pb.collection('companies').update(companyId, companyData)
+        updateCompanyLocal(companyId, updated)
+
+        // Update owner if needed
+        if (ownerData && updated.owner_id) {
+          await pb.collection('users').update(updated.owner_id, ownerData)
         }
 
-        const updatedCompany = await pb.collection('companies').update(companyId, updateData)
-
-        // Update owner if provided
-        if (ownerData && updatedCompany.owner_id) {
-          const ownerUpdateData = {
-            first_name: ownerData.first_name,
-            last_name: ownerData.last_name,
-            email: ownerData.email,
-            gearbox: ownerData.gearbox === 'true' || ownerData.gearbox === true,
-          }
-          await pb.collection('users').update(updatedCompany.owner_id, ownerUpdateData)
-        }
-
-        return { success: true, company: updatedCompany }
+        return { success: true, company: updated }
       } catch (err) {
-        error.value = `Error updating company: ${err.message}`
-        console.error('Error updating company:', err)
-        return { success: false, error: err.message }
-      } finally {
-        loading.value = false
+        // Rollback on error
+        console.warn('⚠️ Update failed, refreshing from server...')
+        await fetchCompanies(true) // force refresh
+        throw err
       }
     }
 
@@ -545,8 +551,17 @@ export const useCompaniesStore = defineStore(
       }
     }
 
+    // ========== CACHE FUNCTIONS ==========
+    function updateCompanyLocal(companyId, updates) {
+      const index = companies.value.findIndex((c) => c.id === companyId)
+      if (index !== -1) {
+        companies.value[index] = { ...companies.value[index], ...updates }
+        console.log('🔄 Company updated locally', { companyId, updates })
+      }
+    }
+
     return {
-      // ========== EXISTING STATE (MANTENER PARA CONFIGVIEW) ==========
+      // ========== EXISTING CONFIG STATE (MANTENER PARA CONFIGVIEW) ==========
       companyConfig,
       globalConfig,
       globalConfigLoading,
@@ -559,6 +574,10 @@ export const useCompaniesStore = defineStore(
       companyUsers,
       loadingUsers,
       usersHierarchy,
+
+      // ========== NEW CACHE CONTROL ==========
+      lastFetch,
+      updateCompanyLocal,
 
       // ========== COMPUTED ==========
       stats,
@@ -577,7 +596,7 @@ export const useCompaniesStore = defineStore(
       createCompanyWithOwner,
       updateCompany,
       deleteCompanyWithUsers,
-      createUserForCompany, // Mover esta línea aquí
+      createUserForCompany,
 
       // ========== HELPERS ==========
       defaultCompanyState,
@@ -587,7 +606,7 @@ export const useCompaniesStore = defineStore(
     persist: {
       key: 'flexirol-companies',
       storage: sessionStorage,
-      paths: ['companies', 'globalConfig'],
+      paths: ['companies', 'globalConfig', 'lastFetch'], // Añadir lastFetch a la persistencia
     },
   },
 )

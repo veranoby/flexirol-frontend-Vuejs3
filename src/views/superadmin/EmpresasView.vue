@@ -257,21 +257,16 @@
           {{ isEditMode ? 'Editar Empresa' : 'Crear Nueva Empresa' }}
         </v-card-title>
 
+        <v-card-subtitle>
+          <v-alert v-if="!isEditMode" type="info" variant="tonal" class="mb-4">
+            <strong>Tipo de usuario:</strong> Empresa (admin)
+          </v-alert></v-card-subtitle
+        >
+
         <v-card-text>
           <v-form ref="empresaForm" v-model="formValid">
-            <!-- Tipo de usuario (del legacy) -->
-            <v-alert v-if="!isEditMode" type="info" variant="tonal" class="mb-4">
-              <strong>Tipo de usuario:</strong> Empresa (admin)
-            </v-alert>
-
             <v-row>
               <!-- Información empresa -->
-              <v-col cols="12">
-                <h6 class="text-h6 mb-3">
-                  <v-icon class="me-2">mdi-office-building</v-icon>
-                  Información de la Empresa
-                </h6>
-              </v-col>
 
               <v-col cols="12" md="6">
                 <v-text-field
@@ -310,6 +305,143 @@
                   false-value="false"
                 />
               </v-col>
+
+              <!-- DATOS DE PLANES FLEXIROL-->
+
+              <v-col cols="12">
+                <v-card variant="outlined" class="mb-4">
+                  <v-card-title class="text-subtitle-1 font-weight-bold">
+                    <v-icon class="me-2">mdi-account-cog</v-icon>
+                    Plan Seleccionado Actualmente
+                  </v-card-title>
+
+                  <v-card-text>
+                    <v-radio-group v-model="newItem.flexirol3" inline>
+                      <v-radio
+                        label="Plan 1 - Porcentaje sobre transacción"
+                        value="1"
+                        color="primary"
+                      ></v-radio>
+                      <v-radio
+                        label="Plan 2 - Valor fijo mensual"
+                        value="2"
+                        color="primary"
+                      ></v-radio>
+                    </v-radio-group>
+
+                    <v-divider class="my-4"></v-divider>
+
+                    <v-row>
+                      <!-- Plan 1 -->
+                      <v-col cols="12" md="6">
+                        <v-card
+                          variant="outlined"
+                          :color="newItem.flexirol3 === '1' ? 'primary' : undefined"
+                        >
+                          <v-card-text>
+                            <div class="d-flex align-center mb-2">
+                              <v-icon
+                                :color="newItem.flexirol3 === '1' ? 'success' : 'error'"
+                                class="me-2"
+                              >
+                                {{
+                                  newItem.flexirol3 === '1'
+                                    ? 'mdi-check-circle'
+                                    : 'mdi-close-circle'
+                                }}
+                              </v-icon>
+                              <span class="font-weight-bold">Plan 1</span>
+                            </div>
+
+                            <v-list density="compact">
+                              <v-list-item>
+                                <template v-slot:prepend>
+                                  <v-icon>mdi-percent</v-icon>
+                                </template>
+                                <v-list-item-title>Porcentaje sobre transacción</v-list-item-title>
+                              </v-list-item>
+
+                              <v-list-item>
+                                <v-list-item-title
+                                  >Valor del servicio: {{ newItem.flexirol }}%</v-list-item-title
+                                >
+                                <template v-slot:append>
+                                  <v-btn
+                                    variant="text"
+                                    icon="mdi-plus"
+                                    size="small"
+                                    @click="newItem.flexirol += 1"
+                                  ></v-btn>
+                                  <v-btn
+                                    variant="text"
+                                    icon="mdi-minus"
+                                    size="small"
+                                    @click="newItem.flexirol -= 1"
+                                  ></v-btn>
+                                </template>
+                              </v-list-item>
+                            </v-list>
+                          </v-card-text>
+                        </v-card>
+                      </v-col>
+
+                      <!-- Plan 2 -->
+                      <v-col cols="12" md="6">
+                        <v-card
+                          variant="outlined"
+                          :color="newItem.flexirol3 === '2' ? 'primary' : undefined"
+                        >
+                          <v-card-text>
+                            <div class="d-flex align-center mb-2">
+                              <v-icon
+                                :color="newItem.flexirol3 === '2' ? 'success' : 'error'"
+                                class="me-2"
+                              >
+                                {{
+                                  newItem.flexirol3 === '2'
+                                    ? 'mdi-check-circle'
+                                    : 'mdi-close-circle'
+                                }}
+                              </v-icon>
+                              <span class="font-weight-bold">Plan 2</span>
+                            </div>
+
+                            <v-list density="compact">
+                              <v-list-item>
+                                <template v-slot:prepend>
+                                  <v-icon>mdi-currency-usd</v-icon>
+                                </template>
+                                <v-list-item-title>Valor fijo mensual</v-list-item-title>
+                              </v-list-item>
+
+                              <v-list-item>
+                                <v-list-item-title
+                                  >Valor mensual: ${{ newItem.flexirol2 }}</v-list-item-title
+                                >
+                                <template v-slot:append>
+                                  <v-btn
+                                    variant="text"
+                                    icon="mdi-plus"
+                                    size="small"
+                                    @click="newItem.flexirol2 += 1"
+                                  ></v-btn>
+                                  <v-btn
+                                    variant="text"
+                                    icon="mdi-minus"
+                                    size="small"
+                                    @click="newItem.flexirol2 -= 1"
+                                  ></v-btn>
+                                </template>
+                              </v-list-item>
+                            </v-list>
+                          </v-card-text>
+                        </v-card>
+                      </v-col>
+                    </v-row>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+
               <!-- Datos de acceso -->
               <v-col cols="12">
                 <h6 class="text-h6 mb-3">
@@ -1211,21 +1343,21 @@ const formatDate = (dateString) => {
 
 // ========== CRUD OPERATIONS (del legacy) ==========
 
-const loadEmpresas = async () => {
+const loadEmpresas = async (forceRefresh = false) => {
   loading.value = true
   try {
-    // Load companies and global user stats like DashboardView
-    const [companiesResult, usersResult] = await Promise.all([
-      companiesStore.fetchCompanies(),
-      api.getGlobalUserStats(), // Using the new optimized method
-    ])
+    // Only fetch if needed or forced
+    await companiesStore.fetchCompanies(forceRefresh)
 
-    globalStats.value.totalUsers = usersResult.totalItems
+    // getGlobalUserStats solo si no tenemos el dato o es refresh forzado
+    if (forceRefresh || !globalStats.value.totalUsers) {
+      const usersResult = await api.getGlobalUserStats()
+      globalStats.value.totalUsers = usersResult.totalItems
+    }
 
-    // Mapear usando EMPRESA gearbox (no owner gearbox)
+    // Map from store (no new fetch)
     empresa_info_set.value = companiesStore.companies.map((company) => ({
       ...company,
-      // Legacy mapping for display
       first_name: company.expand?.owner_id?.first_name || company.company_name || '',
       last_name: company.expand?.owner_id?.last_name || '',
       email: company.expand?.owner_id?.email || '',
@@ -1240,9 +1372,13 @@ const loadEmpresas = async () => {
       frecuencia: company.frecuencia,
       dia_bloqueo: company.dia_bloqueo,
       dia_reinicio: company.dia_reinicio,
-
       fecha_excel: company.fecha_excel,
     }))
+
+    console.log('📊 EmpresasView loaded', {
+      fromCache: !forceRefresh,
+      companies: empresa_info_set.value.length,
+    })
   } catch (error) {
     console.error('Error loading empresas:', error)
     showAlert('Error al cargar empresas', 'error')
@@ -1366,7 +1502,10 @@ const saveEmpresa = async () => {
         isEditMode.value ? 'Empresa actualizada exitosamente' : 'Empresa creada exitosamente',
       )
       closeCreateModal()
-      await loadEmpresas()
+      // Actualización local optimista
+      if (result.company) {
+        companiesStore.updateCompanyLocal(result.company.id, result.company)
+      }
     } else {
       showAlert(result.error || 'Error al guardar empresa', 'error')
     }
@@ -1461,8 +1600,8 @@ const saveUsuario = async () => {
     if (result.success) {
       showAlert('Usuario creado exitosamente')
       closeCreateUserModal()
-      await viewUsers(selectedEmpresa.value) // Refresh users
-      await loadEmpresas() // Refresh companies
+      // Solo refrescar usuarios de esta empresa
+      await viewUsers(selectedEmpresa.value)
     } else {
       showAlert(result.error || 'Error al crear usuario', 'error')
     }
@@ -1597,7 +1736,7 @@ const changePassword = async () => {
 
 // ========== LIFECYCLE ==========
 onMounted(() => {
-  loadEmpresas()
+  loadEmpresas(false) // Use cache if available
 })
 </script>
 
