@@ -26,7 +26,6 @@ WordPress users (empresas) → PocketBase companies
 - porcentaje: Number (0-100) - Porcentaje máximo del disponible
 - disponible: Number (monto disponible para anticipos)
 - gearbox: Bool (activo/inactivo)
-- phone_number: Plain text (opcional)
 - address: Plain text (opcional) 
 - city: Plain text (opcional)
 - phone_number: Plain text (opcional)

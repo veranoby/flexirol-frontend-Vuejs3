@@ -331,6 +331,10 @@ export const useUsersStore = defineStore(
           name: `${user.first_name} ${user.last_name}`,
         })
 
+        // Invalidate cache after deletion
+        invalidateCache()
+        console.log('🔄 Cache invalidated after user deletion')
+
         return true
       } catch (err) {
         error.value = `Error al eliminar usuario: ${err.message}`
@@ -399,15 +403,34 @@ export const useUsersStore = defineStore(
     }
 
     /**
-     * Get user by ID with full details
+     * Get user by ID with cache
      */
-    async function getUserById(userId) {
+    async function getUserById(userId, forceRefresh = false) {
+      // Check local cache first
+      if (!forceRefresh) {
+        const cached = users.value.find((u) => u.id === userId)
+        if (cached) {
+          console.log('🎯 Cache hit: user by id', { userId })
+          return cached
+        }
+      }
+
+      console.log('📡 Fetching user by id from PocketBase...', { userId })
       try {
         const user = await api.getUserById(userId)
-        return mapUserData(user)
+        const mapped = mapUserData(user)
+
+        // Update cache
+        const index = users.value.findIndex((u) => u.id === userId)
+        if (index >= 0) {
+          users.value[index] = mapped
+        } else {
+          users.value.push(mapped)
+        }
+
+        return mapped
       } catch (err) {
-        error.value = `Error al obtener usuario: ${err.message}`
-        console.error('Error getting user:', err)
+        error.value = `Error fetching user: ${err.message}`
         throw err
       }
     }
@@ -462,6 +485,10 @@ export const useUsersStore = defineStore(
         // Refresh users after bulk update
         await fetchUsers()
 
+        // Invalidate cache after bulk update
+        invalidateCache()
+        console.log('🔄 Cache invalidated after bulk update')
+
         return true
       } catch (err) {
         error.value = `Error en actualización masiva: ${err.message}`
@@ -515,6 +542,14 @@ export const useUsersStore = defineStore(
       error.value = null
       currentPage.value = 1
       totalPages.value = 1
+    }
+
+    /**
+     * Invalidate entire users cache
+     */
+    function invalidateCache() {
+      usersFetchTime.value = {}
+      console.log('🗑️ Users cache invalidated')
     }
 
     // Helper Functions
@@ -646,6 +681,7 @@ export const useUsersStore = defineStore(
       bulkUpdateUsers,
       exportUsers,
       clearUsers,
+      invalidateCache,
 
       // Business logic
       checkCedulaExists,

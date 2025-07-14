@@ -14,12 +14,7 @@
       <div class="hidden-md-and-down">
         <!-- SUPERADMIN NAVIGATION -->
         <template v-if="authStore.isSuperadmin">
-          <v-btn
-            :to="'/superadmin/solicitudes'"
-            text
-            class="mx-1"
-            prepend-icon="mdi-file-invoice-dollar"
-          >
+          <v-btn :to="'/superadmin/solicitudes'" text class="mx-1" prepend-icon="mdi-account-cash">
             Solicitudes
           </v-btn>
           <v-btn :to="'/superadmin/empresas'" text class="mx-1" prepend-icon="mdi-domain">
@@ -56,7 +51,7 @@
 
         <!-- USUARIO NAVIGATION -->
         <template v-if="authStore.isUsuario">
-          <v-btn :to="'/usuario/solicitudes'" text class="mx-1" prepend-icon="mdi-hand-coin">
+          <v-btn :to="'/usuario/solicitudes'" text class="mx-1" prepend-icon="mdi-account-cash">
             Mis Solicitudes
           </v-btn>
           <v-btn :to="'/usuario/bancos'" text class="mx-1" prepend-icon="mdi-bank">
@@ -107,7 +102,7 @@
       <v-list>
         <!-- SUPERADMIN NAVIGATION -->
         <template v-if="authStore.isSuperadmin">
-          <v-list-item :to="'/superadmin/solicitudes'" prepend-icon="mdi-file-invoice-dollar">
+          <v-list-item :to="'/superadmin/solicitudes'" prepend-icon="mdi-account-cash">
             <v-list-item-title>Solicitudes</v-list-item-title>
           </v-list-item>
           <v-list-item :to="'/superadmin/empresas'" prepend-icon="mdi-domain">
@@ -126,7 +121,7 @@
 
         <!-- EMPRESA/OPERADOR NAVIGATION -->
         <template v-if="authStore.isEmpresa || authStore.isOperador">
-          <v-list-item :to="'/admin/solicitudes'" prepend-icon="mdi-file-invoice-dollar">
+          <v-list-item :to="'/admin/solicitudes'" prepend-icon="mdi-account-cash">
             <v-list-item-title>Solicitudes</v-list-item-title>
           </v-list-item>
           <v-list-item :to="'/admin/empleados'" prepend-icon="mdi-account-group">
@@ -139,7 +134,7 @@
 
         <!-- USUARIO NAVIGATION -->
         <template v-if="authStore.isUsuario">
-          <v-list-item :to="'/usuario/solicitudes'" prepend-icon="mdi-hand-coin">
+          <v-list-item :to="'/usuario/solicitudes'" prepend-icon="mdi-account-cash">
             <v-list-item-title>Mis Solicitudes</v-list-item-title>
           </v-list-item>
           <v-list-item :to="'/usuario/bancos'" prepend-icon="mdi-bank">

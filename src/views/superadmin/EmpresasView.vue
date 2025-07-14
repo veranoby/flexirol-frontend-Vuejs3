@@ -3,46 +3,65 @@
     <!-- Header con stats -->
     <v-row class="mb-6">
       <v-col cols="12">
-        <h1 class="text-h4 font-weight-bold mb-2">
-          <v-icon class="text-primary me-3" size="32">mdi-office-building</v-icon>
+        <h2 class="text-h4 text-flexirol-primary">
+          <v-icon class="me-2" size="32">mdi-office-building</v-icon>
           Gestión de Empresas
 
           <!-- Stats Chips (reemplazo de cards) -->
 
-          <v-chip class="ma-2" color="primary" size="x-large" :prepend-icon="'mdi-office-building'">
+          <v-chip
+            color="primary"
+            class="ma-1"
+            variant="tonal"
+            size="large"
+            :prepend-icon="'mdi-office-building'"
+          >
             {{ empresa_info_set.length }}
             <template #append>
-              <span class="ml-1 text-caption">Empresas Registradas</span>
-            </template>
-          </v-chip>
-
-          <v-chip class="ma-2" color="success" size="x-large" :prepend-icon="'mdi-check-circle'">
-            {{ empresasActivas }}
-            <template #append>
-              <span class="ml-1 text-caption">Empresas Activas</span>
+              <span class="ml-1 text-lg">Empresas Registradas</span>
             </template>
           </v-chip>
 
           <v-chip
-            class="ma-2"
+            color="success"
+            class="ma-1"
+            variant="tonal"
+            size="large"
+            :prepend-icon="'mdi-check-circle'"
+          >
+            {{ empresasActivas }}
+            <template #append>
+              <span class="ml-1 text-lg">Empresas Activas</span>
+            </template>
+          </v-chip>
+
+          <v-chip
+            class="ma-1"
             color="warning"
-            size="x-large"
+            variant="tonal"
+            size="large"
             :prepend-icon="'mdi-file-excel-outline'"
           >
             {{ empresasSinExcel }}
             <template #append>
-              <span class="ml-1 text-caption">Sin Excel Actualizado</span>
+              <span class="ml-1 text-lg">Sin Excel Actualizado</span>
             </template>
           </v-chip>
 
-          <v-chip class="ma-2" color="info" size="x-large" :prepend-icon="'mdi-account-multiple'">
+          <v-chip
+            variant="tonal"
+            class="ma-1"
+            size="large"
+            color="info"
+            :prepend-icon="'mdi-account-multiple'"
+          >
             {{ globalStats.totalUsers }}
             <template #append>
-              <span class="ml-1 text-caption">Total Usuarios Sistema</span>
+              <span class="ml-1 text-lg">Total Usuarios Sistema</span>
             </template>
           </v-chip>
-        </h1>
-        <p class="text-body-1 text-bold text-blue-grey-darken-4">
+        </h2>
+        <p class="text-subtitle-1 text-medium-emphasis">
           Administración completa de empresas y sus usuarios
         </p>
       </v-col>
@@ -62,7 +81,7 @@
               clearable
             />
           </v-col>
-          <v-col cols="12" md="3">
+          <v-col cols="12" md="2">
             <v-select
               v-model="status_habilitacion"
               :items="[
@@ -75,7 +94,7 @@
               density="compact"
             />
           </v-col>
-          <v-col cols="12" md="3">
+          <v-col cols="12" md="2">
             <v-select
               v-model="status_excel"
               :items="[
@@ -251,11 +270,13 @@
 
     <!-- Modal Crear/Editar Empresa (estructura del legacy) -->
     <v-dialog v-model="showCreateModal" max-width="700px" persistent>
+      <v-toolbar color="primary">
+        <v-icon class="me-2">{{ isEditMode ? 'mdi-pencil' : 'mdi-plus' }}</v-icon>
+        {{ isEditMode ? 'Editar Empresa' : 'Crear Nueva Empresa' }}
+        <v-spacer></v-spacer>
+      </v-toolbar>
       <v-card>
-        <v-card-title color="primary" class="d-flex align-center">
-          <v-icon class="me-2">{{ isEditMode ? 'mdi-pencil' : 'mdi-plus' }}</v-icon>
-          {{ isEditMode ? 'Editar Empresa' : 'Crear Nueva Empresa' }}
-        </v-card-title>
+        <v-card-title color="primary" class="d-flex align-center"> </v-card-title>
 
         <v-card-subtitle>
           <v-alert v-if="!isEditMode" type="info" variant="tonal" class="mb-4">
@@ -309,6 +330,40 @@
                 />
               </v-col>
 
+              <!-- Additional Company Fields -->
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="newItem.address"
+                  label="Dirección"
+                  variant="outlined"
+                  density="compact"
+                />
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="newItem.city"
+                  label="Ciudad"
+                  variant="outlined"
+                  density="compact"
+                />
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="newItem.state"
+                  label="Provincia"
+                  variant="outlined"
+                  density="compact"
+                />
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="newItem.zip_code"
+                  label="Código postal"
+                  variant="outlined"
+                  density="compact"
+                />
+              </v-col>
+
               <!-- Estado -->
               <v-col cols="12" md="6">
                 <v-switch
@@ -335,16 +390,14 @@
                       <v-radio
                         label="Plan 1 - Porcentaje sobre transacción"
                         value="1"
-                        color="primary"
+                        color="success"
                       ></v-radio>
                       <v-radio
                         label="Plan 2 - Valor fijo mensual"
                         value="2"
-                        color="primary"
+                        color="success"
                       ></v-radio>
                     </v-radio-group>
-
-                    <v-divider class="my-4"></v-divider>
 
                     <v-row>
                       <!-- Plan 1 -->
@@ -369,13 +422,6 @@
                             </div>
 
                             <v-list density="compact">
-                              <v-list-item>
-                                <template v-slot:prepend>
-                                  <v-icon>mdi-percent</v-icon>
-                                </template>
-                                <v-list-item-title>Porcentaje sobre transacción</v-list-item-title>
-                              </v-list-item>
-
                               <v-list-item>
                                 <v-list-item-title
                                   >Valor del servicio: {{ newItem.flexirol }}%</v-list-item-title
@@ -421,14 +467,7 @@
                               <span class="font-weight-bold">Plan 2</span>
                             </div>
 
-                            <v-list density="compact">
-                              <v-list-item>
-                                <template v-slot:prepend>
-                                  <v-icon>mdi-currency-usd</v-icon>
-                                </template>
-                                <v-list-item-title>Valor fijo mensual</v-list-item-title>
-                              </v-list-item>
-
+                            <v-list density="compact" compact>
                               <v-list-item>
                                 <v-list-item-title
                                   >Valor mensual: ${{ newItem.flexirol2 }}</v-list-item-title
@@ -647,12 +686,13 @@
 
     <!-- Modal Editar Usuario (del legacy) -->
     <v-dialog v-model="showEditUserModal" max-width="600px" persistent>
-      <v-card>
-        <v-card-title class="d-flex align-center">
-          <v-icon class="me-2">mdi-account-edit</v-icon>
-          Editar Usuario: {{ editedUsuario.first_name }} {{ editedUsuario.last_name }}
-        </v-card-title>
+      <v-toolbar color="success">
+        <v-icon class="me-2">mdi-account-edit</v-icon>
+        Editar Usuario: {{ editedUsuario.first_name }} {{ editedUsuario.last_name }}
+        <v-spacer></v-spacer>
+      </v-toolbar>
 
+      <v-card>
         <v-card-text>
           <v-form ref="editUsuarioForm" v-model="editUserFormValid">
             <v-row>
@@ -904,12 +944,12 @@
 
     <!-- Modal Crear Usuario (estructura del legacy) -->
     <v-dialog v-model="showCreateUserModal" max-width="600px" persistent>
+      <v-toolbar color="success">
+        <v-icon class="me-2">mdi-account-plus</v-icon>
+        Crear Usuario para {{ selectedEmpresa?.first_name }}
+        <v-spacer></v-spacer>
+      </v-toolbar>
       <v-card>
-        <v-card-title class="d-flex align-center">
-          <v-icon class="me-2">mdi-account-plus</v-icon>
-          Crear Usuario para {{ selectedEmpresa?.first_name }}
-        </v-card-title>
-
         <v-card-text>
           <v-form ref="usuarioForm" v-model="userFormValid">
             <v-alert type="info" variant="tonal" class="mb-4">
@@ -1074,11 +1114,13 @@
 
     <!-- Modal Cambiar Contraseña -->
     <v-dialog v-model="showPasswordModal" max-width="500px">
+      <v-toolbar color="error">
+        <v-icon class="me-2">mdi-key</v-icon>
+        Cambiar contraseña
+        <v-spacer></v-spacer>
+      </v-toolbar>
+
       <v-card>
-        <v-card-title>
-          <v-icon class="me-2">mdi-key</v-icon>
-          Cambiar contraseña
-        </v-card-title>
         <v-card-text>
           <v-text-field
             v-model="newPassword"
@@ -1409,6 +1451,18 @@ const loadEmpresas = async (forceRefresh = false) => {
       dia_bloqueo: company.dia_bloqueo,
       dia_reinicio: company.dia_reinicio,
       fecha_excel: company.fecha_excel,
+
+      id: company.id,
+      owner_id: company.owner_id,
+      company_name: company.company_name,
+      flexirol: company.flexirol,
+      flexirol2: company.flexirol2,
+      flexirol3: company.flexirol3,
+
+      zip_code: company.expand?.owner_id?.zip_code || '',
+      state: company.expand?.owner_id?.state || '',
+      city: company.expand?.owner_id?.city || '',
+      address: company.expand?.owner_id?.address || '',
     }))
 
     console.log('📊 EmpresasView loaded', {
@@ -1465,18 +1519,30 @@ const startEdit = async (company) => {
   // 1. Cargar datos básicos
   Object.assign(newItem, {
     id: company.id,
+    owner_id: company.owner_id,
+
     first_name: company.expand?.owner_id?.first_name || company.company_name || '',
     last_name: company.expand?.owner_id?.last_name || '',
     email: company.expand?.owner_id?.email || '',
     username: company.expand?.owner_id?.username || '',
-    cedula: company.cedula || '',
+    cedula: company.expand?.owner_id?.cedula || '',
     gearbox: String(company.gearbox),
-    phone_number: company.phone_number || '', // Cargar el nuevo campo
+
+    address: company.expand?.owner_id?.address || '',
+    phone_number: company.expand?.owner_id?.phone_number || '',
+    state: company.expand?.owner_id?.state || '',
+    city: company.expand?.owner_id?.city || '',
+
+    zip_code: company.expand?.owner_id?.zip_code || '',
   })
 
   // 2. Cargar configuración existente
   const configData = {
-    porcentaje: company.porcentaje ?? company.flexirol, // Usar flexirol como fallback
+    flexirol: company.flexirol, // Usar flexirol como fallback
+    flexirol2: company.flexirol2, // Usar flexirol como fallback
+    flexirol3: company.flexirol3, // Usar flexirol como fallback
+
+    porcentaje: company.porcentaje, // Usar flexirol como fallback
     dia_inicio: company.dia_inicio,
     dia_cierre: company.dia_cierre,
     frecuencia: company.frecuencia,
@@ -1528,10 +1594,18 @@ const saveEmpresa = async () => {
       const ownerData = {
         first_name: newItem.first_name,
         last_name: newItem.last_name,
-        email: newItem.email,
+        username: `${newItem.first_name} ${newItem.last_name}`.trim(),
+        //    email: newItem.email,
         gearbox: newItem.gearbox === 'true',
         phone_number: newItem.phone_number,
         emailVisibility: true, // CRÍTICO para owners
+        address: newItem.address,
+        city: newItem.city,
+        state: newItem.state,
+        zip_code: newItem.zip_code,
+        birth_date: newItem.birth_date,
+        gender: newItem.gender,
+        cedula: newItem.cedula,
       }
 
       result = await companiesStore.updateCompany(newItem.id, companyData, ownerData)
@@ -1604,19 +1678,29 @@ const toggleStatus = async (element) => {
   }
 }
 
-const viewUsers = async (element) => {
-  selectedEmpresa.value = element
+const viewUsers = async (empresa) => {
+  if (!empresa?.id) {
+    alert.message = 'Empresa no válida'
+    return
+  }
+
+  selectedEmpresa.value = empresa
   loadingUsers.value = true
 
   try {
-    const hierarchy = await companiesStore.fetchCompanyUsersHierarchy(element.id)
+    // Use cached company data
+    const hierarchy = await companiesStore.fetchCompanyUsersHierarchy(empresa.id)
 
-    // Mapear a estructura legacy
+    // Map to local format
     usuarios_empresa_info_set.value = hierarchy.employees.map((user) => ({
       ...user,
       gearbox: String(user.gearbox),
     }))
 
+    console.log('👥 Users loaded from cache/store', {
+      count: usuarios_empresa_info_set.value.length,
+      empresaId: empresa.id,
+    })
     showUsersModal.value = true
   } catch (error) {
     console.error('Error loading users:', error)

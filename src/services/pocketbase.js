@@ -3,6 +3,13 @@ import * as XLSX from 'xlsx'
 
 const pb = new PocketBase(import.meta.env.VITE_POCKETBASE_URL || 'http://127.0.0.1:8090')
 
+// Temporary cache for expensive queries
+const cache = {
+  systemConfig: null,
+  systemConfigTime: 0,
+  CACHE_TTL: 5 * 60 * 1000, // 5 minutes
+}
+
 // Auto-refresh auth token
 pb.authStore.onChange(() => {
   console.log('Auth state changed:', pb.authStore.isValid)
@@ -390,61 +397,66 @@ export const api = {
 
   // ===== SYSTEM CONFIG METHODS =====
   async getSystemConfig(forceRefresh = false) {
-    const cacheKey = 'system_config'
-
-    // Verificar cache primero si no es forzado
-    if (!forceRefresh && this.configCache && Date.now() - this.configCache.timestamp < 300000) {
-      // 5 min cache
-      console.log('📦 Using cached system config')
-      return this.configCache.data
+    // Check cache
+    if (
+      !forceRefresh &&
+      cache.systemConfig &&
+      Date.now() - cache.systemConfigTime < cache.CACHE_TTL
+    ) {
+      console.log('🎯 Cache hit: system config')
+      return cache.systemConfig
     }
 
+    console.log('📡 Fetching system config from PocketBase...')
     try {
-      // Obtener o crear configuración
-      let config = await pb.collection('system_config').getFirstListItem('name="default_config"', {
-        fields:
-          'porcentaje_servicio,valor_fijo_mensual,plan_default,dia_inicio,dia_cierre,porcentaje_maximo,dias_bloqueo,frecuencia_maxima,dias_reinicio,activo',
+      const result = await pb.collection('system_config').getFirstListItem('name="default_config"')
+
+      // Update cache
+      cache.systemConfig = result
+      cache.systemConfigTime = Date.now()
+
+      return result
+    } catch (error) {
+      // Create default if not exists
+      const newConfig = await pb.collection('system_config').create({
+        name: 'default_config',
+        porcentaje_servicio: 10,
+        valor_fijo_mensual: 50,
+        plan_default: '1',
+        dia_inicio: 2,
+        dia_cierre: 28,
+        porcentaje_maximo: 70,
+        frecuencia_maxima: 3,
+        dias_bloqueo: 2,
+        dias_reinicio: 3,
+        activo: true,
       })
 
-      // Cachear respuesta
-      this.configCache = {
-        data: config,
-        timestamp: Date.now(),
-      }
+      cache.systemConfig = newConfig
+      cache.systemConfigTime = Date.now()
 
-      return config
-    } catch (err) {
-      if (err.status === 404) {
-        // Crear configuración por defecto si no existe
-        const defaultConfig = {
-          name: 'default_config',
-          porcentaje_servicio: 10,
-          valor_fijo_mensual: 50,
-          plan_default: '1',
-          dia_inicio: 1,
-          dia_cierre: 28,
-          porcentaje_maximo: 50,
-          dias_bloqueo: 2,
-          frecuencia_maxima: 3,
-          dias_reinicio: 1,
-          activo: true,
-        }
-        const newConfig = await pb.collection('system_config').create(defaultConfig)
-
-        this.configCache = {
-          data: newConfig,
-          timestamp: Date.now(),
-        }
-
-        return newConfig
-      }
-      throw err
+      return newConfig
     }
   },
 
   async updateSystemConfig(configData) {
     const config = await this.getSystemConfig()
     return await pb.collection('system_config').update(config.id, configData)
+  },
+
+  async getDefaultCompanyConfig() {
+    const config = await this.getSystemConfig()
+    return {
+      flexirol: config.porcentaje_servicio,
+      flexirol2: config.valor_fijo_mensual,
+      flexirol3: config.plan_default,
+      dia_inicio: config.dia_inicio,
+      dia_cierre: config.dia_cierre,
+      porcentaje: config.porcentaje_maximo,
+      dia_bloqueo: config.dias_bloqueo,
+      frecuencia: config.frecuencia_maxima,
+      dia_reinicio: config.dias_reinicio,
+    }
   },
 
   // Global user stats optimized

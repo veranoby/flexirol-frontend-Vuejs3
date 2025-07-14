@@ -2,13 +2,14 @@ import { defineStore } from 'pinia'
 import { ref, reactive, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { pb, api } from '@/services/pocketbase'
+import { useUsersStore } from '@/stores/users'
 
 // Helper function to create a default company state
 const defaultCompanyState = () => ({
   id: null,
   owner_id: null,
   company_name: '',
-  ruc: '',
+  cedula: '',
   flexirol: 0,
   flexirol2: 0,
   flexirol3: '1',
@@ -69,7 +70,7 @@ export const useCompaniesStore = defineStore(
       companyConfig.id = record.id
       companyConfig.owner_id = record.owner_id
       companyConfig.company_name = record.company_name || ''
-      companyConfig.ruc = record.ruc || ''
+      companyConfig.cedula = record.cedula || ''
       companyConfig.flexirol =
         record.flexirol !== undefined ? Number(record.flexirol) : defaultCompanyState().flexirol
       companyConfig.flexirol2 =
@@ -106,15 +107,59 @@ export const useCompaniesStore = defineStore(
     async function fetchGlobalConfig() {
       globalConfigLoading.value = true
       error.value = null
+
+      // Verificar cache primero
+      if (globalConfig.value) {
+        globalConfigLoading.value = false
+        return globalConfig.value
+      }
+
       try {
         const record = await pb
           .collection('system_config')
           .getFirstListItem('name="default_config"')
         globalConfig.value = record
+        return record
       } catch (e) {
         error.value = `Failed to fetch global configuration: ${e.message}`
         console.error(error.value, e)
         globalConfig.value = null
+        throw e
+      } finally {
+        globalConfigLoading.value = false
+      }
+    }
+
+    async function saveGlobalConfig(configData) {
+      globalConfigLoading.value = true
+      error.value = null
+
+      try {
+        // Opción 1: Usar el ID del cache si está disponible
+        if (globalConfig.value?.id) {
+          const updatedConfig = await pb
+            .collection('system_config')
+            .update(globalConfig.value.id, configData)
+
+          globalConfig.value = updatedConfig
+          console.log('✅ Global config updated (using cached ID)')
+          return updatedConfig
+        }
+
+        // Opción 2: Si no hay cache, hacer una sola llamada con filtro
+        const updatedConfig = await pb.collection('system_config').update(
+          'name="default_config"', // Filtro directo
+          configData,
+        )
+
+        // Actualizar cache
+        globalConfig.value = updatedConfig
+        console.log('✅ Global config updated (direct filter update)')
+        return updatedConfig
+      } catch (error) {
+        error.value = `Error saving global config: ${error.message}`
+        console.error('Error saving global config:', error)
+        throw error
       } finally {
         globalConfigLoading.value = false
       }
@@ -176,7 +221,7 @@ export const useCompaniesStore = defineStore(
       loading.value = false
     }
 
-    async function saveCompanyConfig(configDataToSave) {
+    /*   async function saveCompanyConfig(configDataToSave) {
       if (!authStore.isSuperadmin) {
         error.value = 'Only superadmins can save company configuration.'
         console.error(error.value)
@@ -216,7 +261,7 @@ export const useCompaniesStore = defineStore(
       } finally {
         loading.value = false
       }
-    }
+    } */
 
     function resetCompanyConfig() {
       Object.assign(companyConfig, defaultCompanyState())
@@ -251,7 +296,7 @@ export const useCompaniesStore = defineStore(
           expand: 'owner_id',
           sort: '-created',
           fields:
-            'id,owner_id,company_name,flexirol,flexirol2,flexirol3,dia_inicio , dia_cierre , porcentaje , dia_bloqueo , frecuencia , dia_reinicio , fecha_excel , gearbox,created,expand.owner_id.first_name,expand.owner_id.last_name,expand.owner_id.email,expand.owner_id.cedula,expand.owner_id.username,expand.owner_id.created,expand.owner_id.gearbox',
+            'id,owner_id,company_name,flexirol,flexirol2,flexirol3,dia_inicio , dia_cierre , porcentaje , dia_bloqueo , frecuencia , dia_reinicio , fecha_excel , gearbox,created,expand.owner_id.first_name,expand.owner_id.last_name,expand.owner_id.email,expand.owner_id.cedula,expand.owner_id.username,expand.owner_id.created,expand.owner_id.gearbox, expand.owner_id.birth_date, expand.owner_id.zip_code, expand.owner_id.state, expand.owner_id.address, expand.owner_id.city',
         })
 
         companies.value = result.items
@@ -268,6 +313,38 @@ export const useCompaniesStore = defineStore(
         throw err
       } finally {
         loading.value = false
+      }
+    }
+
+    /**
+     * Get company by ID with cache
+     */
+    async function getCompanyById(companyId, forceRefresh = false) {
+      // Try to find in local cache first
+      if (!forceRefresh) {
+        const cached = companies.value.find((c) => c.id === companyId)
+        if (cached) {
+          console.log('🎯 Cache hit: company by id', { companyId })
+          return cached
+        }
+      }
+
+      console.log('📡 Fetching company by id from PocketBase...', { companyId })
+      try {
+        const company = await api.getCompanyById(companyId)
+
+        // Update local cache
+        const index = companies.value.findIndex((c) => c.id === companyId)
+        if (index >= 0) {
+          companies.value[index] = company
+        } else {
+          companies.value.push(company)
+        }
+
+        return company
+      } catch (err) {
+        error.value = `Error fetching company: ${err.message}`
+        throw err
       }
     }
 
@@ -395,7 +472,7 @@ export const useCompaniesStore = defineStore(
         const companyCreateData = {
           ...companyConfig,
           company_name: companyData.nombre || companyData.company_name || '',
-          ruc: companyData.ruc || '',
+          cedula: companyData.cedula || '',
           owner_id: createdOwner.id,
           gearbox: companyData.gearbox === 'true' || companyData.gearbox === true || true,
           fecha_excel: null,
@@ -417,20 +494,31 @@ export const useCompaniesStore = defineStore(
      * OPTIMIZED: Update company without affecting unrelated data
      */
     async function updateCompany(companyId, companyData, ownerData = null) {
-      // Update locally first (optimistic update)
+      console.log('🔄 Ready to update: companyData')
+      console.log(companyData)
+
+      console.log('🔄 Ready to update: ownerData')
+      console.log(ownerData)
+
+      /* Update locally first (optimistic update)
       updateCompanyLocal(companyId, companyData)
       if (ownerData && companies.value.find((c) => c.id === companyId)?.owner_id) {
         console.log('🔄 Optimistic owner update skipped (needs API call)')
-      }
+      }*/
 
       try {
         const updated = await pb.collection('companies').update(companyId, companyData)
         updateCompanyLocal(companyId, updated)
 
-        // Update owner if needed
+        // Update owner if needed using usersStore
         if (ownerData && updated.owner_id) {
-          await pb.collection('users').update(updated.owner_id, ownerData)
+          const usersStore = useUsersStore()
+          await usersStore.updateUser(updated.owner_id, ownerData)
         }
+
+        // Invalidate cache after update
+        invalidateCompany(companyId)
+        console.log('🔄 Cache invalidated after company update')
 
         return { success: true, company: updated }
       } catch (err) {
@@ -469,6 +557,10 @@ export const useCompaniesStore = defineStore(
 
         // Delete company
         await pb.collection('companies').delete(companyId)
+
+        // Invalidate cache after deletion
+        invalidateCompany(companyId)
+        console.log('🔄 Cache invalidated after company deletion')
 
         return { success: true, deletedUsers: deletedCount }
       } catch (err) {
@@ -553,6 +645,25 @@ export const useCompaniesStore = defineStore(
       }
     }
 
+    /**
+     * Invalidate entire companies cache
+     */
+    function invalidateCache() {
+      lastFetch.value = null
+      console.log('🗑️ Companies cache invalidated')
+    }
+
+    /**
+     * Invalidate specific company from cache
+     */
+    function invalidateCompany(companyId) {
+      const index = companies.value.findIndex((c) => c.id === companyId)
+      if (index >= 0) {
+        companies.value.splice(index, 1)
+        console.log('🗑️ Company cache invalidated', { companyId })
+      }
+    }
+
     return {
       // ========== EXISTING CONFIG STATE (MANTENER PARA CONFIGVIEW) ==========
       companyConfig,
@@ -579,8 +690,9 @@ export const useCompaniesStore = defineStore(
       fetchGlobalConfig,
       fetchCompanyById,
       fetchCompanyToConfigure,
-      saveCompanyConfig,
+      // saveCompanyConfig,
       resetCompanyConfig,
+      saveGlobalConfig, // <-- Asegurarse de exportar
 
       // ========== NEW OPTIMIZED FUNCTIONS ==========
       fetchCompanies,
@@ -590,6 +702,9 @@ export const useCompaniesStore = defineStore(
       updateCompany,
       deleteCompanyWithUsers,
       createUserForCompany,
+      getCompanyById, // <-- Add this to the exports
+      invalidateCache,
+      invalidateCompany,
 
       // ========== HELPERS ==========
       defaultCompanyState,
