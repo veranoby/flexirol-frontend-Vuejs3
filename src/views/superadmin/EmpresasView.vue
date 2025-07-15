@@ -1427,6 +1427,28 @@ const loadEmpresas = async (forceRefresh = false) => {
     // Only fetch if needed or forced
     await companiesStore.fetchCompanies(forceRefresh)
 
+    // Debug detallado
+    console.log('🔍 Debug loadEmpresas:')
+    console.log('Total companies in store:', companiesStore.companies.length)
+    console.log(
+      'Companies with expand:',
+      companiesStore.companies.filter((c) => c.expand?.owner_id).length,
+    )
+    console.log(
+      'Companies without expand:',
+      companiesStore.companies.filter((c) => !c.expand?.owner_id),
+    )
+    console.log(
+      'Companies with flexirol fields:',
+      companiesStore.companies.map((c) => ({
+        id: c.id,
+        name: c.company_name,
+        flexirol: c.flexirol,
+        flexirol2: c.flexirol2,
+        flexirol3: c.flexirol3,
+      })),
+    )
+
     // getGlobalUserStats solo si no tenemos el dato o es refresh forzado
     if (forceRefresh || !globalStats.value.totalUsers) {
       const usersResult = await api.getGlobalUserStats()
@@ -1522,41 +1544,49 @@ const startEdit = async (company) => {
     owner_id: company.owner_id,
 
     first_name: company.expand?.owner_id?.first_name || company.company_name || '',
-    last_name: company.expand?.owner_id?.last_name || '',
-    email: company.expand?.owner_id?.email || '',
-    username: company.expand?.owner_id?.username || '',
-    cedula: company.expand?.owner_id?.cedula || '',
+    last_name: company.expand?.owner_id?.last_name,
+    email: company.expand?.owner_id?.email,
+    username: company.expand?.owner_id?.username,
+    cedula: company.expand?.owner_id?.cedula,
     gearbox: String(company.gearbox),
 
-    address: company.expand?.owner_id?.address || '',
-    phone_number: company.expand?.owner_id?.phone_number || '',
-    state: company.expand?.owner_id?.state || '',
-    city: company.expand?.owner_id?.city || '',
+    address: company.expand?.owner_id?.address,
+    phone_number: company.expand?.owner_id?.phone_number,
+    state: company.expand?.owner_id?.state,
+    city: company.expand?.owner_id?.city,
 
-    zip_code: company.expand?.owner_id?.zip_code || '',
+    zip_code: company.expand?.owner_id?.zip_code,
   })
 
-  // 2. Cargar configuración existente
+  // 2. Cargar configuración de empresa - TODOS los campos
   const configData = {
-    flexirol: company.flexirol, // Usar flexirol como fallback
-    flexirol2: company.flexirol2, // Usar flexirol como fallback
-    flexirol3: company.flexirol3, // Usar flexirol como fallback
+    // Campos flexirol CRÍTICOS
+    flexirol: company.flexirol ?? 10,
+    flexirol2: company.flexirol2 ?? 50,
+    flexirol3: company.flexirol3 ?? '1',
 
-    porcentaje: company.porcentaje, // Usar flexirol como fallback
-    dia_inicio: company.dia_inicio,
-    dia_cierre: company.dia_cierre,
-    frecuencia: company.frecuencia,
-    dia_bloqueo: company.dia_bloqueo,
-    dia_reinicio: company.dia_reinicio,
+    // Otros campos de configuración
+    porcentaje: company.porcentaje ?? 50,
+    dia_inicio: company.dia_inicio ?? 1,
+    dia_cierre: company.dia_cierre ?? 28,
+    frecuencia: company.frecuencia ?? 3,
+    dia_bloqueo: company.dia_bloqueo ?? 2,
+    dia_reinicio: company.dia_reinicio ?? 1,
   }
 
-  // Debug 2: Verificar valores antes de asignar
-  console.log('Configuración a asignar:', configData)
+  // Debug mejorado
+  console.log('Company data:', {
+    id: company.id,
+    flexirol: company.flexirol,
+    flexirol2: company.flexirol2,
+    flexirol3: company.flexirol3,
+  })
+  console.log('Config to assign:', configData)
 
   Object.assign(empresaConfig, configData)
 
-  // Debug 3: Verificar estado final
-  console.log('Estado final empresaConfig:', empresaConfig)
+  // Verificación final
+  console.log('Final empresaConfig:', empresaConfig)
 
   showCreateModal.value = true
 }

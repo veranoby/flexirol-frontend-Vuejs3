@@ -251,9 +251,6 @@ export const useUsersStore = defineStore(
       try {
         const updated = await api.updateUser(userId, userData)
 
-        // Update local state with full response
-        updateUserLocal(userId, mapUserData(updated))
-
         return updated
       } catch (err) {
         // Rollback on error

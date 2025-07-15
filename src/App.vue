@@ -1,7 +1,14 @@
 <template>
   <v-app>
     <!-- Navigation Bar -->
-    <v-app-bar class="glass-app-bar" v-if="authStore.isAuthenticated" dark elevation="2" app>
+    <v-app-bar
+      class=""
+      color="blue-grey-lighten-5"
+      v-if="authStore.isAuthenticated"
+      dark
+      elevation="2"
+      app
+    >
       <!-- Brand FlexiRol -->
       <router-link to="/dashboard" class="text-decoration-none d-flex align-items-center">
         <v-icon color="warning" class="me-2">mdi-chart-line</v-icon>
@@ -213,6 +220,7 @@
 import { computed, onMounted, watch, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useCompaniesStore } from '@/stores/companies'
 import { getBreadcrumb } from '@/router'
 
 // Router and stores
@@ -287,6 +295,10 @@ const breadcrumbItems = computed(() => {
 
 // Methods
 const logout = async () => {
+  const companiesStore = useCompaniesStore()
+  companiesStore.invalidateCache()
+  sessionStorage.removeItem('flexirol-companies')
+
   try {
     await authStore.logout()
     router.push('/login')
@@ -298,11 +310,6 @@ const logout = async () => {
 const goToProfile = () => {
   // TODO: Implement profile page
   console.log('Navigate to profile')
-}
-
-const goToSettings = () => {
-  // TODO: Implement settings page
-  console.log('Navigate to settings')
 }
 
 // Lifecycle

@@ -296,7 +296,7 @@ export const useCompaniesStore = defineStore(
           expand: 'owner_id',
           sort: '-created',
           fields:
-            'id,owner_id,company_name,flexirol,flexirol2,flexirol3,dia_inicio , dia_cierre , porcentaje , dia_bloqueo , frecuencia , dia_reinicio , fecha_excel , gearbox,created,expand.owner_id.first_name,expand.owner_id.last_name,expand.owner_id.email,expand.owner_id.cedula,expand.owner_id.username,expand.owner_id.created,expand.owner_id.gearbox, expand.owner_id.birth_date, expand.owner_id.zip_code, expand.owner_id.state, expand.owner_id.address, expand.owner_id.city',
+            'id,owner_id,company_name,flexirol,flexirol2,flexirol3,dia_inicio,dia_cierre,porcentaje,dia_bloqueo,frecuencia,dia_reinicio,fecha_excel,gearbox,created,expand.owner_id.id,expand.owner_id.first_name,expand.owner_id.last_name,expand.owner_id.email,expand.owner_id.cedula,expand.owner_id.username,expand.owner_id.created,expand.owner_id.gearbox,expand.owner_id.phone_number,expand.owner_id.address,expand.owner_id.city,expand.owner_id.state,expand.owner_id.zip_code',
         })
 
         companies.value = result.items
@@ -508,7 +508,6 @@ export const useCompaniesStore = defineStore(
 
       try {
         const updated = await pb.collection('companies').update(companyId, companyData)
-        updateCompanyLocal(companyId, updated)
 
         // Update owner if needed using usersStore
         if (ownerData && updated.owner_id) {
@@ -516,11 +515,20 @@ export const useCompaniesStore = defineStore(
           await usersStore.updateUser(updated.owner_id, ownerData)
         }
 
-        // Invalidate cache after update
-        invalidateCompany(companyId)
-        console.log('🔄 Cache invalidated after company update')
+        // 3. Re-fetch con expand para obtener datos completos
+        const completeCompany = await pb.collection('companies').getOne(companyId, {
+          expand: 'owner_id',
+          fields: '*,expand.owner_id.*',
+        })
 
-        return { success: true, company: updated }
+        // Actualizar en cache local
+        const index = companies.value.findIndex((c) => c.id === companyId)
+        if (index !== -1) {
+          companies.value[index] = completeCompany
+        }
+
+        console.log('✅ Company updated with complete data:', completeCompany)
+        return { success: true, company: completeCompany }
       } catch (err) {
         // Rollback on error
         console.warn('⚠️ Update failed, refreshing from server...')
@@ -714,7 +722,18 @@ export const useCompaniesStore = defineStore(
     persist: {
       key: 'flexirol-companies',
       storage: sessionStorage,
-      paths: ['companies', 'globalConfig', 'lastFetch'], // Añadir lastFetch a la persistencia
+      paths: ['companies', 'globalConfig'], // Temporalmente sin lastFetch
+      serializer: {
+        deserialize: (value) => {
+          const parsed = JSON.parse(value)
+          // Validar que las empresas tengan expand
+          if (parsed.companies) {
+            parsed.companies = parsed.companies.filter((c) => c.id && c.owner_id)
+          }
+          return parsed
+        },
+        serialize: JSON.stringify,
+      },
     },
   },
 )
