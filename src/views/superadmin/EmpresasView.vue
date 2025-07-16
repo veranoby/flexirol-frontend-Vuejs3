@@ -575,7 +575,7 @@
               <v-row>
                 <v-col cols="12" md="4">
                   <v-text-field
-                    v-model.number="empresaConfig.porcentaje"
+                    v-model.number="newItem.porcentaje"
                     label="Porcentaje máximo (%)"
                     variant="outlined"
                     type="number"
@@ -589,7 +589,7 @@
 
                 <v-col cols="12" md="4">
                   <v-text-field
-                    v-model.number="empresaConfig.dia_inicio"
+                    v-model.number="newItem.dia_inicio"
                     label="Día inicio de ciclo"
                     variant="outlined"
                     type="number"
@@ -603,7 +603,7 @@
 
                 <v-col cols="12" md="4">
                   <v-text-field
-                    v-model.number="empresaConfig.dia_cierre"
+                    v-model.number="newItem.dia_cierre"
                     label="Día cierre de ciclo"
                     variant="outlined"
                     type="number"
@@ -617,7 +617,7 @@
 
                 <v-col cols="12" md="4">
                   <v-text-field
-                    v-model.number="empresaConfig.frecuencia"
+                    v-model.number="newItem.frecuencia"
                     label="Frecuencia máxima mensual"
                     variant="outlined"
                     type="number"
@@ -631,7 +631,7 @@
 
                 <v-col cols="12" md="4">
                   <v-text-field
-                    v-model.number="empresaConfig.dia_bloqueo"
+                    v-model.number="newItem.dia_bloqueo"
                     label="Días bloqueo antes cierre"
                     variant="outlined"
                     type="number"
@@ -645,7 +645,7 @@
 
                 <v-col cols="12" md="4">
                   <v-text-field
-                    v-model.number="empresaConfig.dia_reinicio"
+                    v-model.number="newItem.dia_reinicio"
                     label="Días para reiniciar"
                     variant="outlined"
                     type="number"
@@ -1246,18 +1246,6 @@ const editedUsuario = reactive({
   // Eliminados: nacimiento, gender (no existen en el esquema)
 })
 
-const empresaConfig = reactive({
-  porcentaje: 50,
-  dia_inicio: 1,
-  dia_cierre: 28,
-  frecuencia: 3,
-  dia_bloqueo: 2,
-  dia_reinicio: 1,
-  flexirol: 10, // AGREGAR
-  flexirol2: 50, // AGREGAR
-  flexirol3: '1', // AGREGAR
-})
-
 const deleteItem = ref({
   first_name: '',
   last_name: '',
@@ -1500,6 +1488,8 @@ const loadEmpresas = async (forceRefresh = false) => {
 }
 
 const openCreateModal = async () => {
+  const defaultConfig = await api.getDefaultCompanyConfig()
+
   isEditMode.value = false
   Object.assign(newItem, {
     first_name: '',
@@ -1516,14 +1506,7 @@ const openCreateModal = async () => {
 
   // Cargar configuración default del sistema
   try {
-    const defaultConfig = await api.getDefaultCompanyConfig()
-    Object.assign(empresaConfig, defaultConfig)
-    Object.assign(newItem, {
-      ...newItem,
-      flexirol: defaultConfig.flexirol,
-      flexirol2: defaultConfig.flexirol2,
-      flexirol3: defaultConfig.flexirol3,
-    })
+    Object.assign(newItem, defaultConfig)
   } catch (error) {
     console.error('Error loading default config:', error)
     // Mantener valores hardcodeados como fallback
@@ -1556,37 +1539,24 @@ const startEdit = async (company) => {
     city: company.expand?.owner_id?.city,
 
     zip_code: company.expand?.owner_id?.zip_code,
-  })
 
-  // 2. Cargar configuración de empresa - TODOS los campos
-  const configData = {
     // Campos flexirol CRÍTICOS
-    flexirol: company.flexirol ?? 10,
-    flexirol2: company.flexirol2 ?? 50,
-    flexirol3: company.flexirol3 ?? '1',
-
-    // Otros campos de configuración
-    porcentaje: company.porcentaje ?? 50,
-    dia_inicio: company.dia_inicio ?? 1,
-    dia_cierre: company.dia_cierre ?? 28,
-    frecuencia: company.frecuencia ?? 3,
-    dia_bloqueo: company.dia_bloqueo ?? 2,
-    dia_reinicio: company.dia_reinicio ?? 1,
-  }
-
-  // Debug mejorado
-  console.log('Company data:', {
-    id: company.id,
     flexirol: company.flexirol,
     flexirol2: company.flexirol2,
     flexirol3: company.flexirol3,
+
+    // Otros campos de configuración
+    porcentaje: company.porcentaje,
+    dia_inicio: company.dia_inicio,
+    dia_cierre: company.dia_cierre,
+    frecuencia: company.frecuencia,
+    dia_bloqueo: company.dia_bloqueo,
+    dia_reinicio: company.dia_reinicio,
   })
-  console.log('Config to assign:', configData)
 
-  Object.assign(empresaConfig, configData)
+  // Debug mejorado
 
-  // Verificación final
-  console.log('Final empresaConfig:', empresaConfig)
+  console.log('Config to assign:', newItem)
 
   showCreateModal.value = true
 }
@@ -1608,16 +1578,15 @@ const saveEmpresa = async () => {
         company_name: `${newItem.first_name} ${newItem.last_name}`.trim(),
         cedula: newItem.cedula,
         gearbox: newItem.gearbox === 'true',
-        phone_number: newItem.phone_number,
-        flexirol: empresaConfig.flexirol,
-        flexirol2: empresaConfig.flexirol2,
-        flexirol3: empresaConfig.flexirol3,
-        porcentaje: empresaConfig.porcentaje,
-        dia_inicio: empresaConfig.dia_inicio,
-        dia_cierre: empresaConfig.dia_cierre,
-        frecuencia: empresaConfig.frecuencia,
-        dia_bloqueo: empresaConfig.dia_bloqueo,
-        dia_reinicio: empresaConfig.dia_reinicio,
+        flexirol: newItem.flexirol,
+        flexirol2: newItem.flexirol2,
+        flexirol3: newItem.flexirol3,
+        porcentaje: newItem.porcentaje,
+        dia_inicio: newItem.dia_inicio,
+        dia_cierre: newItem.dia_cierre,
+        frecuencia: newItem.frecuencia,
+        dia_bloqueo: newItem.dia_bloqueo,
+        dia_reinicio: newItem.dia_reinicio,
       }
 
       // Datos del propietario (actualización)
@@ -1636,6 +1605,10 @@ const saveEmpresa = async () => {
         birth_date: newItem.birth_date,
         gender: newItem.gender,
         cedula: newItem.cedula,
+        flexirol: newItem.flexirol,
+        flexirol2: newItem.flexirol2,
+        flexirol3: newItem.flexirol3,
+        porcentaje: newItem.porcentaje,
       }
 
       result = await companiesStore.updateCompany(newItem.id, companyData, ownerData)
@@ -1645,16 +1618,15 @@ const saveEmpresa = async () => {
         company_name: `${newItem.first_name} ${newItem.last_name}`.trim(),
         cedula: newItem.cedula,
         gearbox: newItem.gearbox === 'true',
-        phone_number: newItem.phone_number,
-        flexirol: empresaConfig.flexirol,
-        flexirol2: empresaConfig.flexirol2,
-        flexirol3: empresaConfig.flexirol3,
-        porcentaje: empresaConfig.porcentaje,
-        dia_inicio: empresaConfig.dia_inicio,
-        dia_cierre: empresaConfig.dia_cierre,
-        frecuencia: empresaConfig.frecuencia,
-        dia_bloqueo: empresaConfig.dia_bloqueo,
-        dia_reinicio: empresaConfig.dia_reinicio,
+        flexirol: newItem.flexirol,
+        flexirol2: newItem.flexirol2,
+        flexirol3: newItem.flexirol3,
+        porcentaje: newItem.porcentaje,
+        dia_inicio: newItem.dia_inicio,
+        dia_cierre: newItem.dia_cierre,
+        frecuencia: newItem.frecuencia,
+        dia_bloqueo: newItem.dia_bloqueo,
+        dia_reinicio: newItem.dia_reinicio,
       }
 
       // Datos del propietario (creación)
@@ -1668,6 +1640,11 @@ const saveEmpresa = async () => {
         phone_number: newItem.phone_number,
         emailVisibility: true, // CRÍTICO para owners
         role: 'empresa',
+        flexirol: newItem.flexirol,
+        flexirol2: newItem.flexirol2,
+        flexirol3: newItem.flexirol3,
+        porcentaje: newItem.porcentaje,
+        cedula: newItem.cedula,
       }
 
       result = await companiesStore.createCompanyWithOwner(companyData, ownerData)

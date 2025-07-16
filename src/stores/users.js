@@ -211,7 +211,7 @@ export const useUsersStore = defineStore(
         }
 
         const createdUser = await api.createUser(newUser)
-        const mappedUser = mapUserData(createdUser)
+        const mappedUser = createdUser // Reemplazado de mapUserData(createdUser)
 
         // Actualización local optimista
         users.value.unshift(mappedUser)
@@ -365,7 +365,7 @@ export const useUsersStore = defineStore(
         // Update local state
         const index = users.value.findIndex((u) => u.id === userId)
         if (index !== -1) {
-          users.value[index] = mapUserData(updatedUser)
+          users.value[index] = updatedUser // Reemplazado de mapUserData(updatedUser)
         }
 
         return updatedUser
@@ -415,7 +415,7 @@ export const useUsersStore = defineStore(
       console.log('📡 Fetching user by id from PocketBase...', { userId })
       try {
         const user = await api.getUserById(userId)
-        const mapped = mapUserData(user)
+        const mapped = user // Reemplazado de mapUserData(user)
 
         // Update cache
         const index = users.value.findIndex((u) => u.id === userId)
@@ -552,30 +552,6 @@ export const useUsersStore = defineStore(
     // Helper Functions
 
     /**
-     * Map user data to consistent format
-     */
-    function mapUserData(user) {
-      return {
-        id: user.id,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        email: user.email,
-        username: user.username,
-        cedula: user.cedula,
-        role: user.role,
-        gearbox: user.gearbox,
-        company_id: user.company_id,
-        disponible: user.disponible || 0,
-        assigned_companies: user.assigned_companies || [],
-        created: user.created,
-        updated: user.updated,
-        // Expanded relationships
-        empresa: user.expand?.company_id || null,
-        assignedCompaniesData: user.expand?.assigned_companies || [],
-      }
-    }
-
-    /**
      * Validate user data before operations
      */
     function validateUserData(userData, isUpdate = false) {
@@ -613,34 +589,6 @@ export const useUsersStore = defineStore(
       return {
         isValid: Object.keys(errors).length === 0,
         errors,
-      }
-    }
-
-    /**
-     * Validate user base data (default values based on company or global config)
-     */
-    async function validateUserBaseData(userData) {
-      try {
-        if (userData.role === 'usuario' || userData.role === 'operador') {
-          // Obtener configuración de la empresa si el usuario no es empresa
-          if (userData.company_id) {
-            const company = await api.getCompanyById(userData.company_id)
-            userData.flexirol = company.flexirol
-            userData.flexirol2 = company.flexirol2
-            userData.flexirol3 = company.flexirol3
-          } else {
-            throw new Error('El usuario debe pertenecer a una empresa')
-          }
-        } else if (userData.role === 'empresa') {
-          // Usar configuración global para empresas
-          const config = await api.getSystemConfig()
-          userData.flexirol = config.porcentaje_servicio
-          userData.flexirol2 = config.valor_fijo_mensual
-          userData.flexirol3 = config.plan_default
-        }
-      } catch (error) {
-        console.error('Error en validateUserBaseData:', error)
-        throw error
       }
     }
 

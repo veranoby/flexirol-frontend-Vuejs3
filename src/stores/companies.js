@@ -433,52 +433,9 @@ export const useCompaniesStore = defineStore(
       error.value = null
 
       try {
-        const config = await api.getSystemConfig()
-        const companyConfig = {
-          flexirol: config.porcentaje_servicio,
-          flexirol2: config.valor_fijo_mensual,
-          flexirol3: config.plan_default,
-          dia_inicio: config.dia_inicio,
-          dia_cierre: config.dia_cierre,
-          porcentaje: config.porcentaje_maximo,
-          dia_bloqueo: config.dias_bloqueo,
-          frecuencia: config.frecuencia_maxima,
-          dia_reinicio: config.dias_reinicio,
-        }
+        const createdOwner = await pb.collection('users').create(ownerData)
 
-        // Create owner user (legacy mapping)
-        const ownerUserData = {
-          first_name: ownerData.first_name || '',
-          last_name: ownerData.last_name || '',
-          email: ownerData.email || ownerData.user_email || '',
-          cedula: ownerData.cedula || '',
-          username:
-            ownerData.user_login ||
-            `${ownerData.first_name}_${ownerData.last_name}`.toLowerCase().replace(/\s+/g, '_'),
-          password:
-            ownerData.user_pass ||
-            ownerData.password ||
-            ownerData.user_login ||
-            `${ownerData.first_name}_${ownerData.last_name}`.toLowerCase().replace(/\s+/g, '_'),
-          role: 'empresa',
-          gearbox: ownerData.gearbox === 'true' || ownerData.gearbox === true,
-          emailVisibility: true, // CRÍTICO: owners deben tener email visible
-          phone_number: ownerData.phone_number || '',
-        }
-
-        const createdOwner = await pb.collection('users').create(ownerUserData)
-
-        // Create company (legacy mapping)
-        const companyCreateData = {
-          ...companyConfig,
-          company_name: companyData.nombre || companyData.company_name || '',
-          cedula: companyData.cedula || '',
-          owner_id: createdOwner.id,
-          gearbox: companyData.gearbox === 'true' || companyData.gearbox === true || true,
-          fecha_excel: null,
-        }
-
-        const createdCompany = await pb.collection('companies').create(companyCreateData)
+        const createdCompany = await pb.collection('companies').create(companyData)
 
         return { success: true, company: createdCompany, owner: createdOwner }
       } catch (err) {
@@ -507,13 +464,10 @@ export const useCompaniesStore = defineStore(
       }*/
 
       try {
-        const updated = await pb.collection('companies').update(companyId, companyData)
+        const usersStore = useUsersStore()
+        await usersStore.updateUser(updated.owner_id, ownerData)
 
-        // Update owner if needed using usersStore
-        if (ownerData && updated.owner_id) {
-          const usersStore = useUsersStore()
-          await usersStore.updateUser(updated.owner_id, ownerData)
-        }
+        const updated = await pb.collection('companies').update(companyId, companyData)
 
         // 3. Re-fetch con expand para obtener datos completos
         const completeCompany = await pb.collection('companies').getOne(companyId, {

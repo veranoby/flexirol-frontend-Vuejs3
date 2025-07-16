@@ -70,28 +70,9 @@ export const api = {
   },
 
   async getUserCompanyInfo(userId) {
-    try {
-      const user = await pb.collection('users').getOne(userId, {
-        expand: 'company_id',
-        fields: '*,company_id.*',
-      })
-
-      // Map to legacy format for compatibility
-      return {
-        ...user,
-        empresa_nombre: user.expand?.company_id?.nombre || '',
-        empresa_ruc: user.expand?.company_id?.ruc || '',
-        porcentaje: user.expand?.company_id?.porcentaje || 0,
-        dia_inicio: user.expand?.company_id?.dia_inicio || 1,
-        dia_cierre: user.expand?.company_id?.dia_cierre || 30,
-        dia_bloqueo: user.expand?.company_id?.dia_bloqueo || 0,
-        dia_reinicio: user.expand?.company_id?.dia_reinicio || 1,
-        frecuencia: user.expand?.company_id?.frecuencia || 3,
-      }
-    } catch (error) {
-      console.error('Error fetching user company info:', error)
-      throw error
-    }
+    return await pb.collection('users').getOne(userId, {
+      expand: 'company_id',
+    })
   },
 
   async createUser(userData) {
@@ -397,28 +378,22 @@ export const api = {
 
   // ===== SYSTEM CONFIG METHODS =====
   async getSystemConfig(forceRefresh = false) {
-    // Check cache
-    if (
-      !forceRefresh &&
-      cache.systemConfig &&
-      Date.now() - cache.systemConfigTime < cache.CACHE_TTL
-    ) {
+    if (!forceRefresh && cache.systemConfig && isCacheValid(cache.systemConfigTime)) {
       console.log('🎯 Cache hit: system config')
       return cache.systemConfig
     }
 
-    console.log('📡 Fetching system config from PocketBase...')
     try {
-      const result = await pb.collection('system_config').getFirstListItem('name="default_config"')
+      const config = await pb.collection('system_config').getFirstListItem('name="default_config"')
 
-      // Update cache
-      cache.systemConfig = result
+      cache.systemConfig = config
       cache.systemConfigTime = Date.now()
+      console.log('📡 System config fetched and cached')
 
-      return result
+      return config
     } catch (error) {
       // Create default if not exists
-      const newConfig = await pb.collection('system_config').create({
+      const defaultConfig = {
         name: 'default_config',
         porcentaje_servicio: 10,
         valor_fijo_mensual: 50,
@@ -430,12 +405,13 @@ export const api = {
         dias_bloqueo: 2,
         dias_reinicio: 3,
         activo: true,
-      })
+      }
 
-      cache.systemConfig = newConfig
+      const created = await pb.collection('system_config').create(defaultConfig)
+      cache.systemConfig = created
       cache.systemConfigTime = Date.now()
 
-      return newConfig
+      return created
     }
   },
 
