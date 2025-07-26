@@ -520,7 +520,6 @@ import { useToastSystem } from '@/stores/system'
 // Stores
 const authStore = useAuthStore()
 const requestsStore = useUserAdvanceRequestsStore()
-const companiesStore = useCompaniesStore()
 const bankAccountsStore = useBankAccountsStore()
 const { showToast } = useToastSystem()
 

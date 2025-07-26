@@ -108,52 +108,6 @@ export const api = {
     return results
   },
 
-  // Companies
-  async getCompanies(filters = {}, page = 1, perPage = 1000) {
-    const params = {
-      page,
-      perPage,
-      sort: '-created',
-      expand: 'owner_id',
-      fields:
-        'id,company_name,cedula,owner_id,porcentaje,dia_inicio,dia_cierre,frecuencia,dia_bloqueo,dia_reinicio,gearbox,flexirol,flexirol2,flexirol3', // Todos los campos relevantes
-      ...(buildFilter(filters) && { filter: buildFilter(filters) }),
-    }
-    return await pb.collection('companies').getList(page, perPage, params)
-  },
-
-  async getCompanyById(id) {
-    return await pb.collection('companies').getOne(id, { expand: 'owner_id' })
-  },
-
-  async createCompany(companyData) {
-    return await pb.collection('companies').create(companyData)
-  },
-
-  async updateCompany(id, companyData) {
-    return await pb.collection('companies').update(id, companyData)
-  },
-
-  async deleteCompany(id) {
-    return await pb.collection('companies').delete(id)
-  },
-
-  async toggleCompanyStatus(id, status) {
-    return await pb.collection('companies').update(id, { gearbox: status })
-  },
-
-  async getCompanyUsers(companyId, filters = {}, page = 1, perPage = 1000) {
-    const companyFilter = `company_id="${companyId}"`
-    const additionalFilters = buildFilter(filters)
-    const finalFilter = additionalFilters
-      ? `${companyFilter} && ${additionalFilters}`
-      : companyFilter
-
-    return await pb.collection('users').getList(page, perPage, {
-      filter: finalFilter,
-      sort: '-created',
-    })
-  },
 
   // Advance Requests
   async getAdvanceRequests(filters = {}) {
@@ -325,35 +279,6 @@ export const api = {
     }
   },
 
-  // Company-owner gearbox sync
-  async updateCompanyWithOwnerSync(companyId, companyData) {
-    try {
-      // 1. Actualizar solo el campo gearbox de la compañía
-      const updatedCompany = await pb.collection('companies').update(companyId, {
-        gearbox: companyData.gearbox,
-      })
-
-      // 2. Sincronizar solo el gearbox del propietario si existe
-      if (updatedCompany.owner_id) {
-        await pb.collection('users').update(updatedCompany.owner_id, {
-          gearbox: companyData.gearbox,
-        })
-      }
-
-      return {
-        success: true,
-        company: updatedCompany,
-        message: 'Sincronización completada',
-      }
-    } catch (error) {
-      console.error('Error en sync:', error)
-      return {
-        success: false,
-        error: error.message,
-        company: null,
-      }
-    }
-  },
 }
 
 // Real-time subscriptions

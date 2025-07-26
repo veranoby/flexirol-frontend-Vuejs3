@@ -475,7 +475,6 @@ import * as XLSX from 'xlsx'
 // Stores
 const authStore = useAuthStore()
 const usersStore = useUsersStore()
-const companiesStore = useCompaniesStore()
 const systemStore = useSystemStore()
 const { showToast } = useToastSystem()
 

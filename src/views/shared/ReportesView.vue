@@ -271,7 +271,6 @@ import * as XLSX from 'xlsx'
 // Stores
 const authStore = useAuthStore()
 const requestsStore = useUserAdvanceRequestsStore()
-const companiesStore = useCompaniesStore()
 
 // State
 const loading = ref(false)

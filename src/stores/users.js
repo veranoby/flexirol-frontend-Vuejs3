@@ -231,32 +231,34 @@ export const useUsersStore = defineStore(
     }
 
     /**
-     * Update user locally (optimistic updates)
-     */
-    function updateUserLocal(userId, updates) {
-      const user = users.value.find((u) => u.id === userId)
-      if (user) {
-        Object.assign(user, updates)
-        console.log('🔄 User updated locally', { userId, updates })
-      }
-    }
-
-    /**
      * Optimized updateUser with optimistic updates
      */
-    async function updateUser(userId, userData) {
-      // Update locally first
-      updateUserLocal(userId, userData)
+    async function updateUser(userId, updates) {
+      // Actualización optimista
+      const index = users.value.findIndex(u => u.id === userId)
+      const original = users.value[index] ? {...users.value[index]} : null
+
+      if (index !== -1) {
+        users.value[index] = { ...users.value[index], ...updates }
+      }
 
       try {
-        const updated = await api.updateUser(userId, userData)
+        const updated = await api.updateUser(userId, updates)
 
+        // Actualizar con datos del servidor
+        if (index !== -1) {
+          users.value[index] = updated
+        }
+
+        console.log('✅ User updated:', userId)
         return updated
-      } catch (err) {
-        // Rollback on error
-        console.warn('⚠️ Update failed, refreshing from server...')
-        await fetchUsers({}, true) // force refresh
-        throw err
+      } catch (error) {
+        // Rollback
+        if (index !== -1 && original) {
+          users.value[index] = original
+        }
+        console.error('Error updating user:', error)
+        throw error
       }
     }
 

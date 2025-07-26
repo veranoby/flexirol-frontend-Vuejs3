@@ -1142,15 +1142,13 @@
 
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue'
-import { useCompaniesStore } from '@/stores/companies'
 import { useUsersStore } from '@/stores/users'
-import { useSystemStore } from '@/stores/system'
+import { useSystemConfigStore } from '@/stores/systemConfig'
 import { api } from '@/services/pocketbase'
 
 // Stores
-const companiesStore = useCompaniesStore()
 const usersStore = useUsersStore()
-const systemStore = useSystemStore()
+const systemConfigStore = useSystemConfigStore()
 
 // ========== DATA (estructura del legacy) ==========
 const filter = ref('')
@@ -1673,8 +1671,8 @@ const saveEmpresa = async () => {
 const toggleStatus = async (element) => {
   try {
     const newStatus = !(element.gearbox === 'true')
-    await api.updateCompanyWithOwnerSync(element.id, {
-      gearbox: newStatus, // ← Actualiza gearbox de la empresa (y propaga al owner)
+    await usersStore.updateUser(element.id, {
+      gearbox: newStatus,
     })
     element.gearbox = String(newStatus)
     showAlert(`Empresa ${newStatus ? 'activada' : 'bloqueada'} exitosamente`)
@@ -1687,7 +1685,7 @@ const toggleStatus = async (element) => {
 
 const viewUsers = async (empresa) => {
   if (!empresa?.id) {
-    alert.message = 'Empresa no válida'
+    showAlert('Empresa no válida', 'error')
     return
   }
 
@@ -1695,22 +1693,17 @@ const viewUsers = async (empresa) => {
   loadingUsers.value = true
 
   try {
-    // Use cached company data
-    const hierarchy = await companiesStore.fetchCompanyUsersHierarchy(empresa.id)
+    // Obtener usuarios de esta empresa
+    const users = usersStore.usersByCompany(empresa.id)
 
-    // Map to local format
-    usuarios_empresa_info_set.value = hierarchy.employees.map((user) => ({
+    usuarios_empresa_info_set.value = users.map(user => ({
       ...user,
       gearbox: String(user.gearbox),
     }))
 
-    console.log('👥 Users loaded from cache/store', {
-      count: usuarios_empresa_info_set.value.length,
-      empresaId: empresa.id,
-    })
     showUsersModal.value = true
   } catch (error) {
-    console.error('Error loading users:', error)
+    console.error('Error:', error)
     showAlert('Error al cargar usuarios', 'error')
   } finally {
     loadingUsers.value = false
@@ -1749,27 +1742,33 @@ const saveUsuario = async () => {
 
   submittingUser.value = true
   try {
-    const result = await companiesStore.createUserForCompany(selectedEmpresa.value.id, {
+    const userData = {
       first_name: newUsuario.first_name,
       last_name: newUsuario.last_name,
       email: newUsuario.email,
+      username: newUsuario.username,
+      password: newUsuario.password,
       cedula: newUsuario.cedula,
       disponible: newUsuario.disponible,
-      username: newUsuario.username,
-      user_pass: newUsuario.password,
+      company_id: selectedEmpresa.value.id,
+      role: 'usuario',
       gearbox: newUsuario.gearbox === 'true',
-    })
-
-    if (result.success) {
-      showAlert('Usuario creado exitosamente')
-      closeCreateUserModal()
-      // Solo refrescar usuarios de esta empresa
-      await viewUsers(selectedEmpresa.value)
-    } else {
-      showAlert(result.error || 'Error al crear usuario', 'error')
     }
+
+    await usersStore.createUser(userData)
+
+    showAlert('Usuario creado exitosamente', 'success')
+    closeCreateUserModal()
+
+    // Recargar usuarios de la empresa
+    const users = usersStore.usersByCompany(selectedEmpresa.value.id)
+    usuarios_empresa_info_set.value = users.map(user => ({
+      ...user,
+      gearbox: String(user.gearbox),
+    }))
+
   } catch (error) {
-    console.error('Error creating user:', error)
+    console.error('Error:', error)
     showAlert('Error al crear usuario', 'error')
   } finally {
     submittingUser.value = false
