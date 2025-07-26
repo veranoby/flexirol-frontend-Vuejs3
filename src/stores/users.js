@@ -46,8 +46,15 @@ export const useUsersStore = defineStore(
     // Blocked users
     const blockedUsers = computed(() => users.value.filter((user) => !user.gearbox))
 
-    // Companies (users with role 'empresa')
-    const companies = computed(() => users.value.filter((user) => user.role === 'empresa'))
+    // Empresas (usuarios con role='empresa')
+    const empresas = computed(() =>
+      users.value.filter(u => u.role === 'empresa')
+    )
+
+    // Usuarios por empresa
+    const usersByCompany = computed(() => (empresaId) =>
+      users.value.filter(u => u.company_id === empresaId)
+    )
 
     // Stats
     const stats = computed(() => ({
@@ -132,8 +139,7 @@ export const useUsersStore = defineStore(
         })
 
         // Map results to consistent format
-        const mappedItems = result.items.map(mapUserData)
-        users.value = mappedItems
+        users.value = result.items
 
         // Update cache
         usersFetchTime.value[cacheKey] = Date.now()
@@ -146,7 +152,7 @@ export const useUsersStore = defineStore(
         totalPages.value = result.totalPages
 
         return {
-          items: mappedItems,
+          items: result.items,
           page: result.page,
           totalPages: result.totalPages,
           totalItems: result.totalItems,
@@ -177,54 +183,37 @@ export const useUsersStore = defineStore(
      */
     async function createUser(userData) {
       loading.value = true
-      error.value = null
-
       try {
-        // Validación de datos (preservada)
-        await systemStore.validateUserBaseData(userData)
+        // Si es empresa, agregar campos de configuración por defecto
+        if (userData.role === 'empresa') {
+          const systemConfig = useSystemConfigStore()
+          const defaults = await systemConfig.fetchConfig()
 
-        // Generar username (preservado)
-        const username = systemStore.generateUsername(
-          userData.first_name,
-          userData.last_name,
-          userData.cedula,
-        )
-
-        // Preparar objeto de usuario (preservado)
-        const newUser = {
-          first_name: userData.first_name.trim(),
-          last_name: userData.last_name.trim(),
-          email: userData.email.toLowerCase().trim(),
-          username,
-          cedula: userData.cedula.trim(),
-          role: userData.role || 'usuario',
-          gearbox: userData.gearbox !== undefined ? userData.gearbox : true,
-          password: userData.password || userData.cedula,
-          passwordConfirm: userData.password || userData.cedula,
-          company_id: userData.role === 'empresa' ? null : userData.company_id,
-          disponible: userData.disponible || 0,
+          userData = {
+            ...userData,
+            company_name: userData.company_name || `${userData.first_name} ${userData.last_name}`,
+            flexirol: userData.flexirol ?? defaults.porcentaje_servicio,
+            flexirol2: userData.flexirol2 ?? defaults.valor_fijo_mensual,
+            flexirol3: userData.flexirol3 ?? defaults.plan_default,
+            dia_inicio: userData.dia_inicio ?? defaults.dia_inicio,
+            dia_cierre: userData.dia_cierre ?? defaults.dia_cierre,
+            porcentaje: userData.porcentaje ?? defaults.porcentaje_maximo,
+            dia_bloqueo: userData.dia_bloqueo ?? defaults.dias_bloqueo,
+            frecuencia: userData.frecuencia ?? defaults.frecuencia_maxima,
+            dia_reinicio: userData.dia_reinicio ?? defaults.dias_reinicio,
+          }
         }
 
-        // Campos adicionales (preservado)
-        if (userData.role === 'operador' && userData.assigned_companies) {
-          newUser.assigned_companies = userData.assigned_companies
-        }
+        const created = await api.createUser(userData)
 
-        const createdUser = await api.createUser(newUser)
-        const mappedUser = createdUser // Reemplazado de mapUserData(createdUser)
+        // Actualizar cache local
+        users.value.unshift(created)
 
-        // Actualización local optimista
-        users.value.unshift(mappedUser)
-        console.log('➕ User created and added locally', {
-          id: createdUser.id,
-          username: createdUser.username,
-        })
-
-        return mappedUser
-      } catch (err) {
-        error.value = `Error al crear usuario: ${err.message}`
-        console.error('Error creating user:', err)
-        throw err
+        console.log('✅ User created:', created.id)
+        return created
+      } catch (error) {
+        console.error('Error creating user:', error)
+        throw error
       } finally {
         loading.value = false
       }
@@ -244,19 +233,31 @@ export const useUsersStore = defineStore(
     /**
      * Optimized updateUser with optimistic updates
      */
-    async function updateUser(userId, userData) {
-      // Update locally first
-      updateUserLocal(userId, userData)
+    async function updateUser(userId, updates) {
+      // Actualización optimista
+      const index = users.value.findIndex(u => u.id === userId)
+      const original = users.value[index]
+
+      if (index !== -1) {
+        users.value[index] = { ...original, ...updates }
+      }
 
       try {
-        const updated = await api.updateUser(userId, userData)
+        const updated = await api.updateUser(userId, updates)
 
+        // Actualizar con datos del servidor
+        if (index !== -1) {
+          users.value[index] = updated
+        }
+
+        console.log('✅ User updated:', userId)
         return updated
-      } catch (err) {
-        // Rollback on error
-        console.warn('⚠️ Update failed, refreshing from server...')
-        await fetchUsers({}, true) // force refresh
-        throw err
+      } catch (error) {
+        // Rollback en caso de error
+        if (index !== -1) {
+          users.value[index] = original
+        }
+        throw error
       }
     }
 
