@@ -265,13 +265,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useUserAdvanceRequestsStore } from '@/stores/userAdvanceRequests'
-import { useCompaniesStore } from '@/stores/companies'
 import * as XLSX from 'xlsx'
 
 // Stores
 const authStore = useAuthStore()
 const requestsStore = useUserAdvanceRequestsStore()
-const companiesStore = useCompaniesStore()
 
 // State
 const loading = ref(false)

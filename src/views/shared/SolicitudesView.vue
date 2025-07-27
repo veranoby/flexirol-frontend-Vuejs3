@@ -512,7 +512,6 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useUserAdvanceRequestsStore } from '@/stores/userAdvanceRequests'
-import { useCompaniesStore } from '@/stores/companies'
 import { useBankAccountsStore } from '@/stores/bankAccounts'
 import * as XLSX from 'xlsx'
 import { useToastSystem } from '@/stores/system'
@@ -520,7 +519,6 @@ import { useToastSystem } from '@/stores/system'
 // Stores
 const authStore = useAuthStore()
 const requestsStore = useUserAdvanceRequestsStore()
-const companiesStore = useCompaniesStore()
 const bankAccountsStore = useBankAccountsStore()
 const { showToast } = useToastSystem()
 

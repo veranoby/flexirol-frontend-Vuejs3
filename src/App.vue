@@ -295,8 +295,6 @@ const breadcrumbItems = computed(() => {
 
 // Methods
 const logout = async () => {
-  const companiesStore = useCompaniesStore()
-  companiesStore.invalidateCache()
   sessionStorage.removeItem('flexirol-companies')
 
   try {

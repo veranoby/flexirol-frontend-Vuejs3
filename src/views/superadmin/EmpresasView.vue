@@ -1410,23 +1410,75 @@ const formatDate = (dateString) => {
 const loadEmpresas = async (forceRefresh = false) => {
   loading.value = true
   try {
-    await usersStore.fetchUsers({ role: 'empresa' }, forceRefresh)
+    // Only fetch if needed or forced
+    await companiesStore.fetchCompanies(forceRefresh)
 
-    empresa_info_set.value = usersStore.empresas.map(empresa => ({
-      ...empresa,
-      // Mapeo para compatibilidad visual
-      first_name: empresa.first_name,
-      last_name: empresa.last_name,
-      email: empresa.email,
-      username: empresa.username,
-      cedula: empresa.cedula,
-      gearbox: String(empresa.gearbox),
-      user_count: usersStore.usersByCompany(empresa.id).length,
-      user_registered: empresa.created,
+    // Debug detallado
+    console.log('🔍 Debug loadEmpresas:')
+    console.log('Total companies in store:', companiesStore.companies.length)
+    console.log(
+      'Companies with expand:',
+      companiesStore.companies.filter((c) => c.expand?.owner_id).length,
+    )
+    console.log(
+      'Companies without expand:',
+      companiesStore.companies.filter((c) => !c.expand?.owner_id),
+    )
+    console.log(
+      'Companies with flexirol fields:',
+      companiesStore.companies.map((c) => ({
+        id: c.id,
+        name: c.company_name,
+        flexirol: c.flexirol,
+        flexirol2: c.flexirol2,
+        flexirol3: c.flexirol3,
+      })),
+    )
+
+    // getGlobalUserStats solo si no tenemos el dato o es refresh forzado
+    if (forceRefresh || !globalStats.value.totalUsers) {
+      const usersResult = await api.getGlobalUserStats()
+      globalStats.value.totalUsers = usersResult.totalItems
+    }
+
+    // Map from store (no new fetch)
+    empresa_info_set.value = companiesStore.companies.map((company) => ({
+      ...company,
+      first_name: company.expand?.owner_id?.first_name || company.company_name || '',
+      last_name: company.expand?.owner_id?.last_name || '',
+      email: company.expand?.owner_id?.email || '',
+      username: company.expand?.owner_id?.username || '',
+      cedula: company.expand?.owner_id?.cedula || '',
+      user_registered: company.expand?.owner_id?.created || company.created,
+      gearbox: String(company.gearbox), // ← Usar gearbox de la EMPRESA (no del owner)
+      user_count: company.users_count,
+      porcentaje: company.porcentaje,
+      dia_inicio: company.dia_inicio,
+      dia_cierre: company.dia_cierre,
+      frecuencia: company.frecuencia,
+      dia_bloqueo: company.dia_bloqueo,
+      dia_reinicio: company.dia_reinicio,
+      fecha_excel: company.fecha_excel,
+
+      id: company.id,
+      owner_id: company.owner_id,
+      company_name: company.company_name,
+      flexirol: company.flexirol,
+      flexirol2: company.flexirol2,
+      flexirol3: company.flexirol3,
+
+      zip_code: company.expand?.owner_id?.zip_code || '',
+      state: company.expand?.owner_id?.state || '',
+      city: company.expand?.owner_id?.city || '',
+      address: company.expand?.owner_id?.address || '',
     }))
 
+    console.log('📊 EmpresasView loaded', {
+      fromCache: !forceRefresh,
+      companies: empresa_info_set.value.length,
+    })
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error loading empresas:', error)
     showAlert('Error al cargar empresas', 'error')
   } finally {
     loading.value = false
@@ -1434,7 +1486,7 @@ const loadEmpresas = async (forceRefresh = false) => {
 }
 
 const openCreateModal = async () => {
-  const defaultConfig = await systemConfigStore.fetchConfig()
+  const defaultConfig = await api.getDefaultCompanyConfig()
 
   isEditMode.value = false
   Object.assign(newItem, {
@@ -1517,62 +1569,100 @@ const saveEmpresa = async () => {
 
   submitting.value = true
   try {
-    const userData = {
-      // Datos básicos
-      first_name: newItem.first_name,
-      last_name: newItem.last_name,
-      email: newItem.email,
-      username: newItem.username,
-      cedula: newItem.cedula,
-      phone_number: newItem.phone_number,
-      gearbox: newItem.gearbox === 'true',
-      role: 'empresa',
-
-      // Datos de empresa
-      company_name: `${newItem.first_name} ${newItem.last_name}`.trim(),
-      flexirol: empresaConfig.flexirol,
-      flexirol2: empresaConfig.flexirol2,
-      flexirol3: empresaConfig.flexirol3,
-      porcentaje: empresaConfig.porcentaje,
-      dia_inicio: empresaConfig.dia_inicio,
-      dia_cierre: empresaConfig.dia_cierre,
-      frecuencia: empresaConfig.frecuencia,
-      dia_bloqueo: empresaConfig.dia_bloqueo,
-      dia_reinicio: empresaConfig.dia_reinicio,
-
-      // Datos adicionales
-      address: newItem.address,
-      city: newItem.city,
-      state: newItem.state,
-      zip_code: newItem.zip_code,
-    }
-
     let result
     if (isEditMode.value) {
-      // No incluir email ni password en updates
-      delete userData.email
-      delete userData.username
-      userData.password = undefined
+      // Datos de la empresa (actualización)
+      const companyData = {
+        company_name: `${newItem.first_name} ${newItem.last_name}`.trim(),
+        cedula: newItem.cedula,
+        gearbox: newItem.gearbox === 'true',
+        flexirol: newItem.flexirol,
+        flexirol2: newItem.flexirol2,
+        flexirol3: newItem.flexirol3,
+        porcentaje: newItem.porcentaje,
+        dia_inicio: newItem.dia_inicio,
+        dia_cierre: newItem.dia_cierre,
+        frecuencia: newItem.frecuencia,
+        dia_bloqueo: newItem.dia_bloqueo,
+        dia_reinicio: newItem.dia_reinicio,
+      }
 
-      result = await usersStore.updateUser(newItem.id, userData)
+      // Datos del propietario (actualización)
+      const ownerData = {
+        first_name: newItem.first_name,
+        last_name: newItem.last_name,
+        username: `${newItem.first_name} ${newItem.last_name}`.trim(),
+        //    email: newItem.email,
+        gearbox: newItem.gearbox === 'true',
+        phone_number: newItem.phone_number,
+        emailVisibility: true, // CRÍTICO para owners
+        address: newItem.address,
+        city: newItem.city,
+        state: newItem.state,
+        zip_code: newItem.zip_code,
+        birth_date: newItem.birth_date,
+        gender: newItem.gender,
+        cedula: newItem.cedula,
+        flexirol: newItem.flexirol,
+        flexirol2: newItem.flexirol2,
+        flexirol3: newItem.flexirol3,
+        porcentaje: newItem.porcentaje,
+      }
+
+      result = await companiesStore.updateCompany(newItem.id, companyData, ownerData)
     } else {
-      // Crear nuevo
-      userData.password = newItem.password
-      userData.emailVisibility = true
-      result = await usersStore.createUser(userData)
+      // Datos de la empresa (creación)
+      const companyData = {
+        company_name: `${newItem.first_name} ${newItem.last_name}`.trim(),
+        cedula: newItem.cedula,
+        gearbox: newItem.gearbox === 'true',
+        flexirol: newItem.flexirol,
+        flexirol2: newItem.flexirol2,
+        flexirol3: newItem.flexirol3,
+        porcentaje: newItem.porcentaje,
+        dia_inicio: newItem.dia_inicio,
+        dia_cierre: newItem.dia_cierre,
+        frecuencia: newItem.frecuencia,
+        dia_bloqueo: newItem.dia_bloqueo,
+        dia_reinicio: newItem.dia_reinicio,
+      }
+
+      // Datos del propietario (creación)
+      const ownerData = {
+        first_name: newItem.first_name,
+        last_name: newItem.last_name,
+        email: newItem.email,
+        username: newItem.username,
+        password: newItem.password,
+        gearbox: newItem.gearbox === 'true',
+        phone_number: newItem.phone_number,
+        emailVisibility: true, // CRÍTICO para owners
+        role: 'empresa',
+        flexirol: newItem.flexirol,
+        flexirol2: newItem.flexirol2,
+        flexirol3: newItem.flexirol3,
+        porcentaje: newItem.porcentaje,
+        cedula: newItem.cedula,
+      }
+
+      result = await companiesStore.createCompanyWithOwner(companyData, ownerData)
     }
 
-    showAlert(
-      isEditMode.value ? 'Empresa actualizada' : 'Empresa creada',
-      'success'
-    )
-
-    closeCreateModal()
-    await loadEmpresas(true)
-
+    if (result.success) {
+      showAlert(
+        isEditMode.value ? 'Empresa actualizada exitosamente' : 'Empresa creada exitosamente',
+      )
+      closeCreateModal()
+      // Actualización local optimista
+      if (result.company) {
+        companiesStore.updateCompanyLocal(result.company.id, result.company)
+      }
+    } else {
+      showAlert(result.error || 'Error al guardar empresa', 'error')
+    }
   } catch (error) {
-    console.error('Error:', error)
-    showAlert('Error al guardar', 'error')
+    console.error('Error saving empresa:', error)
+    showAlert('Error al guardar empresa', 'error')
   } finally {
     submitting.value = false
   }
@@ -1581,8 +1671,8 @@ const saveEmpresa = async () => {
 const toggleStatus = async (element) => {
   try {
     const newStatus = !(element.gearbox === 'true')
-    await api.updateCompanyWithOwnerSync(element.id, {
-      gearbox: newStatus, // ← Actualiza gearbox de la empresa (y propaga al owner)
+    await usersStore.updateUser(element.id, {
+      gearbox: newStatus,
     })
     element.gearbox = String(newStatus)
     showAlert(`Empresa ${newStatus ? 'activada' : 'bloqueada'} exitosamente`)
@@ -1595,7 +1685,7 @@ const toggleStatus = async (element) => {
 
 const viewUsers = async (empresa) => {
   if (!empresa?.id) {
-    alert.message = 'Empresa no válida'
+    showAlert('Empresa no válida', 'error')
     return
   }
 
@@ -1603,22 +1693,17 @@ const viewUsers = async (empresa) => {
   loadingUsers.value = true
 
   try {
-    // Use cached company data
-    const hierarchy = await companiesStore.fetchCompanyUsersHierarchy(empresa.id)
+    // Obtener usuarios de esta empresa
+    const users = usersStore.usersByCompany(empresa.id)
 
-    // Map to local format
-    usuarios_empresa_info_set.value = hierarchy.employees.map((user) => ({
+    usuarios_empresa_info_set.value = users.map((user) => ({
       ...user,
       gearbox: String(user.gearbox),
     }))
 
-    console.log('👥 Users loaded from cache/store', {
-      count: usuarios_empresa_info_set.value.length,
-      empresaId: empresa.id,
-    })
     showUsersModal.value = true
   } catch (error) {
-    console.error('Error loading users:', error)
+    console.error('Error:', error)
     showAlert('Error al cargar usuarios', 'error')
   } finally {
     loadingUsers.value = false
@@ -1657,27 +1742,32 @@ const saveUsuario = async () => {
 
   submittingUser.value = true
   try {
-    const result = await companiesStore.createUserForCompany(selectedEmpresa.value.id, {
+    const userData = {
       first_name: newUsuario.first_name,
       last_name: newUsuario.last_name,
       email: newUsuario.email,
+      username: newUsuario.username,
+      password: newUsuario.password,
       cedula: newUsuario.cedula,
       disponible: newUsuario.disponible,
-      username: newUsuario.username,
-      user_pass: newUsuario.password,
+      company_id: selectedEmpresa.value.id,
+      role: 'usuario',
       gearbox: newUsuario.gearbox === 'true',
-    })
-
-    if (result.success) {
-      showAlert('Usuario creado exitosamente')
-      closeCreateUserModal()
-      // Solo refrescar usuarios de esta empresa
-      await viewUsers(selectedEmpresa.value)
-    } else {
-      showAlert(result.error || 'Error al crear usuario', 'error')
     }
+
+    await usersStore.createUser(userData)
+
+    showAlert('Usuario creado exitosamente', 'success')
+    closeCreateUserModal()
+
+    // Recargar usuarios de la empresa
+    const users = usersStore.usersByCompany(selectedEmpresa.value.id)
+    usuarios_empresa_info_set.value = users.map((user) => ({
+      ...user,
+      gearbox: String(user.gearbox),
+    }))
   } catch (error) {
-    console.error('Error creating user:', error)
+    console.error('Error:', error)
     showAlert('Error al crear usuario', 'error')
   } finally {
     submittingUser.value = false

@@ -232,21 +232,21 @@
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { useCompaniesStore } from '@/stores/companies'
+import { useSystemConfigStore } from '@/stores/systemConfig'
 import { useToastSystem } from '@/stores/system'
 
 const authStore = useAuthStore()
-const companiesStore = useCompaniesStore()
+const systemConfigStore = useSystemConfigStore()
 const { showToast } = useToastSystem()
 
 // ✅ CORRECCIÓN: Computed properties correctos
-const globalConfig = computed(() => companiesStore.globalConfig)
-const globalConfigLoading = computed(() => companiesStore.globalConfigLoading)
-const globalConfigError = computed(() => companiesStore.globalConfigError) // ✅ AGREGADO: Faltaba esta línea
+const globalConfig = computed(() => systemConfigStore.config)
+const globalConfigLoading = computed(() => systemConfigStore.loading)
+const globalConfigError = computed(() => systemConfigStore.error) // ✅ AGREGADO: Faltaba esta línea
 
 // Referencias a funciones del store
-const fetchGlobalConfig = companiesStore.fetchGlobalConfig
-const saveGlobalConfig = companiesStore.saveGlobalConfig
+const fetchGlobalConfig = systemConfigStore.fetchConfig
+const saveGlobalConfig = systemConfigStore.updateConfig
 
 // ✅ CORRECTO: Estado del formulario con nombres exactos del schema system_config
 const formState = reactive({
