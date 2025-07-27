@@ -16,7 +16,7 @@
             size="large"
             :prepend-icon="'mdi-office-building'"
           >
-            {{ empresa_info_set.length }}
+            {{ companies.length }}
             <template #append>
               <span class="ml-1 text-lg">Empresas Registradas</span>
             </template>
@@ -125,7 +125,7 @@
           <p class="text-body-2 mt-2">Cargando empresas...</p>
         </div>
 
-        <div v-else-if="filteredRows.length === 0" class="text-center py-8">
+        <div v-else-if="filteredCompanies.length === 0" class="text-center py-8">
           <v-icon size="64" class="text-medium-emphasis mb-4">mdi-office-building-outline</v-icon>
           <h3 class="text-h6 mb-2">No hay empresas registradas</h3>
           <p class="text-body-2 text-medium-emphasis mb-4">Crea la primera empresa para comenzar</p>
@@ -138,8 +138,15 @@
         <div v-else>
           <!-- Empresas Grid (del legacy con cards) -->
           <v-row>
+            <v-pagination
+              v-if="filteredCompanies.length > itemsPerPage"
+              v-model="currentPage"
+              :length="totalPages"
+              rounded="circle"
+              class="mt-4"
+            />
             <v-col
-              v-for="(element, index) in paginatedRows"
+              v-for="element in paginatedRows"
               :key="element.id"
               cols="12"
               md="4"
@@ -676,7 +683,7 @@
             variant="tonal"
             color="primary"
             text="Guardar"
-            @click="saveEmpresa"
+            @click="save"
             :loading="submitting"
             :disabled="!formValid"
           />
@@ -684,124 +691,6 @@
       </v-card>
     </v-dialog>
 
-    <!-- Modal Editar Usuario (del legacy) -->
-    <v-dialog v-model="showEditUserModal" max-width="600px" persistent>
-      <v-toolbar color="success">
-        <v-icon class="me-2">mdi-account-edit</v-icon>
-        Editar Usuario: {{ editedUsuario.first_name }} {{ editedUsuario.last_name }}
-        <v-spacer></v-spacer>
-      </v-toolbar>
-
-      <v-card>
-        <v-card-text>
-          <v-form ref="editUsuarioForm" v-model="editUserFormValid">
-            <v-row>
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="editedUsuario.first_name"
-                  label="Nombre *"
-                  variant="outlined"
-                  :rules="[rules.required]"
-                />
-              </v-col>
-
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="editedUsuario.last_name"
-                  label="Apellido *"
-                  variant="outlined"
-                  :rules="[rules.required]"
-                />
-              </v-col>
-
-              <v-col cols="12">
-                <v-text-field
-                  v-model="editedUsuario.email"
-                  label="Email *"
-                  variant="outlined"
-                  :rules="[rules.required, rules.email]"
-                />
-              </v-col>
-
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="editedUsuario.cedula"
-                  label="Cédula *"
-                  variant="outlined"
-                  :rules="[rules.required, rules.cedula]"
-                />
-              </v-col>
-
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model.number="editedUsuario.disponible"
-                  label="Monto Disponible"
-                  variant="outlined"
-                  type="number"
-                  min="0"
-                />
-              </v-col>
-
-              <v-col cols="12" md="6">
-                <v-text-field v-model="editedUsuario.city" label="Ciudad" variant="outlined" />
-              </v-col>
-
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="editedUsuario.address"
-                  label="Dirección"
-                  variant="outlined"
-                />
-              </v-col>
-
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="editedUsuario.username"
-                  label="Usuario"
-                  variant="outlined"
-                  readonly
-                  hint="Se genera automáticamente"
-                  persistent-hint
-                />
-              </v-col>
-
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="editedUsuario.password"
-                  label="Contraseña"
-                  variant="outlined"
-                  readonly
-                  hint="Se genera automáticamente"
-                  persistent-hint
-                />
-              </v-col>
-
-              <v-col cols="12">
-                <v-switch
-                  v-model="editedUsuario.gearbox"
-                  label="Usuario habilitado"
-                  color="success"
-                  true-value="true"
-                  false-value="false"
-                />
-              </v-col>
-            </v-row>
-          </v-form>
-        </v-card-text>
-
-        <v-card-actions>
-          <v-spacer />
-          <v-btn text="Cancelar" @click="closeEditUserModal" :disabled="submittingUser" />
-          <v-btn
-            color="primary"
-            text="Actualizar Usuario"
-            @click="saveEditedUsuario"
-            :loading="submittingUser"
-            :disabled="!editUserFormValid"
-          />
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
     <!-- Modal Usuarios Empresa (estructura del legacy) -->
     <v-dialog v-model="showUsersModal" max-width="1200px">
       <v-card v-if="selectedEmpresa">
@@ -872,7 +761,9 @@
                       class="me-3"
                     >
                       <v-icon color="white">
-                        {{ elementUsuario.gearbox ? 'mdi-account-check' : 'mdi-account-cancel' }}
+                        {{
+                          elementUsuario.gearbox ? 'mdi-account-check' : 'mdi-account-cancel'
+                        }}
                       </v-icon>
                     </v-avatar>
                     <div class="flex-grow-1">
@@ -946,7 +837,7 @@
     <v-dialog v-model="showCreateUserModal" max-width="600px" persistent>
       <v-toolbar color="success">
         <v-icon class="me-2">mdi-account-plus</v-icon>
-        Crear Usuario para {{ selectedEmpresa?.first_name }}
+        {{ isEditUserMode ? 'Editar Usuario' : 'Crear Nuevo Usuario' }}
         <v-spacer></v-spacer>
       </v-toolbar>
       <v-card>
@@ -1053,12 +944,14 @@
           <v-spacer />
           <v-btn text="Cancelar" @click="closeCreateUserModal" :disabled="submittingUser" />
           <v-btn
-            color="primary"
-            text="Crear Usuario"
+            color="blue-darken-1"
+            text
             @click="saveUsuario"
             :loading="submittingUser"
             :disabled="!userFormValid"
-          />
+          >
+            {{ isEditUserMode ? 'Guardar Cambios' : 'Crear Usuario' }}
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -1141,26 +1034,20 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, reactive } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useUsersStore } from '@/stores/users'
 import { useSystemConfigStore } from '@/stores/systemConfig'
-import { api } from '@/services/pocketbase'
 
 // Stores
 const usersStore = useUsersStore()
 const systemConfigStore = useSystemConfigStore()
 
-// ========== DATA (estructura del legacy) ==========
+// ========== STATE ========== (Refactored for Pinia Store)(estructura del legacy) ==========
 const filter = ref('')
 const status_habilitacion = ref('')
 const status_excel = ref('')
 const filter_usuarios = ref('')
 const status_habilitacion_usuarios = ref('')
-
-const empresa_info_set = ref([])
-const usuarios_empresa_info_set = ref([])
-const globalStats = ref({ totalUsers: 0 })
-
 const loading = ref(false)
 const loadingUsers = ref(false)
 const submitting = ref(false)
@@ -1171,7 +1058,7 @@ const deleting = ref(false)
 const showCreateModal = ref(false)
 const showUsersModal = ref(false)
 const showCreateUserModal = ref(false)
-const showEditUserModal = ref(false)
+
 const showDeleteModal = ref(false)
 const isEditMode = ref(false)
 const isEditUserMode = ref(false)
@@ -1188,14 +1075,16 @@ const passwordRules = [
 // Form validation
 const formValid = ref(false)
 const userFormValid = ref(false)
-const editUserFormValid = ref(false)
 
 // Current page
 const currentPage = ref(1)
-const itemsPerPage = 20
+const itemsPerPage = ref(20)
+const globalStats = computed(() => ({
+  totalUsers: usersStore.users.length,
+}))
 
 // Forms (actualizado según esquema PocketBase)
-const newItem = reactive({
+const newItem = ref({
   first_name: '',
   last_name: '',
   email: '',
@@ -1212,28 +1101,12 @@ const newItem = reactive({
   flexirol3: '1', // Plan activo
 })
 
-const newUsuario = reactive({
+const newUsuario = ref({
   first_name: '',
   last_name: '',
   email: '', // Cambiado de user_email
   username: '', // Cambiado de user_login
   password: '', // Cambiado de user_pass
-  role: 'usuario',
-  gearbox: true, // Booleano, no string
-  cedula: '',
-  disponible: 0,
-  company_id: '', // Cambiado de empresa
-  city: '', // Cambiado de ciudad
-  address: '', // Cambiado de direccion
-  // Eliminados: nacimiento, gender (no existen en el esquema)
-})
-
-const editedUsuario = reactive({
-  id: '',
-  first_name: '',
-  last_name: '',
-  email: '', // Cambiado de user_email
-  username: '', // Cambiado de user_login
   role: 'usuario',
   gearbox: true, // Booleano, no string
   cedula: '',
@@ -1253,7 +1126,7 @@ const deleteItem = ref({
 })
 
 // Alert system
-const alert = reactive({
+const alert = ref({
   show: false,
   message: '',
   variant: 'success',
@@ -1273,50 +1146,78 @@ const rules = {
 }
 
 // ========== COMPUTED (del legacy) ==========
-const empresasActivas = computed(
-  () => empresa_info_set.value.filter((e) => e.gearbox === 'true' || e.gearbox === true).length,
-)
+const empresasActivas = computed(() => {
+  return usersStore.companies.filter((e) => e.gearbox === 'true' || e.gearbox === true).length
+})
 
-const empresasSinExcel = computed(
-  () => empresa_info_set.value.filter((e) => isExcelVencido(e.fecha_excel)).length,
-)
+const empresasSinExcel = computed(() => {
+  return usersStore.companies.filter((e) => !e.last_excel_upload).length
+})
 
-const totalPropietarios = computed(() => empresa_info_set.value.length)
+const totalPropietarios = computed(() => usersStore.companies.length)
 
-// Filtros (del legacy)
-const filteredRows = computed(() => {
-  let filtered = empresa_info_set.value
+// Filtros 
+const companies = computed(() => usersStore.companies)
+
+const showAlert = (message, variant = 'success') => {
+  alert.value.message = message
+  alert.value.variant = variant
+  alert.value.show = true
+}
+
+const formatDate = (dateString) => {
+  if (!dateString) return 'No registrado'
+  return new Date(dateString).toLocaleDateString('es-EC', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
+const computedUsername = () => {
+  const userLogin = `${newItem.value.first_name}_${newItem.value.last_name}`.replace(/\s+/g, '_').toUpperCase()
+  newItem.value.username = userLogin
+  newItem.value.password = userLogin
+}
+
+const computedUsernameUsuario = () => {
+  const userLogin = `${newUsuario.value.first_name}_${newUsuario.value.last_name}_${newUsuario.value.cedula}`
+    .replace(/\s+/g, '_')
+    .toUpperCase()
+  newUsuario.value.username = userLogin
+  newUsuario.value.password = userLogin
+}
+
+const filteredCompanies = computed(() => {
+  let filtered = companies.value
 
   if (filter.value) {
-    const search = filter.value.toLowerCase()
+    const lowerFilter = filter.value.toLowerCase()
     filtered = filtered.filter(
-      (element) =>
-        element.first_name?.toLowerCase().includes(search) ||
-        element.last_name?.toLowerCase().includes(search) ||
-        element.email?.toLowerCase().includes(search) ||
-        element.cedula?.toLowerCase().includes(search),
+      (row) =>
+        row.first_name.toLowerCase().includes(lowerFilter) ||
+        row.last_name.toLowerCase().includes(lowerFilter) ||
+        (row.cedula && row.cedula.includes(lowerFilter)) ||
+        (row.company_name && row.company_name.toLowerCase().includes(lowerFilter)),
     )
   }
 
   if (status_habilitacion.value) {
-    filtered = filtered.filter((element) => String(element.gearbox) === status_habilitacion.value)
+    filtered = filtered.filter((row) => String(row.gearbox) === status_habilitacion.value)
   }
 
-  if (status_excel.value === 'sin_excel') {
-    filtered = filtered.filter(
-      (element) => !element.fecha_excel || element.fecha_excel === 'No creado',
-    )
-  } else if (status_excel.value === 'actualizado') {
-    filtered = filtered.filter(
-      (element) =>
-        element.fecha_excel &&
-        element.fecha_excel !== 'No creado' &&
-        !isExcelVencido(element.fecha_excel),
-    )
+  if (status_excel.value) {
+    if (status_excel.value === 'actualizado') {
+      filtered = filtered.filter((row) => row.last_excel_upload)
+    } else if (status_excel.value === 'sin_excel') {
+      filtered = filtered.filter((row) => !row.last_excel_upload)
+    }
   }
 
   return filtered
 })
+
+const usuarios_empresa_info_set = ref([])
 
 const filteredRowsUsuarios = computed(() => {
   let filtered = usuarios_empresa_info_set.value
@@ -1342,14 +1243,17 @@ const filteredRowsUsuarios = computed(() => {
 })
 
 // Paginación
-const totalPages = computed(() => Math.ceil(filteredRows.value.length / itemsPerPage))
-
-const paginatedRows = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage
-  return filteredRows.value.slice(start, start + itemsPerPage)
+const totalPages = computed(() => {
+  return Math.ceil(filteredCompanies.value.length / itemsPerPage.value)
 })
 
-// ========== METHODS (del legacy) ==========
+const paginatedRows = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value
+  const end = start + itemsPerPage.value
+  return filteredCompanies.value.slice(start, end)
+})
+
+// ========== METHODS ========== 
 
 // REEMPLAZAR computed property
 const isExcelVencido = (fechaExcel) => {
@@ -1371,298 +1275,57 @@ const isExcelVencido = (fechaExcel) => {
   }
 }
 
-// Username computation (del legacy)
-const computedUsername = () => {
-  const userLogin = `${newItem.first_name}_${newItem.last_name}`.replace(/\s+/g, '_').toUpperCase()
-
-  newItem.username = userLogin
-  newItem.password = userLogin
-}
-
-const computedUsernameUsuario = () => {
-  const userLogin = `${newUsuario.first_name}_${newUsuario.last_name}_${newUsuario.cedula}`
-    .replace(/\s+/g, '_')
-    .toUpperCase()
-
-  newUsuario.username = userLogin
-  newUsuario.password = userLogin
-}
-
-// Alert system
-const showAlert = (message, variant = 'success') => {
-  alert.message = message
-  alert.variant = variant
-  alert.show = true
-}
-
-// Format date
-const formatDate = (dateString) => {
-  if (!dateString) return 'No registrado'
-  return new Date(dateString).toLocaleDateString('es-EC', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
-}
-
-// ========== CRUD OPERATIONS (del legacy) ==========
-
-const loadEmpresas = async (forceRefresh = false) => {
-  loading.value = true
-  try {
-    // Only fetch if needed or forced
-    await companiesStore.fetchCompanies(forceRefresh)
-
-    // Debug detallado
-    console.log('🔍 Debug loadEmpresas:')
-    console.log('Total companies in store:', companiesStore.companies.length)
-    console.log(
-      'Companies with expand:',
-      companiesStore.companies.filter((c) => c.expand?.owner_id).length,
-    )
-    console.log(
-      'Companies without expand:',
-      companiesStore.companies.filter((c) => !c.expand?.owner_id),
-    )
-    console.log(
-      'Companies with flexirol fields:',
-      companiesStore.companies.map((c) => ({
-        id: c.id,
-        name: c.company_name,
-        flexirol: c.flexirol,
-        flexirol2: c.flexirol2,
-        flexirol3: c.flexirol3,
-      })),
-    )
-
-    // getGlobalUserStats solo si no tenemos el dato o es refresh forzado
-    if (forceRefresh || !globalStats.value.totalUsers) {
-      const usersResult = await api.getGlobalUserStats()
-      globalStats.value.totalUsers = usersResult.totalItems
-    }
-
-    // Map from store (no new fetch)
-    empresa_info_set.value = companiesStore.companies.map((company) => ({
-      ...company,
-      first_name: company.expand?.owner_id?.first_name || company.company_name || '',
-      last_name: company.expand?.owner_id?.last_name || '',
-      email: company.expand?.owner_id?.email || '',
-      username: company.expand?.owner_id?.username || '',
-      cedula: company.expand?.owner_id?.cedula || '',
-      user_registered: company.expand?.owner_id?.created || company.created,
-      gearbox: String(company.gearbox), // ← Usar gearbox de la EMPRESA (no del owner)
-      user_count: company.users_count,
-      porcentaje: company.porcentaje,
-      dia_inicio: company.dia_inicio,
-      dia_cierre: company.dia_cierre,
-      frecuencia: company.frecuencia,
-      dia_bloqueo: company.dia_bloqueo,
-      dia_reinicio: company.dia_reinicio,
-      fecha_excel: company.fecha_excel,
-
-      id: company.id,
-      owner_id: company.owner_id,
-      company_name: company.company_name,
-      flexirol: company.flexirol,
-      flexirol2: company.flexirol2,
-      flexirol3: company.flexirol3,
-
-      zip_code: company.expand?.owner_id?.zip_code || '',
-      state: company.expand?.owner_id?.state || '',
-      city: company.expand?.owner_id?.city || '',
-      address: company.expand?.owner_id?.address || '',
-    }))
-
-    console.log('📊 EmpresasView loaded', {
-      fromCache: !forceRefresh,
-      companies: empresa_info_set.value.length,
-    })
-  } catch (error) {
-    console.error('Error loading empresas:', error)
-    showAlert('Error al cargar empresas', 'error')
-  } finally {
-    loading.value = false
-  }
-}
-
 const openCreateModal = async () => {
-  const defaultConfig = await api.getDefaultCompanyConfig()
+  const defaultConfig = await systemConfigStore.fetchConfig()
 
   isEditMode.value = false
-  Object.assign(newItem, {
+  newItem.value = {
     first_name: '',
     last_name: '',
     email: '',
-    username: '',
-    password: '',
-    role: 'empresa',
-    gearbox: true,
     cedula: '',
-    company_id: '',
     phone_number: '',
-  })
-
-  // Cargar configuración default del sistema
-  try {
-    Object.assign(newItem, defaultConfig)
-  } catch (error) {
-    console.error('Error loading default config:', error)
-    // Mantener valores hardcodeados como fallback
+    gearbox: 'true',
+    ...defaultConfig,
   }
 
   showCreateModal.value = true
 }
 
-const startEdit = async (company) => {
+const startEdit = (company) => {
   isEditMode.value = true
-
-  // Debug 1: Verificar datos crudos de la empresa
-  console.log('Datos empresa recibidos:', company)
-
-  // 1. Cargar datos básicos
-  Object.assign(newItem, {
-    id: company.id,
-    owner_id: company.owner_id,
-
-    first_name: company.expand?.owner_id?.first_name || company.company_name || '',
-    last_name: company.expand?.owner_id?.last_name,
-    email: company.expand?.owner_id?.email,
-    username: company.expand?.owner_id?.username,
-    cedula: company.expand?.owner_id?.cedula,
-    gearbox: String(company.gearbox),
-
-    address: company.expand?.owner_id?.address,
-    phone_number: company.expand?.owner_id?.phone_number,
-    state: company.expand?.owner_id?.state,
-    city: company.expand?.owner_id?.city,
-
-    zip_code: company.expand?.owner_id?.zip_code,
-
-    // Campos flexirol CRÍTICOS
-    flexirol: company.flexirol,
-    flexirol2: company.flexirol2,
-    flexirol3: company.flexirol3,
-
-    // Otros campos de configuración
-    porcentaje: company.porcentaje,
-    dia_inicio: company.dia_inicio,
-    dia_cierre: company.dia_cierre,
-    frecuencia: company.frecuencia,
-    dia_bloqueo: company.dia_bloqueo,
-    dia_reinicio: company.dia_reinicio,
-  })
-
-  // Debug mejorado
-
-  console.log('Config to assign:', newItem)
-
+  newItem.value = { ...company, gearbox: String(company.gearbox) }
   showCreateModal.value = true
 }
 
 const closeCreateModal = () => {
   showCreateModal.value = false
-  selectedEmpresa.value = null
 }
 
-const saveEmpresa = async () => {
+const save = async () => {
   if (!formValid.value) return
 
   submitting.value = true
   try {
-    let result
+    const data = { ...newItem.value }
+    data.gearbox = data.gearbox === 'true'
+
     if (isEditMode.value) {
-      // Datos de la empresa (actualización)
-      const companyData = {
-        company_name: `${newItem.first_name} ${newItem.last_name}`.trim(),
-        cedula: newItem.cedula,
-        gearbox: newItem.gearbox === 'true',
-        flexirol: newItem.flexirol,
-        flexirol2: newItem.flexirol2,
-        flexirol3: newItem.flexirol3,
-        porcentaje: newItem.porcentaje,
-        dia_inicio: newItem.dia_inicio,
-        dia_cierre: newItem.dia_cierre,
-        frecuencia: newItem.frecuencia,
-        dia_bloqueo: newItem.dia_bloqueo,
-        dia_reinicio: newItem.dia_reinicio,
-      }
-
-      // Datos del propietario (actualización)
-      const ownerData = {
-        first_name: newItem.first_name,
-        last_name: newItem.last_name,
-        username: `${newItem.first_name} ${newItem.last_name}`.trim(),
-        //    email: newItem.email,
-        gearbox: newItem.gearbox === 'true',
-        phone_number: newItem.phone_number,
-        emailVisibility: true, // CRÍTICO para owners
-        address: newItem.address,
-        city: newItem.city,
-        state: newItem.state,
-        zip_code: newItem.zip_code,
-        birth_date: newItem.birth_date,
-        gender: newItem.gender,
-        cedula: newItem.cedula,
-        flexirol: newItem.flexirol,
-        flexirol2: newItem.flexirol2,
-        flexirol3: newItem.flexirol3,
-        porcentaje: newItem.porcentaje,
-      }
-
-      result = await companiesStore.updateCompany(newItem.id, companyData, ownerData)
+      await usersStore.updateUser(data.id, data)
+      showAlert('Empresa actualizada exitosamente')
     } else {
-      // Datos de la empresa (creación)
-      const companyData = {
-        company_name: `${newItem.first_name} ${newItem.last_name}`.trim(),
-        cedula: newItem.cedula,
-        gearbox: newItem.gearbox === 'true',
-        flexirol: newItem.flexirol,
-        flexirol2: newItem.flexirol2,
-        flexirol3: newItem.flexirol3,
-        porcentaje: newItem.porcentaje,
-        dia_inicio: newItem.dia_inicio,
-        dia_cierre: newItem.dia_cierre,
-        frecuencia: newItem.frecuencia,
-        dia_bloqueo: newItem.dia_bloqueo,
-        dia_reinicio: newItem.dia_reinicio,
+      data.role = 'empresa'
+      // Ensure company_name is set if not provided
+      if (!data.company_name) {
+        data.company_name = `${data.first_name} ${data.last_name}`.trim()
       }
-
-      // Datos del propietario (creación)
-      const ownerData = {
-        first_name: newItem.first_name,
-        last_name: newItem.last_name,
-        email: newItem.email,
-        username: newItem.username,
-        password: newItem.password,
-        gearbox: newItem.gearbox === 'true',
-        phone_number: newItem.phone_number,
-        emailVisibility: true, // CRÍTICO para owners
-        role: 'empresa',
-        flexirol: newItem.flexirol,
-        flexirol2: newItem.flexirol2,
-        flexirol3: newItem.flexirol3,
-        porcentaje: newItem.porcentaje,
-        cedula: newItem.cedula,
-      }
-
-      result = await companiesStore.createCompanyWithOwner(companyData, ownerData)
+      await usersStore.createUser(data)
+      showAlert('Empresa creada exitosamente')
     }
-
-    if (result.success) {
-      showAlert(
-        isEditMode.value ? 'Empresa actualizada exitosamente' : 'Empresa creada exitosamente',
-      )
-      closeCreateModal()
-      // Actualización local optimista
-      if (result.company) {
-        companiesStore.updateCompanyLocal(result.company.id, result.company)
-      }
-    } else {
-      showAlert(result.error || 'Error al guardar empresa', 'error')
-    }
+    closeCreateModal()
   } catch (error) {
     console.error('Error saving empresa:', error)
-    showAlert('Error al guardar empresa', 'error')
+    showAlert(`Error al guardar empresa: ${error.message}`, 'error')
   } finally {
     submitting.value = false
   }
@@ -1671,12 +1334,8 @@ const saveEmpresa = async () => {
 const toggleStatus = async (element) => {
   try {
     const newStatus = !(element.gearbox === 'true')
-    await usersStore.updateUser(element.id, {
-      gearbox: newStatus,
-    })
-    element.gearbox = String(newStatus)
+    await usersStore.updateUser(element.id, { gearbox: newStatus })
     showAlert(`Empresa ${newStatus ? 'activada' : 'bloqueada'} exitosamente`)
-    await loadEmpresas() // Refresh data to ensure consistency
   } catch (error) {
     console.error('Error toggling status:', error)
     showAlert('Error al cambiar estado', 'error')
@@ -1689,21 +1348,15 @@ const viewUsers = async (empresa) => {
     return
   }
 
-  selectedEmpresa.value = empresa
   loadingUsers.value = true
+  selectedEmpresa.value = empresa
 
   try {
-    // Obtener usuarios de esta empresa
-    const users = usersStore.usersByCompany(empresa.id)
-
-    usuarios_empresa_info_set.value = users.map((user) => ({
-      ...user,
-      gearbox: String(user.gearbox),
-    }))
-
+    await usersStore.fetchCompanyUsers(empresa.id)
+    usuarios_empresa_info_set.value = usersStore.companyUsers
     showUsersModal.value = true
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error loading users:', error)
     showAlert('Error al cargar usuarios', 'error')
   } finally {
     loadingUsers.value = false
@@ -1713,23 +1366,21 @@ const viewUsers = async (empresa) => {
 const closeUsersModal = () => {
   showUsersModal.value = false
   selectedEmpresa.value = null
-  filter_usuarios.value = ''
   status_habilitacion_usuarios.value = ''
 }
 
 const openCreateUserModal = () => {
-  Object.assign(newUsuario, {
+  isEditUserMode.value = false
+  newUsuario.value = {
     first_name: '',
     last_name: '',
     email: '',
-    username: '',
-    password: '',
-    role: 'usuario',
-    gearbox: true,
     cedula: '',
-    disponible: 0,
-    company_id: selectedEmpresa.value?.id || '',
-  })
+    disponible: 1000,
+    gearbox: 'true',
+    password: '',
+    username: '',
+  }
   showCreateUserModal.value = true
 }
 
@@ -1738,37 +1389,30 @@ const closeCreateUserModal = () => {
 }
 
 const saveUsuario = async () => {
-  if (!userFormValid.value || !selectedEmpresa.value) return
+  if (!userFormValid.value) return
 
   submittingUser.value = true
   try {
-    const userData = {
-      first_name: newUsuario.first_name,
-      last_name: newUsuario.last_name,
-      email: newUsuario.email,
-      username: newUsuario.username,
-      password: newUsuario.password,
-      cedula: newUsuario.cedula,
-      disponible: newUsuario.disponible,
-      company_id: selectedEmpresa.value.id,
-      role: 'usuario',
-      gearbox: newUsuario.gearbox === 'true',
+    if (isEditUserMode.value) {
+      const { id, ...updateData } = newUsuario.value
+      updateData.gearbox = updateData.gearbox === 'true'
+      await usersStore.updateUser(id, updateData)
+      showAlert('Usuario actualizado exitosamente')
+    } else {
+      await usersStore.createUser({
+        ...newUsuario.value,
+        company_id: selectedEmpresa.value.id,
+        role: 'empleado',
+        emailVisibility: true,
+        gearbox: newUsuario.value.gearbox === 'true',
+      })
+      showAlert('Usuario creado exitosamente')
     }
-
-    await usersStore.createUser(userData)
-
-    showAlert('Usuario creado exitosamente', 'success')
     closeCreateUserModal()
-
-    // Recargar usuarios de la empresa
-    const users = usersStore.usersByCompany(selectedEmpresa.value.id)
-    usuarios_empresa_info_set.value = users.map((user) => ({
-      ...user,
-      gearbox: String(user.gearbox),
-    }))
+    await viewUsers(selectedEmpresa.value)
   } catch (error) {
-    console.error('Error:', error)
-    showAlert('Error al crear usuario', 'error')
+    console.error('Error saving user:', error)
+    showAlert('Error al guardar usuario', 'error')
   } finally {
     submittingUser.value = false
   }
@@ -1798,19 +1442,13 @@ const proceedDelete = async () => {
   deleting.value = true
   try {
     if (deleteItem.value.tipo === 'empresa') {
-      const result = await companiesStore.deleteCompanyWithUsers(deleteItem.value.id)
-      if (result.success) {
-        showAlert(`Empresa eliminada. Se eliminaron ${result.deletedUsers} usuarios.`)
-        await loadEmpresas()
-      } else {
-        showAlert(result.error || 'Error al eliminar empresa', 'error')
-      }
+      await usersStore.deleteCompanyAndItsUsers(deleteItem.value.id)
+      showAlert('Empresa y sus usuarios han sido eliminados.')
     } else {
       await usersStore.deleteUser(deleteItem.value.id)
       showAlert('Usuario eliminado exitosamente')
       if (selectedEmpresa.value) {
-        await viewUsers(selectedEmpresa.value)
-        await loadEmpresas()
+        await viewUsers(selectedEmpresa.value) // Refresh user list for the company
       }
     }
   } catch (error) {
@@ -1824,57 +1462,14 @@ const proceedDelete = async () => {
 
 const startEditUsuario = (element) => {
   isEditUserMode.value = true
-  Object.assign(editedUsuario, {
-    id: element.id,
-    first_name: element.first_name,
-    last_name: element.last_name,
-    email: element.email || element.email,
-    username: element.username || element.username,
-    cedula: element.cedula,
-    disponible: element.disponible,
-    city: element.city || element.ciudad || '',
-    address: element.address || element.direccion || '',
-    gearbox: String(element.gearbox),
-  })
-  showEditUserModal.value = true
+  // Use newUsuario form for editing as well
+  newUsuario.value = { ...element, gearbox: String(element.gearbox) }
+  showCreateUserModal.value = true // Open the unified modal
 }
 
-const closeEditUserModal = () => {
-  showEditUserModal.value = false
-  isEditUserMode.value = false
-}
 
-const saveEditedUsuario = async () => {
-  if (!editUserFormValid.value) return
 
-  submittingUser.value = true
-  try {
-    const updateData = {
-      first_name: editedUsuario.first_name,
-      last_name: editedUsuario.last_name,
-      email: editedUsuario.email,
-      cedula: editedUsuario.cedula,
-      disponible: editedUsuario.disponible,
-      city: editedUsuario.city,
-      address: editedUsuario.address,
-      gearbox: editedUsuario.gearbox === 'true',
-    }
 
-    await usersStore.updateUser(editedUsuario.id, updateData)
-    showAlert('Usuario actualizado exitosamente')
-    closeEditUserModal()
-
-    if (selectedEmpresa.value) {
-      await viewUsers(selectedEmpresa.value)
-      await loadEmpresas()
-    }
-  } catch (error) {
-    console.error('Error updating user:', error)
-    showAlert('Error al actualizar usuario', 'error')
-  } finally {
-    submittingUser.value = false
-  }
-}
 
 // 2. Método para cambiar contraseña
 
@@ -1882,7 +1477,7 @@ const changePassword = async () => {
   try {
     if (!newPassword.value) return
 
-    await usersStore.updateUserPassword(newItem.id, newPassword.value)
+    await usersStore.updateUserPassword(newItem.value.id, newPassword.value)
     showAlert('Contraseña actualizada correctamente')
     showPasswordModal.value = false
     newPassword.value = ''
@@ -1893,8 +1488,12 @@ const changePassword = async () => {
 }
 
 // ========== LIFECYCLE ==========
+const loadEmpresas = async (forceRefresh = false) => {
+  await usersStore.fetchUsers({ filter: "role = 'empresa'" }, forceRefresh)
+}
+
 onMounted(() => {
-  loadEmpresas(false) // Use cache if available
+  loadEmpresas(true) // Force a refresh on initial load
 })
 </script>
 

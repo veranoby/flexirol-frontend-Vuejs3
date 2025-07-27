@@ -22,7 +22,7 @@ export const useSystemConfigStore = defineStore(
 
       loading.value = true
       try {
-        const result = await pb
+        const result = await api.pb
           .collection('system_config')
           .getFirstListItem('name="default_config"')
 
@@ -62,11 +62,11 @@ export const useSystemConfigStore = defineStore(
 
     async function updateConfig(updates) {
       try {
-        const current = await pb
+        const current = await api.pb
           .collection('system_config')
           .getFirstListItem('name="default_config"')
 
-        const updated = await pb.collection('system_config').update(current.id, updates)
+        const updated = await api.pb.collection('system_config').update(current.id, updates)
 
         // Update local cache
         Object.assign(config.value, updates)

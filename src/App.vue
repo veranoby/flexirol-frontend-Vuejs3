@@ -220,7 +220,6 @@
 import { computed, onMounted, watch, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { useCompaniesStore } from '@/stores/companies'
 import { getBreadcrumb } from '@/router'
 
 // Router and stores

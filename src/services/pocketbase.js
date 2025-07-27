@@ -3,13 +3,6 @@ import * as XLSX from 'xlsx'
 
 const pb = new PocketBase(import.meta.env.VITE_POCKETBASE_URL || 'http://127.0.0.1:8090')
 
-// Temporary cache for expensive queries
-const cache = {
-  systemConfig: null,
-  systemConfigTime: 0,
-  CACHE_TTL: 5 * 60 * 1000, // 5 minutes
-}
-
 // Auto-refresh auth token
 pb.authStore.onChange(() => {
   console.log('Auth state changed:', pb.authStore.isValid)
@@ -54,116 +47,27 @@ export const api = {
   },
 
   // Users
-  async getUsers(filters = {}, page = 1, perPage = 1000) {
-    const params = {
-      page,
-      perPage,
+  async getUsers(filters = {}, page = 1, perPage = 50) {
+    return await pb.collection('users').getList(page, perPage, {
+      filter: buildFilter(filters),
       sort: '-created',
-      expand: 'company_id',
-      ...(buildFilter(filters) && { filter: buildFilter(filters) }),
-    }
-    return await pb.collection('users').getList(page, perPage, params)
-  },
-
-  async getUserById(id) {
-    return await pb.collection('users').getOne(id, { expand: 'company_id' })
-  },
-
-  async getUserCompanyInfo(userId) {
-    return await pb.collection('users').getOne(userId, {
-      expand: 'company_id',
-    })
+      expand: 'company_id'
+    });
   },
 
   async createUser(userData) {
     return await pb.collection('users').create(userData)
   },
 
-  async updateUser(id, userData) {
-    return await pb.collection('users').update(id, userData)
+  async updateUser(userId, data) {
+    return await pb.collection('users').update(userId, data);
   },
 
-  async updateUserStatus(userId, status) {
-    return await pb.collection('users').update(userId, { gearbox: status })
-  },
-
-  async deleteUser(id) {
-    return await pb.collection('users').delete(id)
-  },
-
-  async bulkCreateUsers(usersArray) {
-    const results = []
-    for (const user of usersArray) {
-      try {
-        const result = await this.createUser(user)
-        results.push({ success: true, data: result })
-      } catch (error) {
-        results.push({
-          success: false,
-          error: error.message,
-          data: user,
-        })
-      }
-    }
-    return results
-  },
-
-  // Advance Requests
-  async getAdvanceRequests(filters = {}) {
-    return await pb.collection('advance_requests').getList(1, 1000, {
-      filter: buildFilter(filters),
-      expand: 'user_id,company_id,banco_id',
-      sort: '-fecha_solicitud',
-    })
-  },
-
-  async getAdvanceRequestsByStatus(status) {
-    return await this.getAdvanceRequests({ estado: status })
-  },
-
-  async createAdvanceRequest(requestData) {
-    return await pb.collection('advance_requests').create(requestData)
-  },
-
-  async updateAdvanceRequest(id, requestData) {
-    return await pb.collection('advance_requests').update(id, requestData)
-  },
-
-  async updateAdvanceRequestStatus(id, newStatus) {
-    return await this.updateAdvanceRequest(id, { estado: newStatus })
-  },
-
-  // Bank Accounts
-  async getBankAccounts(userId) {
-    return await pb.collection('bank_accounts').getList(1, 50, {
-      filter: `user_id="${userId}"`,
-      sort: '-created',
-    })
-  },
-
-  async createBankAccount(bankData) {
-    return await pb.collection('bank_accounts').create(bankData)
-  },
-
-  async updateBankAccount(id, bankData) {
-    return await pb.collection('bank_accounts').update(id, bankData)
-  },
-
-  async deleteBankAccount(id) {
-    return await pb.collection('bank_accounts').delete(id)
+  async deleteUser(userId) {
+    return await pb.collection('users').delete(userId);
   },
 
   // Excel Operations
-  async uploadExcelUsers(file, companyId) {
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('companyId', companyId)
-
-    return await pb.collection('_imports').create(formData, {
-      requestKey: null,
-    })
-  },
-
   async generateBankingExcel(requests) {
     // Group requests by bank
     const banks = {}
@@ -201,82 +105,7 @@ export const api = {
     XLSX.writeFile(wb, `pagos_${new Date().toISOString().split('T')[0]}.xlsx`)
   },
 
-  // ===== SYSTEM CONFIG METHODS =====
-  async getSystemConfig(forceRefresh = false) {
-    if (!forceRefresh && cache.systemConfig && isCacheValid(cache.systemConfigTime)) {
-      console.log('🎯 Cache hit: system config')
-      return cache.systemConfig
-    }
 
-    try {
-      const config = await pb.collection('system_config').getFirstListItem('name="default_config"')
-
-      cache.systemConfig = config
-      cache.systemConfigTime = Date.now()
-      console.log('📡 System config fetched and cached')
-
-      return config
-    } catch (error) {
-      // Create default if not exists
-      const defaultConfig = {
-        name: 'default_config',
-        porcentaje_servicio: 10,
-        valor_fijo_mensual: 50,
-        plan_default: '1',
-        dia_inicio: 2,
-        dia_cierre: 28,
-        porcentaje_maximo: 70,
-        frecuencia_maxima: 3,
-        dias_bloqueo: 2,
-        dias_reinicio: 3,
-        activo: true,
-      }
-
-      const created = await pb.collection('system_config').create(defaultConfig)
-      cache.systemConfig = created
-      cache.systemConfigTime = Date.now()
-
-      return created
-    }
-  },
-
-  async updateSystemConfig(configData) {
-    const config = await this.getSystemConfig()
-    return await pb.collection('system_config').update(config.id, configData)
-  },
-
-  async getDefaultCompanyConfig() {
-    const config = await this.getSystemConfig()
-    return {
-      flexirol: config.porcentaje_servicio,
-      flexirol2: config.valor_fijo_mensual,
-      flexirol3: config.plan_default,
-      dia_inicio: config.dia_inicio,
-      dia_cierre: config.dia_cierre,
-      porcentaje: config.porcentaje_maximo,
-      dia_bloqueo: config.dias_bloqueo,
-      frecuencia: config.frecuencia_maxima,
-      dia_reinicio: config.dias_reinicio,
-    }
-  },
-
-  // Global user stats optimized
-  async getGlobalUserStats() {
-    try {
-      const result = await pb.collection('users').getList(1, 1, {
-        fields: 'id',
-        requestKey: null, // Evita caché de PocketBase
-      })
-      console.log('getGlobalUserStats result:', result)
-      return {
-        success: true,
-        totalItems: result.totalItems || 0, // Fallback explícito
-      }
-    } catch (error) {
-      console.error('Error en getGlobalUserStats:', error)
-      return { success: false, totalItems: 0 }
-    }
-  },
 }
 
 // Real-time subscriptions
@@ -293,11 +122,7 @@ export const subscriptions = {
     })
   },
 
-  subscribeToCompanyUpdates(companyId, callback) {
-    return pb.collection('companies').subscribe(companyId, (e) => {
-      callback(e)
-    })
-  },
+
 
   unsubscribe(subscription) {
     return pb.collection(subscription.collection).unsubscribe(subscription.id)
