@@ -256,7 +256,7 @@ export default {
     // Obtener empresas al montar el componente
     onMounted(async () => {
       try {
-        await userStore.fetchUsers({}, false) // Cache completo
+        await userStore.fetchUsers(false) // Cache completo
         availableCompanies.value = userStore.empresas
       } catch (error) {
         console.error('Error al cargar las empresas:', error)

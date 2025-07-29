@@ -638,7 +638,7 @@ const loadUsers = async () => {
   loading.value = true
   try {
     // Cargar cache completo
-    await usersStore.fetchUsers({}, false)
+    await usersStore.fetchUsers(false)
 
     // Filtrar según rol del usuario logueado
     if (authStore.isSuperadmin) {

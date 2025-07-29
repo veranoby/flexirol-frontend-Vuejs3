@@ -318,7 +318,7 @@ const loadDashboardData = async () => {
 
 const loadSuperadminStats = async () => {
   // Cargar cache completo una vez
-  await usersStore.fetchUsers({}, true) // force refresh inicial
+  await usersStore.fetchUsers(false) // force refresh inicial
 
   stats.value.totalCompanies = usersStore.empresas.length
   stats.value.totalUsers = usersStore.users.length

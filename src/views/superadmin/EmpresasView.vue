@@ -1344,23 +1344,27 @@ const viewUsers = async (empresa) => {
     showAlert('Empresa no válida', 'error')
     return
   }
+  console.log('Empresa seleccionada:', empresa)
+  console.log('ID de empresa:', empresa.id)
+  console.log('Total usuarios en cache:', usersStore.users.length)
+  console.log('Total empresas en cache:', usersStore.empresas.length)
 
   loadingUsers.value = true
   selectedEmpresa.value = empresa
 
-  console.log('Empresa seleccionada:', empresa)
+  // Debug: mostrar todos los company_id en cache
+  const allCompanyIds = usersStore.users.map((u) => ({
+    name: u.first_name,
+    company_id: u.company_id,
+    role: u.role,
+  }))
+  console.log('Todos los company_id en cache:', allCompanyIds)
 
-  try {
-    usuarios_empresa_info_set.value = usersStore.getEmpresaUsers(empresa.id)
+  usuarios_empresa_info_set.value = usersStore.getEmpresaUsers(empresa.id)
+  console.log('Usuarios filtrados:', usuarios_empresa_info_set.value)
 
-    console.log('Usuarios de la empresa:', usuarios_empresa_info_set.value)
-    console.log('usuarios de la empresa filtrada:', usersStore.getEmpresaUsers(empresa.id))
-    showUsersModal.value = true
-  } catch (error) {
-    console.error('Error loading users:', error)
-    showAlert('Error al cargar usuarios', 'error')
-  } finally {
-    loadingUsers.value = false
+  if (usuarios_empresa_info_set.value.length === 0) {
+    showAlert('Esta empresa no tiene usuarios registrados', 'info')
   }
 }
 
@@ -1489,7 +1493,7 @@ const loadEmpresas = async (forceRefresh = false) => {
   loading.value = true
   try {
     // Cargar cache completo si no existe
-    await usersStore.fetchUsers({}, forceRefresh)
+    await usersStore.fetchUsers(forceRefresh)
 
     // Filtrar empresas localmente y agregar info extra
     empresa_info_set.value = usersStore.empresas.map((empresa) => ({

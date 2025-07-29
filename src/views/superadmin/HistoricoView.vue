@@ -210,10 +210,9 @@ const empresas = ref([])
 
 onMounted(async () => {
   try {
-    await users.fetchUsers({ role: 'empresa' })
-    empresas.value = users.empresas
-  } catch {
-    empresas.value = []
+    await users.fetchUsers(false)
+  } catch (error) {
+    console.error('Error al cargar empresas:', error)
   }
 })
 

@@ -361,7 +361,7 @@ const visiblePages = computed(() => {
 const loadCompanies = async () => {
   try {
     // Usar cache de empresas
-    await usersStore.fetchUsers({}, false)
+    await usersStore.fetchUsers(false)
     availableCompanies.value = usersStore.empresas
   } catch (error) {
     console.error('Error loading companies:', error)

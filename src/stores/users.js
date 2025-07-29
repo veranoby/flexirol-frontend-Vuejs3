@@ -51,7 +51,7 @@ export const useUsersStore = defineStore(
         let hasMore = true
 
         while (hasMore) {
-          const result = await api.getUsers({}, page, 500)
+          const result = await api.getUsers({}, page, 5000)
           allUsers.push(...result.items)
 
           hasMore = result.page < result.totalPages
