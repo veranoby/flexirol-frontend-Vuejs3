@@ -118,16 +118,6 @@ export const api = {
     XLSX.writeFile(wb, `pagos_${new Date().toISOString().split('T')[0]}.xlsx`)
   },
 
-  // Company operations (now using users with role='empresa')
-  async getCompanies(filters = {}, page = 1, perPage = 50) {
-    const companyFilters = { ...filters, role: 'empresa' }
-    return await pb.collection('users').getList(page, perPage, {
-      filter: buildFilter(companyFilters),
-      sort: '-created',
-      expand: 'company_id',
-    })
-  },
-
   // Advance Requests operations
   async getAdvanceRequests(filters = {}, page = 1, perPage = 50) {
     return await pb.collection('advance_requests').getList(page, perPage, {

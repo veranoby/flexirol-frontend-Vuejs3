@@ -391,5 +391,6 @@ const formatDate = (dateString) => {
 // Lifecycle
 onMounted(() => {
   loadDashboardData()
+  usersStore.fetchUsers(true) // force refresh inicial
 })
 </script>
