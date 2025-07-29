@@ -589,7 +589,9 @@
 import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { api } from '@/services/pocketbase'
+import { useUsersStore } from '@/stores/users'
 
+const usersStore = useUsersStore()
 const authStore = useAuthStore()
 
 // Reactive data
@@ -707,26 +709,20 @@ const currentCompanyName = computed(() => {
 const loadUsers = async () => {
   loading.value = true
   try {
-    const filters = {}
+    // Asegurar cache completo cargado
+    await usersStore.fetchUsers()
 
-    // Apply role-based filters
-    if (!authStore.isSuperadmin) {
-      if (authStore.isEmpresa) {
-        filters.empresa_id = authStore.user.id
-      } else if (authStore.isOperador) {
-        // Load users from assigned companies
-        const companies = authStore.getUserCompanies()
-        if (companies.length > 0) {
-          filters.empresa_id = companies.join(',')
-        }
-      }
+    // Filtrar según rol del usuario actual
+    if (authStore.isSuperadmin) {
+      users.value = usersStore.users // Todos los usuarios
+    } else if (authStore.isEmpresa) {
+      users.value = usersStore.getEmpresaUsers(authStore.user.id)
+    } else if (authStore.isOperador) {
+      const companies = authStore.getUserCompanies()
+      users.value = usersStore.getFilteredUsers({
+        company_id: companies.length > 0 ? companies[0] : null,
+      })
     }
-
-    const result = await api.getUsers(filters)
-    users.value = result.items.map((user) => ({
-      ...user,
-      name: user.name || `${user.first_name} ${user.last_name}`.trim(),
-    }))
   } catch (error) {
     showAlert('Error al cargar usuarios: ' + error.message, 'error')
   } finally {
@@ -735,16 +731,17 @@ const loadUsers = async () => {
 }
 
 const loadEmpresas = async () => {
-  if (authStore.isSuperadmin) {
-    try {
-      const result = await api.getUsers({ role: 'empresa' })
-      empresas.value = result.items.map((empresa) => ({
-        id: empresa.id,
-        name: empresa.name || `${empresa.first_name} ${empresa.last_name}`.trim(),
-      }))
-    } catch (error) {
-      console.error('Error loading empresas:', error)
-    }
+  if (!authStore.isSuperadmin) return
+
+  try {
+    // Usar empresas desde cache
+    await usersStore.fetchUsers()
+    empresas.value = usersStore.empresas.map((empresa) => ({
+      id: empresa.id,
+      name: `${empresa.first_name} ${empresa.last_name}`.trim(),
+    }))
+  } catch (error) {
+    console.error('Error loading empresas:', error)
   }
 }
 
