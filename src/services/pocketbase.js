@@ -50,14 +50,15 @@ export const api = {
 
   // Users
   async getUsers(filters = {}, page = 1, perPage = 50) {
+    console.log('🚨 POCKETBASE.JS GETUSERS CALLED!', { filters, page, perPage })
+    console.log('🚨 STACK TRACE:', new Error().stack)
+
     const result = await pb.collection('users').getList(page, perPage, {
       filter: buildFilter(filters),
       sort: '-created',
-      // ✅ NO expand, solo traer datos directos
     })
 
-    // ✅ DEBUG: Verificar datos crudos
-    console.log('🔍 Raw PocketBase data sample:', result.items[0])
+    console.log('🚨 POCKETBASE RAW RESULT:', result.items[0])
     return result
   },
 

@@ -36,6 +36,11 @@ export const useUsersStore = defineStore(
 
     // ✅ REEMPLAZAR función fetchUsers (cache completo)
     async function fetchUsers(forceRefresh = false) {
+      console.log('🚨 users.value actual!', users.value)
+
+      console.log('🚨 USERS.JS FETCHUSERS CALLED!')
+      console.log('🚨 STACK TRACE:', new Error().stack)
+
       const cacheKey = 'all_users'
 
       if (!forceRefresh && users.value.length > 0) {
@@ -45,18 +50,23 @@ export const useUsersStore = defineStore(
 
       loading.value = true
       try {
-        // ✅ Cargar TODOS sin paginación compleja
+        console.log('🚨 CALLING API.GETUSERS...')
         const result = await api.getUsers({}, 1, 5000)
+        console.log('🚨 RESULT FROM API:', result.items[0])
+
         users.value = result.items
+        console.log('🚨 USERS STORED IN CACHE:', users.value[0])
+
         usersFetchTime.value[cacheKey] = Date.now()
         console.log(`📦 Loaded ${users.value.length} users to cache`)
 
-        // ✅ DEBUG: Verificar company_id
+        // Debug: Verificar company_id
         console.log(
           '📊 Sample user with company_id:',
           result.items.find((u) => u.company_id),
         )
       } catch (err) {
+        console.error('🚨 ERROR IN FETCHUSERS:', err)
         error.value = err.message
       } finally {
         loading.value = false
