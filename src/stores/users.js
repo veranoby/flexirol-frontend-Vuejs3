@@ -48,7 +48,7 @@ export const useUsersStore = defineStore(
     }
 
     // ✅ REEMPLAZAR función fetchUsers (cache completo)
-    async function fetchUsers(filters = {}, forceRefresh = false) {
+    async function fetchUsers(forceRefresh = false) {
       // Cache completo - cargar todos los usuarios una vez
       const cacheKey = 'all_users'
 
