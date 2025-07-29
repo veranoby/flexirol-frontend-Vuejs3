@@ -15,53 +15,39 @@ WordPress users (empresas) → PocketBase companies
 **Campos personalizados agregados:**
 - first_name: Plain text (requerido) 
 - last_name: Plain text (requerido)
+- avatar: imagen
 - username: Plain text (requerido)
 - role: Select ["superadmin", "empresa", "operador", "usuario"] (requerido)
 - cedula: Plain text (10 dígitos, único) 
-- company_id: Relation → companies single (nueva relación)
-- assigned_companies: Relation → companies multiple (solo operadores)
 - flexirol: Number (0-100) - Plan 1: Porcentaje del servicio  
 - flexirol2: Number (0-9999) - Plan 2: Valor fijo mensual
 - flexirol3: Select ["1", "2"] - Tipo de plan activo
 - porcentaje: Number (0-100) - Porcentaje máximo del disponible
 - disponible: Number (monto disponible para anticipos)
 - gearbox: Bool (activo/inactivo)
+- phone_number: Plain text (opcional)
 - address: Plain text (opcional) 
 - city: Plain text (opcional)
-- phone_number: Plain text (opcional)
 - state: Plain text (opcional) 
 - zip_code: Plain text (opcional)
-- birth_date: Date (opcional)
-- gender: Select ["hombre", "mujer"] (opcional)
-- emailVisibility: Boolean
- 
-**Reglas de negocio:**
-- role="usuario" DEBE tener company_id (no puede ser null)
-- role="empresa" NO tiene company_id (es la empresa madre)
-- role="operador" puede tener assigned_companies
-- cedula debe ser único y 10 dígitos numéricos
-- gearbox=false bloquea al usuario de solicitar anticipos
-
-### Collection: companies  
-**Campos:**
-- id: Auto-generated primary key
-- company_name: Plain text (requerido) - nombre de la empresa
-- owner_id: Relation → users single (usuario empresa dueño)
+- company_name: Plain text (opcional) - nombre de la empresa
 - fecha_excel: Date (última carga de Excel - CRÍTICO para validaciones)
-- flexirol: Number (0-100) - Plan 1: Porcentaje del servicio  
-- flexirol2: Number (0-9999) - Plan 2: Valor fijo mensual
-- flexirol3: Select ["1", "2"] - Tipo de plan activo
 - dia_inicio: Number (1-31) - Día inicio del ciclo mensual
 - dia_cierre: Number (1-31) - Día cierre del ciclo mensual  
-- porcentaje: Number (0-100) - Porcentaje máximo del disponible
 - dia_bloqueo: Number (0-31) - Días antes del cierre para bloquear
 - frecuencia: Number (1-10) - Máximo solicitudes por usuario por mes
 - dia_reinicio: Number (1-31) - Días después de pago para reactivar
-- gearbox: Bool (empresa activa/inactiva)
-
+- emailVisibility: Boolean
+- company_id: Relation → users single (nueva relación)
+- assigned_companies: Relation → users multiple (solo operadores)
 
 **Reglas de negocio:**
-- fecha_excel DEBE estar actualizada o usuarios se bloquean
+- role="usuario" DEBE tener company_id (no puede ser null)
+- role="empresa" NO tiene company_id (porque es el mismo , es la empresa madre)
+- role="operador" puede tener assigned_companies multiples (para administrarlos)
+- cedula debe ser único y 10 dígitos numéricos
+- gearbox=false bloquea al usuario de solicitar anticipos
+- fecha_excel DEBE estar actualizada o usuarios se bloquean (para role="empresa", la empresa madre de esos usuarios normales)
 - dia_inicio < dia_cierre siempre
 - dia_bloqueo < dia_cierre
 - Si flexirol3="1" usar flexirol (porcentaje), si "2" usar flexirol2 (fijo)
@@ -70,7 +56,7 @@ WordPress users (empresas) → PocketBase companies
 **Campos:**
 - id: Auto-generated primary key
 - user_id: Relation → users single (usuario solicitante)
-- company_id: Relation → companies single (empresa del usuario)
+- company_id: Relation → users single (empresa del usuario)
 - monto_solicitado: Number (1-99999) (requerido)
 - monto_aprobado: Number (0-99999) (default: igual a solicitado)
 - estado: Select ["pendiente", "procesando", "pagado", "rechazado"]
@@ -93,7 +79,6 @@ WordPress users (empresas) → PocketBase companies
 - dias_bloqueo: Number (0-31) - default: 2
 - dias_reinicio: Number (1-31) - default: 3
 - activo: Bool - default: true
-
 
 
 **Mapeo WordPress:**
@@ -154,7 +139,6 @@ WordPress users (empresas) → PocketBase companies
 - Excel debe cargarse antes del nuevo ciclo
 
 ### Excel Bancario:
-- Formato específico para Banco Guayaquil: PA, CUENTA ORIGINAL, headers especiales
-- Formato otros bancos: TIPO CUENTA, NUMERO CUENTA, headers estándar
+- Formato  bancos: TIPO CUENTA, NUMERO CUENTA, headers estándar
 - Al generar: solicitudes "pendiente" → "procesando"
 

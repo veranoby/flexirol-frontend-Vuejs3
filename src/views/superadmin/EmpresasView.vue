@@ -145,13 +145,7 @@
               rounded="circle"
               class="mt-4"
             />
-            <v-col
-              v-for="element in paginatedRows"
-              :key="element.id"
-              cols="12"
-              md="4"
-              lg="3"
-            >
+            <v-col v-for="element in paginatedRows" :key="element.id" cols="12" md="4" lg="3">
               <v-card
                 class="h-100 glass-morphism"
                 :color="element.gearbox ? 'blue-grey-darken-3' : 'error'"
@@ -761,9 +755,7 @@
                       class="me-3"
                     >
                       <v-icon color="white">
-                        {{
-                          elementUsuario.gearbox ? 'mdi-account-check' : 'mdi-account-cancel'
-                        }}
+                        {{ elementUsuario.gearbox ? 'mdi-account-check' : 'mdi-account-cancel' }}
                       </v-icon>
                     </v-avatar>
                     <div class="flex-grow-1">
@@ -1156,7 +1148,7 @@ const empresasSinExcel = computed(() => {
 
 const totalPropietarios = computed(() => usersStore.companies.length)
 
-// Filtros 
+// Filtros
 const companies = computed(() => usersStore.companies)
 
 const showAlert = (message, variant = 'success') => {
@@ -1175,15 +1167,18 @@ const formatDate = (dateString) => {
 }
 
 const computedUsername = () => {
-  const userLogin = `${newItem.value.first_name}_${newItem.value.last_name}`.replace(/\s+/g, '_').toUpperCase()
+  const userLogin = `${newItem.value.first_name}_${newItem.value.last_name}`
+    .replace(/\s+/g, '_')
+    .toUpperCase()
   newItem.value.username = userLogin
   newItem.value.password = userLogin
 }
 
 const computedUsernameUsuario = () => {
-  const userLogin = `${newUsuario.value.first_name}_${newUsuario.value.last_name}_${newUsuario.value.cedula}`
-    .replace(/\s+/g, '_')
-    .toUpperCase()
+  const userLogin =
+    `${newUsuario.value.first_name}_${newUsuario.value.last_name}_${newUsuario.value.cedula}`
+      .replace(/\s+/g, '_')
+      .toUpperCase()
   newUsuario.value.username = userLogin
   newUsuario.value.password = userLogin
 }
@@ -1253,7 +1248,7 @@ const paginatedRows = computed(() => {
   return filteredCompanies.value.slice(start, end)
 })
 
-// ========== METHODS ========== 
+// ========== METHODS ==========
 
 // REEMPLAZAR computed property
 const isExcelVencido = (fechaExcel) => {
@@ -1466,10 +1461,6 @@ const startEditUsuario = (element) => {
   newUsuario.value = { ...element, gearbox: String(element.gearbox) }
   showCreateUserModal.value = true // Open the unified modal
 }
-
-
-
-
 
 // 2. Método para cambiar contraseña
 
