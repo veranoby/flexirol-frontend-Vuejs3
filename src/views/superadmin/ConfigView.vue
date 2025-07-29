@@ -230,7 +230,8 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+// ✅ CAMBIAR línea 1:
+import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useSystemConfigStore } from '@/stores/systemConfig'
 import { useToastSystem } from '@/stores/system'
@@ -245,7 +246,6 @@ const globalConfigLoading = computed(() => systemConfigStore.loading)
 const globalConfigError = computed(() => systemConfigStore.error) // ✅ AGREGADO: Faltaba esta línea
 
 // Referencias a funciones del store
-const fetchGlobalConfig = systemConfigStore.fetchConfig
 const saveGlobalConfig = systemConfigStore.updateConfig
 
 // ✅ CORRECTO: Estado del formulario con nombres exactos del schema system_config
@@ -338,13 +338,18 @@ watch(
 
 // Lifecycle
 onMounted(async () => {
-  if (!globalConfig.value) {
-    try {
-      await fetchGlobalConfig()
-    } catch (error) {
-      console.error('Error loading global config:', error)
-      showAlert('Error al cargar la configuración global', 'error')
+  try {
+    // Forzar carga desde PocketBase
+    await systemConfigStore.fetchConfig(true) // force refresh
+
+    // Esperar a que se cargue y actualizar form
+    await nextTick()
+    if (systemConfigStore.config) {
+      Object.assign(formState, systemConfigStore.config)
     }
+  } catch (error) {
+    console.error('Error loading global config:', error)
+    showAlert('Error al cargar la configuración global', 'error')
   }
 })
 </script>

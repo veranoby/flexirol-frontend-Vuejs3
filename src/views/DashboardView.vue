@@ -254,7 +254,13 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { api } from '@/services/pocketbase'
+import { useUsersStore } from '@/stores/users'
+import { useUserAdvanceRequestsStore } from '@/stores/userAdvanceRequests'
+import { useBankAccountsStore } from '@/stores/bankAccounts'
+
+const usersStore = useUsersStore()
+const userAdvanceRequestsStore = useUserAdvanceRequestsStore()
+const bankAccountsStore = useBankAccountsStore()
 
 const authStore = useAuthStore()
 
@@ -311,45 +317,56 @@ const loadDashboardData = async () => {
 }
 
 const loadSuperadminStats = async () => {
-  const [companies, users, requests] = await Promise.all([
-    api.getCompanies(), // ✅ Ahora existe
-    api.getUsers(),
-    api.getAdvanceRequests(), // ✅ Ahora existe
-  ])
+  // Cargar cache completo una vez
+  await usersStore.fetchUsers({}, true) // force refresh inicial
 
-  stats.value.totalCompanies = companies.totalItems
-  stats.value.totalUsers = users.totalItems
-  stats.value.totalRequests = requests.totalItems
-  stats.value.totalAmount = requests.items.reduce((sum, req) => sum + req.monto_solicitado, 0)
+  stats.value.totalCompanies = usersStore.empresas.length
+  stats.value.totalUsers = usersStore.users.length
+  // TODO: implementar advance_requests store
+  //  stats.value.totalRequests = 0
+  // stats.value.totalAmount = 0
 }
 
+// --- NUEVA VERSIÓN: usando stores y cache ---
+
 const loadAdminStats = async () => {
-  const companyFilter = authStore.isEmpresa
-    ? { company_id: authStore.user.id }
-    : { company_id: authStore.getUserCompanies() }
+  try {
+    const companyId = authStore.user.id
+    // Cargar usuarios de la empresa (cacheado)
+    await usersStore.fetchCompanyUsers(companyId)
+    const userItems = usersStore.companyUsers || []
 
-  const [users, requests] = await Promise.all([
-    api.getUsers({ empresa_id: authStore.user.id }),
-    api.getAdvanceRequests(companyFilter),
-  ])
+    // Cargar solicitudes de adelanto de todos los usuarios de la empresa
+    // NOTA: Si tienes un método store para esto, úsalo. Si no, aquí se asume que debes recorrer los usuarios
+    let allRequests = []
+    for (const user of userItems) {
+      await userAdvanceRequestsStore.fetchUserRequests(user.id)
+      allRequests = allRequests.concat(userAdvanceRequestsStore.userRequests)
+    }
 
-  stats.value.myUsers = users.totalItems
-  stats.value.pendingRequests = requests.items.filter((r) => r.estado === 'pendiente').length
-  stats.value.approvedThisMonth = requests.items.filter((r) => r.estado === 'aprobado').length
+    stats.value.myUsers = userItems.length
+    stats.value.pendingRequests = allRequests.filter((r) => r.estado === 'pendiente').length
+    stats.value.approvedThisMonth = allRequests.filter((r) => r.estado === 'aprobado').length
 
-  recentRequests.value = requests.items.slice(0, 5)
+    recentRequests.value = allRequests.slice(0, 5)
+  } catch (error) {
+    console.error('Error loading admin stats:', error)
+    stats.value = { myUsers: 0, pendingRequests: 0, approvedThisMonth: 0 }
+  }
 }
 
 const loadUserStats = async () => {
+  // Usar el store para obtener el monto disponible (si tienes un método, úsalo; si no, usar authStore)
   userStats.value.availableAmount = authStore.user.disponible || 0
 
-  const [requests, bankAccounts] = await Promise.all([
-    api.getAdvanceRequests({ user_id: authStore.user.id }),
-    api.getBankAccounts(authStore.user.id),
+  // Cargar solicitudes y cuentas bancarias usando los stores
+  await Promise.all([
+    userAdvanceRequestsStore.fetchUserRequests(authStore.user.id),
+    bankAccountsStore.fetchUserBankAccounts(authStore.user.id),
   ])
 
-  userRequests.value = requests.items.slice(0, 5)
-  userBankAccounts.value = bankAccounts.items.slice(0, 3)
+  userRequests.value = userAdvanceRequestsStore.userRequests.slice(0, 5)
+  userBankAccounts.value = bankAccountsStore.bankAccounts.slice(0, 3)
 }
 
 const getStatusColor = (estado) => {

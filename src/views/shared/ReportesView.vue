@@ -271,7 +271,7 @@ import { useUsersStore } from '@/stores/users'
 // Stores
 const authStore = useAuthStore()
 const requestsStore = useUserAdvanceRequestsStore()
-const companyStore = useUsersStore()
+const usersStore = useUsersStore()
 // State
 const loading = ref(false)
 const hasSearched = ref(false)
@@ -359,16 +359,14 @@ const visiblePages = computed(() => {
 
 // Load initial data
 const loadCompanies = async () => {
-  if (!authStore.isSuperadmin) return
-
   try {
-    const result = await await companyStore.fetchUsers({ role: 'empresa' })
-    availableCompanies.value = result.items || []
+    // Usar cache de empresas
+    await usersStore.fetchUsers({}, false)
+    availableCompanies.value = usersStore.empresas
   } catch (error) {
     console.error('Error loading companies:', error)
   }
 }
-
 // Generate report with filters
 const generateReport = async () => {
   loading.value = true

@@ -247,6 +247,7 @@ export default {
     const isProcessing = ref(false)
     const isUploading = ref(false)
     const previewData = ref([])
+    const availableCompanies = ref([])
     const uploadResult = ref(null)
 
     // Columnas esperadas en el Excel
@@ -255,13 +256,13 @@ export default {
     // Obtener empresas al montar el componente
     onMounted(async () => {
       try {
-        await companyStore.fetchUsers({ role: 'empresa' })
+        await usersStore.fetchUsers({}, false) // Cache completo
+        availableCompanies.value = usersStore.empresas
       } catch (error) {
         console.error('Error al cargar las empresas:', error)
         systemStore.showToast('Error al cargar la lista de empresas', 'danger')
       }
     })
-
     // Computed properties
     const firstFivePreviewRows = computed(() => {
       return previewData.value.slice(0, 5).map((row, index) => ({

@@ -1484,20 +1484,26 @@ const changePassword = async () => {
 const loadEmpresas = async (forceRefresh = false) => {
   loading.value = true
   try {
-    await usersStore.fetchUsers({ role: 'empresa' }, forceRefresh)
-
-    // ✅ SIEMPRE asignar array, nunca undefined
-    empresa_info_set.value = usersStore.empresas || []
+    // Cargar cache completo si no existe
+    await usersStore.fetchUsers({}, forceRefresh)
+    
+    // Filtrar empresas localmente y agregar info extra
+    empresa_info_set.value = usersStore.empresas.map(empresa => ({
+      ...empresa,
+      user_count: usersStore.getEmpresaUsers(empresa.id).length,
+      user_registered: empresa.created,
+    }))
   } catch (error) {
     console.error('Error:', error)
-    empresa_info_set.value = [] // ✅ Array vacío en error
+    showAlert('Error al cargar empresas', 'error')
   } finally {
     loading.value = false
   }
 }
 
-onMounted(() => {
-  loadEmpresas(true) // Force a refresh on initial load
+// ✅ AGREGAR al final del script:
+onMounted(async () => {
+  await loadEmpresas(true) // Carga inicial
 })
 </script>
 
