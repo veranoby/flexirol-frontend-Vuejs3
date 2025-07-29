@@ -50,11 +50,15 @@ export const api = {
 
   // Users
   async getUsers(filters = {}, page = 1, perPage = 50) {
-    return await pb.collection('users').getList(page, perPage, {
+    const result = await pb.collection('users').getList(page, perPage, {
       filter: buildFilter(filters),
       sort: '-created',
-      expand: 'company_id',
+      // ✅ NO expand, solo traer datos directos
     })
+
+    // ✅ DEBUG: Verificar datos crudos
+    console.log('🔍 Raw PocketBase data sample:', result.items[0])
+    return result
   },
 
   async createUser(userData) {

@@ -45,22 +45,17 @@ export const useUsersStore = defineStore(
 
       loading.value = true
       try {
-        // Cargar TODOS los usuarios sin límite fijo
-        let allUsers = []
-        let page = 1
-        let hasMore = true
-
-        while (hasMore) {
-          const result = await api.getUsers({}, page, 5000)
-          allUsers.push(...result.items)
-
-          hasMore = result.page < result.totalPages
-          page++
-        }
-
-        users.value = allUsers
+        // ✅ Cargar TODOS sin paginación compleja
+        const result = await api.getUsers({}, 1, 5000)
+        users.value = result.items
         usersFetchTime.value[cacheKey] = Date.now()
         console.log(`📦 Loaded ${users.value.length} users to cache`)
+
+        // ✅ DEBUG: Verificar company_id
+        console.log(
+          '📊 Sample user with company_id:',
+          result.items.find((u) => u.company_id),
+        )
       } catch (err) {
         error.value = err.message
       } finally {
@@ -70,7 +65,9 @@ export const useUsersStore = defineStore(
 
     // ✅ AGREGAR funciones de filtrado local:
     function getEmpresaUsers(empresaId) {
-      return users.value.filter((u) => u.company_id === empresaId)
+      const filtered = users.value.filter((u) => u.company_id === empresaId)
+      console.log(`🔍 Usuarios para empresa ${empresaId}: ${filtered.length}`)
+      return filtered
     }
 
     function getFilteredUsers(filters = {}) {

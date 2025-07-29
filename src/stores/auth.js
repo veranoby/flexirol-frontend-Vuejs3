@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { api, pb } from '@/services/pocketbase'
+import { useUsersStore } from '@/stores/users'
 
 export const useAuthStore = defineStore('auth', () => {
   // State
@@ -46,6 +47,14 @@ export const useAuthStore = defineStore('auth', () => {
       await api.logout()
       user.value = null
       error.value = null
+
+      // ✅ AGREGAR: Limpiar cache de todos los stores
+      const usersStore = useUsersStore()
+      usersStore.$reset() // Limpia store completo
+
+      // Limpiar sessionStorage manualmente
+      sessionStorage.removeItem('flexirol-users')
+      sessionStorage.removeItem('flexirol-system-config')
     } catch (err) {
       error.value = err.message
     } finally {
