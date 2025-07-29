@@ -56,9 +56,15 @@ export const api = {
     const result = await pb.collection('users').getList(page, perPage, {
       filter: buildFilter(filters),
       sort: '-created',
+      expand: 'company_id', // ✅ AGREGAR expand
     })
 
     console.log('🚨 POCKETBASE RAW RESULT:', result.items[0])
+
+    console.log(
+      '🚨 COMPANY_ID SAMPLE:',
+      result.items.find((u) => u.company_id),
+    )
     return result
   },
 

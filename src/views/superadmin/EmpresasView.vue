@@ -1352,14 +1352,6 @@ const viewUsers = async (empresa) => {
   loadingUsers.value = true
   selectedEmpresa.value = empresa
 
-  // Debug: mostrar todos los company_id en cache
-  const allCompanyIds = usersStore.users.map((u) => ({
-    name: u.first_name,
-    company_id: u.company_id,
-    role: u.role,
-  }))
-  console.log('Todos los company_id en cache:', allCompanyIds)
-
   usuarios_empresa_info_set.value = usersStore.getEmpresaUsers(empresa.id)
   console.log('Usuarios filtrados:', usuarios_empresa_info_set.value)
 
