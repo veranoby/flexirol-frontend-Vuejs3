@@ -1041,6 +1041,7 @@ const status_excel = ref('')
 const filter_usuarios = ref('')
 const status_habilitacion_usuarios = ref('')
 const loading = ref(false)
+const empresa_info_set = ref([])
 const loadingUsers = ref(false)
 const submitting = ref(false)
 const submittingUser = ref(false)
@@ -1146,8 +1147,9 @@ const empresasSinExcel = computed(() => {
   return usersStore.companies.filter((e) => !e.last_excel_upload).length
 })
 
-const totalPropietarios = computed(() => usersStore.companies.length)
-
+const totalEmpresas = computed(() => {
+  return empresa_info_set.value?.length || 0 // ✅ Operador opcional
+})
 // Filtros
 const companies = computed(() => usersStore.companies)
 
@@ -1480,7 +1482,18 @@ const changePassword = async () => {
 
 // ========== LIFECYCLE ==========
 const loadEmpresas = async (forceRefresh = false) => {
-  await usersStore.fetchUsers({ filter: "role = 'empresa'" }, forceRefresh)
+  loading.value = true
+  try {
+    await usersStore.fetchUsers({ role: 'empresa' }, forceRefresh)
+
+    // ✅ SIEMPRE asignar array, nunca undefined
+    empresa_info_set.value = usersStore.empresas || []
+  } catch (error) {
+    console.error('Error:', error)
+    empresa_info_set.value = [] // ✅ Array vacío en error
+  } finally {
+    loading.value = false
+  }
 }
 
 onMounted(() => {

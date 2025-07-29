@@ -229,7 +229,6 @@
 <script>
 import { ref, computed, onMounted } from 'vue'
 import * as XLSX from 'xlsx'
-import { useCompaniesStore } from '@/stores/companies'
 import { useUsersStore } from '@/stores/users'
 import { useSystemStore } from '@/stores/system'
 
@@ -237,7 +236,7 @@ export default {
   name: 'ExcelUploadView',
 
   setup() {
-    const companyStore = useCompaniesStore()
+    const companyStore = useUsersStore()
     const userStore = useUsersStore()
     const systemStore = useSystemStore()
 
@@ -256,7 +255,7 @@ export default {
     // Obtener empresas al montar el componente
     onMounted(async () => {
       try {
-        await companyStore.fetchCompanies()
+        await companyStore.fetchUsers({ role: 'empresa' })
       } catch (error) {
         console.error('Error al cargar las empresas:', error)
         systemStore.showToast('Error al cargar la lista de empresas', 'danger')

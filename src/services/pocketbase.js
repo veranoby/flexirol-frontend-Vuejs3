@@ -32,6 +32,8 @@ function buildFilter(filters = {}) {
 
 // API methods for Flexirol
 export const api = {
+  pb, // ✅ AGREGAR esta línea
+
   // Auth
   async login(email, password) {
     try {
@@ -51,8 +53,8 @@ export const api = {
     return await pb.collection('users').getList(page, perPage, {
       filter: buildFilter(filters),
       sort: '-created',
-      expand: 'company_id'
-    });
+      expand: 'company_id',
+    })
   },
 
   async createUser(userData) {
@@ -60,11 +62,11 @@ export const api = {
   },
 
   async updateUser(userId, data) {
-    return await pb.collection('users').update(userId, data);
+    return await pb.collection('users').update(userId, data)
   },
 
   async deleteUser(userId) {
-    return await pb.collection('users').delete(userId);
+    return await pb.collection('users').delete(userId)
   },
 
   // Excel Operations
@@ -105,7 +107,43 @@ export const api = {
     XLSX.writeFile(wb, `pagos_${new Date().toISOString().split('T')[0]}.xlsx`)
   },
 
+  // Company operations (now using users with role='empresa')
+  async getCompanies(filters = {}, page = 1, perPage = 50) {
+    const companyFilters = { ...filters, role: 'empresa' }
+    return await pb.collection('users').getList(page, perPage, {
+      filter: buildFilter(companyFilters),
+      sort: '-created',
+      expand: 'company_id',
+    })
+  },
 
+  // Advance Requests operations
+  async getAdvanceRequests(filters = {}, page = 1, perPage = 50) {
+    return await pb.collection('advance_requests').getList(page, perPage, {
+      filter: buildFilter(filters),
+      sort: '-created',
+      expand: 'user_id,company_id,banco_destino',
+    })
+  },
+
+  async getAdvanceRequestsByStatus(status, filters = {}) {
+    const statusFilters = { ...filters, estado: status }
+    return await pb.collection('advance_requests').getList(1, 500, {
+      filter: buildFilter(statusFilters),
+      sort: '-created',
+      expand: 'user_id,company_id,banco_destino',
+    })
+  },
+
+  // Bank Accounts operations
+  async getBankAccounts(userId, page = 1, perPage = 50) {
+    const filters = userId ? { user_id: userId } : {}
+    return await pb.collection('bank_accounts').getList(page, perPage, {
+      filter: buildFilter(filters),
+      sort: '-created',
+      expand: 'user_id',
+    })
+  },
 }
 
 // Real-time subscriptions
@@ -121,8 +159,6 @@ export const subscriptions = {
       callback(e)
     })
   },
-
-
 
   unsubscribe(subscription) {
     return pb.collection(subscription.collection).unsubscribe(subscription.id)

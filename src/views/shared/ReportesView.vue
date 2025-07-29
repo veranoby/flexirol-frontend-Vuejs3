@@ -266,11 +266,12 @@ import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useUserAdvanceRequestsStore } from '@/stores/userAdvanceRequests'
 import * as XLSX from 'xlsx'
+import { useUsersStore } from '@/stores/users'
 
 // Stores
 const authStore = useAuthStore()
 const requestsStore = useUserAdvanceRequestsStore()
-
+const companyStore = useUsersStore()
 // State
 const loading = ref(false)
 const hasSearched = ref(false)
@@ -361,7 +362,7 @@ const loadCompanies = async () => {
   if (!authStore.isSuperadmin) return
 
   try {
-    const result = await companiesStore.fetchCompanies()
+    const result = await await companyStore.fetchUsers({ role: 'empresa' })
     availableCompanies.value = result.items || []
   } catch (error) {
     console.error('Error loading companies:', error)

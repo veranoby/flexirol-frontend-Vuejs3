@@ -312,9 +312,9 @@ const loadDashboardData = async () => {
 
 const loadSuperadminStats = async () => {
   const [companies, users, requests] = await Promise.all([
-    api.getCompanies(),
+    api.getCompanies(), // ✅ Ahora existe
     api.getUsers(),
-    api.getAdvanceRequests(),
+    api.getAdvanceRequests(), // ✅ Ahora existe
   ])
 
   stats.value.totalCompanies = companies.totalItems

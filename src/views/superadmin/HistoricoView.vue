@@ -5,11 +5,7 @@
     <!-- Filtros Nivel 1 -->
     <v-row class="mb-3">
       <v-col md="2">
-        <v-text-field
-          v-model="filters.cedula"
-          label="Cédula"
-          maxlength="10"
-        ></v-text-field>
+        <v-text-field v-model="filters.cedula" label="Cédula" maxlength="10"></v-text-field>
       </v-col>
       <v-col md="2">
         <v-select
@@ -33,17 +29,14 @@
             { title: 'Pendiente', value: 'pendiente' },
             { title: 'Procesando', value: 'procesando' },
             { title: 'Pagado', value: 'pagado' },
-            { title: 'Rechazado', value: 'rechazado' }
+            { title: 'Rechazado', value: 'rechazado' },
           ]"
           label="Estado"
           clearable
         ></v-select>
       </v-col>
       <v-col md="2">
-        <v-text-field
-          v-model="filters.banco"
-          label="Banco"
-        ></v-text-field>
+        <v-text-field v-model="filters.banco" label="Banco"></v-text-field>
       </v-col>
       <v-col md="2">
         <v-text-field
@@ -62,18 +55,10 @@
         ></v-text-field>
       </v-col>
       <v-col md="3">
-        <v-text-field
-          v-model="filters.fechaInicio"
-          label="Fecha inicio"
-          type="date"
-        ></v-text-field>
+        <v-text-field v-model="filters.fechaInicio" label="Fecha inicio" type="date"></v-text-field>
       </v-col>
       <v-col md="3">
-        <v-text-field
-          v-model="filters.fechaFin"
-          label="Fecha fin"
-          type="date"
-        ></v-text-field>
+        <v-text-field v-model="filters.fechaFin" label="Fecha fin" type="date"></v-text-field>
       </v-col>
       <v-col md="3">
         <v-text-field
@@ -200,16 +185,16 @@
       </div>
     </div>
     <div v-if="historicoError" class="alert alert-danger mt-3">{{ historicoError }}</div>
-  </div>
+  </v-container>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useReportsStore } from '@/stores/reports'
-import { useCompaniesStore } from '@/stores/companies'
+import { useUsersStore } from '@/stores/users'
 
 const reports = useReportsStore()
-const companies = useCompaniesStore()
+const users = useUsersStore()
 
 const filters = reports.historicoFilters
 const historicoLoading = computed(() => reports.historicoLoading)
@@ -225,11 +210,8 @@ const empresas = ref([])
 
 onMounted(async () => {
   try {
-    // Cargar empresas para el filtro (ahora usando fetchCompanies)
-    const { items } = await companies.fetchCompanies({
-      expand: 'assigned_companies', // Opcional: cargar relaciones si se necesitan
-    })
-    empresas.value = items
+    await users.fetchUsers({ role: 'empresa' })
+    empresas.value = users.empresas
   } catch {
     empresas.value = []
   }

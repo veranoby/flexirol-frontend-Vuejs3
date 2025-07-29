@@ -26,6 +26,8 @@ export const useSystemConfigStore = defineStore(
           .collection('system_config')
           .getFirstListItem('name="default_config"')
 
+        console.log('llamado a system_config - default_config:', result)
+
         config.value = {
           porcentaje_servicio: result.porcentaje_servicio || 10,
           valor_fijo_mensual: result.valor_fijo_mensual || 50,
