@@ -33,23 +33,9 @@ export const useUsersStore = defineStore(
     }))
 
     // Actions
-    async function fetchCompanyUsers(companyId) {
-      // This is a simplified fetch, assuming we get all users for a company
-      // In a real-world scenario, you might want pagination here as well.
-      loading.value = true
-      try {
-        const result = await api.getUsers({ filter: `company_id = "${companyId}"` }, 1, 500) // Fetch up to 500 users
-        companyUsers.value = result.items
-      } catch (err) {
-        error.value = err.message
-      } finally {
-        loading.value = false
-      }
-    }
 
     // ✅ REEMPLAZAR función fetchUsers (cache completo)
     async function fetchUsers(forceRefresh = false) {
-      // Cache completo - cargar todos los usuarios una vez
       const cacheKey = 'all_users'
 
       if (!forceRefresh && users.value.length > 0) {
@@ -59,8 +45,20 @@ export const useUsersStore = defineStore(
 
       loading.value = true
       try {
-        const result = await api.getUsers({}, 1, 5000) // Cargar TODOS
-        users.value = result.items
+        // Cargar TODOS los usuarios sin límite fijo
+        let allUsers = []
+        let page = 1
+        let hasMore = true
+
+        while (hasMore) {
+          const result = await api.getUsers({}, page, 500)
+          allUsers.push(...result.items)
+
+          hasMore = result.page < result.totalPages
+          page++
+        }
+
+        users.value = allUsers
         usersFetchTime.value[cacheKey] = Date.now()
         console.log(`📦 Loaded ${users.value.length} users to cache`)
       } catch (err) {
@@ -195,7 +193,6 @@ export const useUsersStore = defineStore(
 
       // Actions
       fetchUsers,
-      fetchCompanyUsers,
       getEmpresaUsers,
       getFilteredUsers,
       createUser,

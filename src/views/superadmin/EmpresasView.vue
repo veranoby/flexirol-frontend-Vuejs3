@@ -1140,18 +1140,18 @@ const rules = {
 
 // ========== COMPUTED (del legacy) ==========
 const empresasActivas = computed(() => {
-  return usersStore.companies.filter((e) => e.gearbox === 'true' || e.gearbox === true).length
+  return usersStore.empresas.filter((e) => e.gearbox === 'true' || e.gearbox === true).length
 })
 
 const empresasSinExcel = computed(() => {
-  return usersStore.companies.filter((e) => !e.last_excel_upload).length
+  return usersStore.empresas.filter((e) => !e.last_excel_upload).length
 })
 
 const totalEmpresas = computed(() => {
   return empresa_info_set.value?.length || 0 // ✅ Operador opcional
 })
 // Filtros
-const companies = computed(() => usersStore.companies)
+const companies = computed(() => usersStore.empresas)
 
 const showAlert = (message, variant = 'success') => {
   alert.value.message = message
@@ -1348,9 +1348,13 @@ const viewUsers = async (empresa) => {
   loadingUsers.value = true
   selectedEmpresa.value = empresa
 
+  console.log('Empresa seleccionada:', empresa)
+
   try {
-    await usersStore.fetchCompanyUsers(empresa.id)
-    usuarios_empresa_info_set.value = usersStore.companyUsers
+    usuarios_empresa_info_set.value = usersStore.getEmpresaUsers(empresa.id)
+
+    console.log('Usuarios de la empresa:', usuarios_empresa_info_set.value)
+    console.log('usuarios de la empresa filtrada:', usersStore.getEmpresaUsers(empresa.id))
     showUsersModal.value = true
   } catch (error) {
     console.error('Error loading users:', error)
@@ -1486,9 +1490,9 @@ const loadEmpresas = async (forceRefresh = false) => {
   try {
     // Cargar cache completo si no existe
     await usersStore.fetchUsers({}, forceRefresh)
-    
+
     // Filtrar empresas localmente y agregar info extra
-    empresa_info_set.value = usersStore.empresas.map(empresa => ({
+    empresa_info_set.value = usersStore.empresas.map((empresa) => ({
       ...empresa,
       user_count: usersStore.getEmpresaUsers(empresa.id).length,
       user_registered: empresa.created,
@@ -1503,7 +1507,7 @@ const loadEmpresas = async (forceRefresh = false) => {
 
 // ✅ AGREGAR al final del script:
 onMounted(async () => {
-  await loadEmpresas(true) // Carga inicial
+  await loadEmpresas(false) // Carga inicial
 })
 </script>
 
